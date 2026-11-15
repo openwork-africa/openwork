@@ -4,12 +4,14 @@
     "./packages/ui",
     "./packages/store",
     "./packages/shell",
+    "./packages/panel",
+    "./plugins/profile",
     "./app"
   ],
   "tasks": {
     "test": "deno test -A --ignore=tools",
-    "lint": "deno lint packages tools app",
-    "check": "deno check packages tools app/main.tsx app/product.ts app/pwa/stamp-sw.ts",
+    "lint": "deno lint packages plugins tools app",
+    "check": "deno check packages plugins tools app/main.tsx app/product.ts app/pwa/stamp-sw.ts",
     "fitness": "deno test -A tools/fitness.test.ts",
     "build": "deno task --cwd app build && test -f app/dist/index.html"
   },
