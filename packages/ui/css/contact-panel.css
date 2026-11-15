@@ -178,3 +178,20 @@
     color: var(--color-text-secondary);
   }
 }
+
+@layer components {
+  /* The close button floats over the cover's top-left corner; the cover's own button sits at the right. */
+  .contact-panel {
+    position: relative;
+  }
+  .contact-close {
+    position: absolute;
+    inset-block-start: var(--spacing-3);
+    inset-inline-start: var(--spacing-3);
+    z-index: 2;
+  }
+  /* A cover inside the scroll reaches the scroll's own edges, which the scroll's inset keeps from being cut. */
+  .contact-scroll .contact-cover-top {
+    margin-inline: calc(var(--spacing-2) * -1);
+  }
+}

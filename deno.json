@@ -8,6 +8,8 @@
     "./plugins/text",
     "./packages/circle",
     "./plugins/rooms",
+    "./packages/panel",
+    "./plugins/profile",
     "./app"
   ],
   "tasks": {
