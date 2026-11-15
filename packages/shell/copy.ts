@@ -1,0 +1,17 @@
+export const copy = {
+  listLabel: "Conversations",
+  panelLabel: "Contact details",
+  circleName: "conversation list",
+  windowName: "conversation",
+  panelName: "contact panel",
+  pageName: "page",
+  circleEmptyTitle: "No conversations yet",
+  circleEmptyDescription: "Rooms you create show up here.",
+  noRoomTitle: "Pick a conversation to start.",
+  panelEmpty: "Details show up here.",
+  notFoundTitle: "Nothing here",
+  notFoundDescription: "This page does not exist.",
+  goHome: "Go home",
+  updateReady: "New version ready.",
+  update: "Update",
+} as const;

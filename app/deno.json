@@ -1,0 +1,28 @@
+{
+  "name": "@openwork/app",
+  "version": "0.1.0",
+  "exports": "./product.ts",
+  "imports": {
+    "react": "npm:react@^19.3",
+    "react/jsx-runtime": "npm:react@^19.3/jsx-runtime",
+    "react-dom": "npm:react-dom@^19.3",
+    "react-dom/client": "npm:react-dom@^19.3/client",
+    "@types/react": "npm:@types/react@^19.3",
+    "@types/react-dom": "npm:@types/react-dom@^19",
+    "@vitejs/plugin-react": "npm:@vitejs/plugin-react@^5",
+    "vite": "npm:vite@^7"
+  },
+  "tasks": {
+    "dev": "deno run -A npm:vite@^7",
+    "build": "deno run -A npm:vite@^7 build && deno run -A ./pwa/stamp-sw.ts"
+  },
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "deno.ns"
+    ]
+  }
+}

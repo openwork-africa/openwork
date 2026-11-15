@@ -1,0 +1,9 @@
+{
+  "name": "Openwork",
+  "short_name": "Openwork",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [{ "src": "/assets/mark.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}
