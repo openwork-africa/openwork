@@ -1,3 +1,5 @@
+export { COMMAND_PREFIX, provideCommand } from "./commands.ts";
+export type { CommandHandler } from "./commands.ts";
 export { compose } from "./compose.tsx";
 export type { ComposeOptions, Product } from "./compose.tsx";
 export type { Commands, Ports, SetupContext, SlotContext } from "./context.ts";

@@ -6,6 +6,8 @@
     "./packages/shell",
     "./packages/conversation",
     "./plugins/text",
+    "./packages/circle",
+    "./plugins/rooms",
     "./app"
   ],
   "tasks": {

@@ -38,10 +38,12 @@ function useKit(): Kit {
 
 export function useCtx(): SlotContext {
   const { registry, ports, roomId, navigate, commands } = useKit();
-  return useMemo(
-    () => ({ roomId, navigate, notify, commands, ports, service: <T,>(key: ServiceKey<T>) => registry.service(key) }),
-    [registry, ports, roomId, navigate, commands],
-  );
+  return useMemo(() => {
+    const bound: Record<string, (...args: never[]) => unknown> = { ...commands };
+    const ctx: SlotContext = { roomId, navigate, notify, commands: bound, ports, service: <T,>(key: ServiceKey<T>) => registry.service(key) };
+    for (const [name, handler] of Object.entries(registry.commands())) bound[name] = (...args) => handler(ctx, ...args);
+    return ctx;
+  }, [registry, ports, roomId, navigate, commands]);
 }
 
 export function useSlot<T>(key: SlotKey<T>, ctx: SlotContext): readonly (T & Placed)[] {

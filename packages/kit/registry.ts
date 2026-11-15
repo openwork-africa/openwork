@@ -1,3 +1,4 @@
+import { COMMAND_PREFIX, type CommandHandler } from "./commands.ts";
 import type { Placed, ServiceKey, SlotKey } from "./keys.ts";
 import type { Plugin } from "./plugin.ts";
 import { copy } from "./copy.ts";
@@ -5,6 +6,8 @@ import { copy } from "./copy.ts";
 export interface Registry {
   slot<T>(key: SlotKey<T>): readonly (T & Placed)[];
   service<T>(key: ServiceKey<T>): T | undefined;
+  /** The commands plugins provide, by name. */
+  commands(): Readonly<Record<string, CommandHandler>>;
 }
 
 export type Override = Readonly<Record<string, Readonly<Record<string, unknown>>>>;
@@ -57,9 +60,15 @@ export function buildRegistry(
     frozen.set(slot, Object.freeze(sorted));
   }
   const none: readonly Placed[] = Object.freeze([]);
+  const commands = Object.freeze(
+    Object.fromEntries(
+      [...services].filter(([id]) => id.startsWith(COMMAND_PREFIX)).map(([id, { value }]) => [id.slice(COMMAND_PREFIX.length), value as CommandHandler]),
+    ),
+  );
 
   return Object.freeze({
     slot: <T>(key: SlotKey<T>) => (frozen.get(key.id) ?? none) as readonly (T & Placed)[],
     service: <T>(key: ServiceKey<T>) => services.get(key.id)?.value as T | undefined,
+    commands: () => commands,
   });
 }

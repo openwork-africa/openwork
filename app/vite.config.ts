@@ -34,6 +34,8 @@ export default defineConfig({
       { find: /^@openwork\/store$/, replacement: here("../packages/store/mod.ts") },
       { find: /^@openwork\/conversation$/, replacement: here("../packages/conversation/mod.ts") },
       { find: /^@openwork\/plugin-text$/, replacement: here("../plugins/text/mod.ts") },
+      { find: /^@openwork\/circle$/, replacement: here("../packages/circle/mod.ts") },
+      { find: /^@openwork\/plugin-rooms$/, replacement: here("../plugins/rooms/mod.ts") },
       { find: /^@openwork\/shell\/app$/, replacement: here("../packages/shell/createApp.tsx") },
       { find: /^@openwork\/shell$/, replacement: here("../packages/shell/mod.ts") },
     ],

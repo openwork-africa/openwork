@@ -1,0 +1,16 @@
+export const copy = {
+  listLabel: "Conversations",
+  circleName: "circle",
+  emptyTitle: "No conversations yet",
+  emptyDescription: "Rooms you create show up here.",
+  newLabel: "New",
+  loadingLabel: "Loading",
+  tabsLabel: "Circle",
+  menuLabel: (name: string) => `${name} actions`,
+  unreadLabel: (count: number) => `${count} unread`,
+  unreadMax: 99,
+  confirmTitle: "Delete this?",
+  confirmBody: (name: string) => `“${name}” will be deleted.`,
+  cancel: "Cancel",
+  dialogLabel: "Dialog",
+} as const;

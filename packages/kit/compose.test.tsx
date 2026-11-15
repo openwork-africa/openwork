@@ -1,6 +1,6 @@
 import { assert, assertEquals, assertThrows } from "@std/assert";
 import { renderToStaticMarkup } from "react-dom/server";
-import { compose, contribute, definePlugin, getNotices, provide, service, slot, useCtx, useSlot } from "./mod.ts";
+import { compose, contribute, definePlugin, getNotices, provide, provideCommand, service, slot, useCtx, useSlot } from "./mod.ts";
 import { clearNotices, type Item, itemsSlot, placed, pluginWith } from "./testing.ts";
 
 const labelsOf = (product: ReturnType<typeof compose>): string[] => product.registry.slot(itemsSlot).map((item) => item.label);
@@ -227,4 +227,20 @@ Deno.test("hooks read slots sorted, filtered by when, and the service through ct
 
 Deno.test("contribute keeps the slot id of its key", () => {
   assertEquals(contribute(itemsSlot, placed("x", 1)).slot, "test.items");
+});
+
+Deno.test("a provided command is on ctx.commands, bound to the context, and a given command stays", () => {
+  const seen: unknown[] = [];
+  const product = compose(
+    [definePlugin({ id: "doer", version: "1.0.0", contributes: [], provides: [provideCommand("do.it", (ctx, word: string) => seen.push([ctx.roomId, word]))] })],
+    {},
+  );
+  const Probe = () => {
+    const ctx = useCtx();
+    (ctx.commands["do.it"] as (word: string) => void)("now");
+    return <p>{Object.keys(ctx.commands).join(",")}</p>;
+  };
+  const html = renderToStaticMarkup(<product.Root roomId="r1" navigate={() => {}} commands={{ other: () => 1 }}><Probe /></product.Root>);
+  assertEquals(seen, [["r1", "now"]]);
+  assert(html.includes("other,do.it"));
 });
