@@ -1,4 +1,4 @@
 import { createApp } from "@openwork/shell/app";
-import { plugins } from "./product.ts";
+import { openPlugins, regions } from "./product.ts";
 
-createApp({ plugins });
+createApp({ plugins: openPlugins, regions });

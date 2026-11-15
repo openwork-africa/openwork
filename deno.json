@@ -10,14 +10,18 @@
     "./plugins/rooms",
     "./packages/panel",
     "./plugins/profile",
-    "./app"
+    "./app",
+    "./docs/examples"
   ],
   "tasks": {
     "test": "deno test -A --ignore=tools",
-    "lint": "deno lint packages plugins tools app",
-    "check": "deno check packages plugins tools app/main.tsx app/product.ts app/pwa/stamp-sw.ts",
+    "lint": "deno lint packages plugins tools app docs/examples",
+    "check": "deno check packages plugins tools docs/examples app/main.tsx app/product.ts app/pwa/stamp-sw.ts",
     "fitness": "deno test -A tools/fitness.test.ts",
-    "build": "deno task --cwd app build && test -f app/dist/index.html"
+    "build": "deno task --cwd app build && test -f app/dist/index.html",
+    "test:e2e": "deno test -A tools/e2e.test.ts",
+    "test:base-only": "deno test -A app/baseOnly.test.tsx",
+    "test:remove-each": "deno test -A app/removeEach.test.tsx --"
   },
   "lint": {
     "rules": {
