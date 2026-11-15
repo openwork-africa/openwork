@@ -1,0 +1,79 @@
+{
+  "room": {
+    "id": "7b1e0d2a-5c3f-4e8a-9d41-2f6a8c0b1e11",
+    "name": "Family",
+    "description": "Sunday plans",
+    "picture": "file:0c9f2e7a-1b34-4d5e-8f60-a1b2c3d4e5f6",
+    "background": "white",
+    "createdAt": 1731600000000,
+    "updatedAt": 1731600005000,
+    "activityAt": 1731600009000
+  },
+  "message": {
+    "id": "a4d8f1c2-6e7b-4a90-b3c5-d1e2f3a4b5c6",
+    "roomId": "7b1e0d2a-5c3f-4e8a-9d41-2f6a8c0b1e11",
+    "authorId": "you",
+    "content": "Lunch at one?",
+    "createdAt": 1731600009000,
+    "updatedAt": 1731600009000,
+    "deleted": false
+  },
+  "fileItem": {
+    "id": "0c9f2e7a-1b34-4d5e-8f60-a1b2c3d4e5f6",
+    "parentId": "7b1e0d2a-5c3f-4e8a-9d41-2f6a8c0b1e11",
+    "name": "menu.png",
+    "mimeType": "image/png",
+    "size": 20480,
+    "createdAt": 1731600002000,
+    "updatedAt": 1731600002000
+  },
+  "pushBody": {
+    "changes": [
+      {
+        "kind": "message",
+        "id": "a4d8f1c2-6e7b-4a90-b3c5-d1e2f3a4b5c6",
+        "updatedAt": 1731600009000,
+        "data": {
+          "id": "a4d8f1c2-6e7b-4a90-b3c5-d1e2f3a4b5c6",
+          "roomId": "7b1e0d2a-5c3f-4e8a-9d41-2f6a8c0b1e11",
+          "authorId": "you",
+          "content": "Lunch at one?",
+          "createdAt": 1731600009000,
+          "updatedAt": 1731600009000
+        }
+      }
+    ]
+  },
+  "pullAnswer": {
+    "changes": [
+      {
+        "kind": "room",
+        "id": "7b1e0d2a-5c3f-4e8a-9d41-2f6a8c0b1e11",
+        "updatedAt": 1731600005000,
+        "data": {
+          "id": "7b1e0d2a-5c3f-4e8a-9d41-2f6a8c0b1e11",
+          "name": "Family",
+          "createdAt": 1731600000000,
+          "updatedAt": 1731600005000,
+          "activityAt": 1731600009000,
+          "deleted": true
+        }
+      },
+      {
+        "kind": "file",
+        "id": "0c9f2e7a-1b34-4d5e-8f60-a1b2c3d4e5f6",
+        "updatedAt": 1731600002000,
+        "data": {
+          "id": "0c9f2e7a-1b34-4d5e-8f60-a1b2c3d4e5f6",
+          "parentId": "7b1e0d2a-5c3f-4e8a-9d41-2f6a8c0b1e11",
+          "name": "menu.png",
+          "mimeType": "image/png",
+          "size": 20480,
+          "createdAt": 1731600002000,
+          "updatedAt": 1731600002000
+        }
+      }
+    ],
+    "cursor": 2
+  }
+}
