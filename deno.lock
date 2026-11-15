@@ -843,6 +843,19 @@
           "npm:vite@7"
         ]
       },
+      "packages/circle": {
+        "dependencies": [
+          "jsr:@std/assert@1",
+          "npm:@astryxdesign/core@~0.6.5",
+          "npm:@stylexjs/stylex@0.19",
+          "npm:@types/react@^19.3.0",
+          "npm:fake-indexeddb@6",
+          "npm:happy-dom@20",
+          "npm:lucide-react@^1.18.0",
+          "npm:react-dom@^19.3.0",
+          "npm:react@^19.3.0"
+        ]
+      },
       "packages/kit": {
         "dependencies": [
           "jsr:@std/assert@1",
@@ -881,6 +894,19 @@
           "npm:@astryxdesign/core@~0.6.5",
           "npm:@stylexjs/stylex@0.19",
           "npm:@types/react@^19.3.0",
+          "npm:lucide-react@^1.18.0",
+          "npm:react-dom@^19.3.0",
+          "npm:react@^19.3.0"
+        ]
+      },
+      "plugins/rooms": {
+        "dependencies": [
+          "jsr:@std/assert@1",
+          "npm:@astryxdesign/core@~0.6.5",
+          "npm:@stylexjs/stylex@0.19",
+          "npm:@types/react@^19.3.0",
+          "npm:fake-indexeddb@6",
+          "npm:happy-dom@20",
           "npm:lucide-react@^1.18.0",
           "npm:react-dom@^19.3.0",
           "npm:react@^19.3.0"
