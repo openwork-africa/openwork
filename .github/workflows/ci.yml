@@ -1,0 +1,84 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: 2.9.x
+      - run: deno task lint
+
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: 2.9.x
+      - run: deno task check
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: 2.9.x
+      - run: deno task test
+
+  fitness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: 2.9.x
+      - run: deno task fitness
+
+  base-only:
+    if: false # waits for app/ (WP9): builds the app with zero plugins
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: 2.9.x
+      - run: deno task test:base-only
+
+  remove-each:
+    if: false # waits for app/ and the chat plugins (WP7, WP9): builds the app with each plugin removed in turn
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        plugin: [rooms, text, profile]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: 2.9.x
+      - run: deno task test:remove-each ${{ matrix.plugin }}
+
+  cargo:
+    if: false # waits for server/ (WP8)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo test --manifest-path server/Cargo.toml
+
+  e2e:
+    if: false # waits for the app and the server (WP8, WP9): the offline end-to-end checklist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: 2.9.x
+      - run: deno task test:e2e

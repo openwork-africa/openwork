@@ -1,0 +1,180 @@
+@layer components {
+  .contact-panel {
+    flex: 0 0 auto;
+    width: var(--shell-panel-width);
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    color: var(--color-text-primary);
+    /* The panel's inset is the only one: nothing inside it adds its own. Where it slides over the conversation, 16px.
+       No top inset: the cover starts at the panel's top edge. */
+    padding: 0 var(--spacing-3) var(--spacing-3);
+    --container-padding-inline-start: var(--spacing-3);
+    --container-padding-inline-end: var(--spacing-3);
+  }
+  .contact-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-6);
+    padding: 0;
+  }
+
+  /* A row's words start where the panel's headings and fields start: each list lets its rows' inset out past the text
+     (Astryx's edgeCompensation, up to the container padding named here), so a highlight is wider than its text. The scroll
+     keeps that much room either side so the highlight is not cut off. The AI's profile is edge to edge and keeps its own. */
+  .contact-panel:not(.profile-panel) .contact-scroll {
+    margin-inline: calc(var(--spacing-2) * -1);
+    padding-inline: var(--spacing-2);
+    --container-padding-inline-start: var(--spacing-2);
+    --container-padding-inline-end: var(--spacing-2);
+  }
+  /* The row's icon, sized like its neighbours. */
+  .browser-icon {
+    display: inline-flex;
+    width: var(--spacing-4);
+    height: var(--spacing-4);
+  }
+  /* The cover sits above the scroll, edge to edge, and makes room below for the picture overlapping it. */
+  .contact-cover-top {
+    position: relative;
+    flex: none;
+    margin-inline: calc(var(--spacing-3) * -1);
+    margin-bottom: calc(var(--spacing-10) * -1);
+  }
+  .contact-cover-members {
+    position: absolute;
+    inset-block-start: var(--spacing-3);
+    inset-inline-start: var(--spacing-3);
+    z-index: 1;
+  }
+  /* The hero body's top room keeps the picture's ring clear of the scroll's clipped top edge. */
+  .contact-hero-body {
+    padding-top: var(--spacing-2);
+  }
+  .contact-footer {
+    flex: none;
+  }
+
+  /* Everything under one atom fills the panel: its heading and its add tiles stay put, and the list between them
+     (or the folders being browsed) is what scrolls. */
+  .everything-view {
+    flex: 1;
+    min-height: 0;
+  }
+  .contact-panel:not(.profile-panel) > .everything-view {
+    padding: var(--spacing-4) 0 0;
+  }
+  .everything-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+  }
+  /* Its rows' icons and words start on the panel's edge, as the panel's own rows do (.contact-scroll above): the
+     scroll keeps that much room either side so a highlight is not cut. The tree fills the scroll untouched. */
+  .contact-panel:not(.profile-panel) .everything-scroll {
+    margin-inline: calc(var(--spacing-2) * -1);
+    padding-inline: var(--spacing-2);
+  }
+
+  /* A folder task's run card: its title shrinks (and its name is cut short) so Stop beside it is never cut. */
+  .task-run-title {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .task-run-stop {
+    flex: none;
+  }
+
+  /* "Add to this" tiles: square cards in a grid, icon over label, as designed. */
+  .add-tiles {
+    width: 100%;
+  }
+  .add-tiles .add-tile {
+    min-width: 0;
+    text-align: center;
+  }
+  .add-tiles .add-tile > div {
+    height: 100%;
+  }
+
+  /* A personality is written on a flat page: no border, no shadow, the field's own background given to the card. The
+     words start on the card's left edge with its heading, notes and buttons (the field's inset is taken off), and its
+     counter sits under the words rather than over the last line of a long brief, which scrolls inside the field. */
+  .personality-card {
+    border: none;
+    box-shadow: none;
+  }
+  .personality-card .astryx-text-area {
+    border: none;
+    box-shadow: none;
+    background: transparent;
+  }
+  .personality-card .astryx-text-area-control {
+    resize: none;
+    padding-inline: 0;
+    padding-block-end: 0;
+  }
+  .personality-card .astryx-text-area-counter {
+    position: static;
+    justify-content: flex-end;
+    padding-block-start: var(--spacing-1);
+  }
+
+  /* Everything's Personality row says what the operator is in two lines at most, like the rows around it, however long
+     its brief. */
+  .personality-row .astryx-tree-list-item-label + span {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+
+  @media (max-width: 1099px) {
+    .convo-shell .astryx-layout-panel[aria-label="Contact details"] {
+      display: contents;
+    }
+    .contact-panel {
+      position: absolute;
+      inset-block: 0;
+      inset-inline-end: 0;
+      z-index: 30;
+      width: 100%;
+      background-color: var(--color-background-body);
+      transform: translateX(100%);
+      visibility: hidden;
+      transition: transform var(--duration-medium) var(--ease-standard), visibility 0s linear var(--duration-medium);
+    }
+    .convo-shell.is-panel-open .contact-panel {
+      transform: none;
+      visibility: visible;
+      transition: transform var(--duration-medium) var(--ease-standard), visibility 0s;
+    }
+    /* Hidden is not stopped: closed, the panel's mark would still flash its every pixel, every frame. */
+    .convo-shell:not(.is-panel-open) .contact-panel .pixel--flash {
+      animation: none;
+    }
+  }
+
+  @media (max-width: 1099px) and (prefers-reduced-motion: reduce) {
+    .contact-panel,
+    .convo-shell.is-panel-open .contact-panel {
+      transition: none;
+    }
+  }
+
+  /* The description under a name (DescriptionField): one flat line in the supporting colour, cut to fit, until clicked;
+     then a borderless line typed in place, centred like the words it stands in for. */
+  .description-line {
+    color: var(--color-text-secondary);
+    font-weight: var(--font-weight-normal);
+  }
+  .description-input input {
+    text-align: center;
+    color: var(--color-text-secondary);
+  }
+}

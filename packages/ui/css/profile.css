@@ -1,0 +1,147 @@
+/* The AI profile's header, from the design: a cover the picture overlaps. Sizes are steps of the 48px token. */
+@layer components {
+  .profile-panel {
+    padding: 0;
+  }
+
+  /* The cover is the theme: its picture (app/public/assets/covers, or a client's own) over the theme's own colours; a client's theme with no picture shows its colours alone. */
+  .profile-cover {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-end;
+    aspect-ratio: 576 / 171;
+    padding: var(--spacing-3);
+    background: linear-gradient(135deg, var(--color-accent), var(--color-accent-muted)) center / cover;
+  }
+
+  /* On openwork.africa the cover is a picture, so its theme control sits on a solid surface: readable whatever is behind it. */
+  .profile-cover button {
+    background-color: var(--color-background-card);
+    color: var(--color-text-primary);
+  }
+
+  /* Placeholder copy reads as unfilled: greyed secondary text, never the solid white of a set name. */
+  .name-placeholder {
+    color: var(--color-text-secondary);
+  }
+
+  /* Half the picture sits on the cover. */
+  .profile-identity {
+    margin-top: calc(var(--spacing-12) * -1);
+  }
+
+  /* The picture, with room around it for the stat ring. */
+  .profile-avatar-wrap {
+    position: relative;
+    flex: none;
+    display: flex;
+    padding: var(--spacing-2);
+    margin: calc(var(--spacing-2) * -1);
+  }
+
+  .profile-avatar {
+    display: flex;
+    width: calc(var(--spacing-12) * 2);
+    height: calc(var(--spacing-12) * 2);
+    border-radius: var(--radius-container);
+    outline: var(--spacing-1) solid var(--color-background-body);
+    box-shadow: var(--shadow-high);
+    overflow: hidden;
+    background-color: var(--color-background-muted);
+  }
+
+  /* A green ring (standing "in") replaces the body-coloured outline, at the same thickness. */
+  .profile-avatar:has(.avatar-frame[data-ring]) {
+    outline: none;
+  }
+
+  .profile-avatar .avatar-frame,
+  .profile-avatar .avatar-frame > button,
+  .profile-avatar .avatar-art {
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+  }
+
+  /* What the AI has to tell you, as a thought over its picture (the design's bubble): a pill, with a tail of three circles
+     stepping down to the picture's corner. The pill stretches with its words; the tail keeps the design's shape. */
+  .thought-bubble {
+    position: absolute;
+    inset-block-end: calc(100% - var(--spacing-3));
+    inset-inline-start: calc(100% - var(--spacing-3));
+    z-index: 1;
+    color: var(--color-accent);
+    filter: drop-shadow(var(--shadow-low));
+  }
+
+  .thought-bubble-tail {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: calc(var(--spacing-6) * -1);
+    inline-size: var(--spacing-12);
+    fill: currentColor;
+  }
+
+  .thought-bubble-words {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    padding: var(--spacing-2) var(--spacing-3);
+    border: 0;
+    border-radius: var(--radius-container);
+    background-color: var(--color-accent);
+    color: var(--color-on-accent);
+    white-space: nowrap;
+  }
+
+  .thought-bubble button.thought-bubble-words {
+    cursor: pointer;
+  }
+
+  /* Until you have said what AI is to you, its picture is greyed out. */
+  .profile-avatar[data-undecided] {
+    filter: grayscale(1);
+    opacity: 0.5;
+  }
+
+  /* The AI's name is typed where it is shown: a heading with no field around it. */
+  .profile-name-input input {
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+  }
+
+  .profile-metrics > * {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .profile-tabs {
+    padding-inline: var(--spacing-4);
+  }
+
+  .profile-tab-panel {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    padding: var(--spacing-4);
+  }
+
+  /* The owner tab's footer (storage, version, the Openwork mark) rests at the foot of the panel. */
+  .profile-owner-footer {
+    margin-top: auto;
+  }
+
+  /* Storage, legal and version share one line: the storage figure never breaks or gives way. */
+  .profile-footer-storage {
+    flex: none;
+    white-space: nowrap;
+  }
+
+  /* The Openwork mark greets a device's first visit, at the foot of the panel. */
+  .profile-first-visit-mark {
+    flex: none;
+    margin-top: auto;
+    padding: var(--spacing-4);
+  }
+}

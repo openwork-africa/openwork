@@ -1,0 +1,249 @@
+/* The one place the app reaches into a design-system component: nothing else here restyles Astryx's own parts.
+   The chat composer's layout: one row tall until the text wraps — the send/stop/mic actions sit at the end of the
+   input row instead of on a row of their own. Astryx exposes no prop for this, so it is stated once, on the
+   composer's stable class. Its corner radius is not here: chat surfaces read the theme's --radius-chat
+   (theme/themes/openwork/brand.ts). The drawer above (the @ menu, the reply bar) is a sibling of the body. */
+@layer components {
+  .astryx-chat-composer > div:not(.astryx-chat-composer-drawer) {
+    flex-direction: row;
+    align-items: flex-end;
+  }
+
+  /* The input row is as tall as the action button, so a one-line placeholder sits centred beside it. */
+  .astryx-chat-composer > div:not(.astryx-chat-composer-drawer) > :first-child {
+    flex: 1;
+    min-width: 0;
+    min-height: var(--size-element-md);
+    justify-content: center;
+  }
+
+  /* Empty, the editable has no line of its own and collapses to nothing on a phone, where the browser then has no
+     place for the caret and takes no typing at all: it is always one line tall. */
+  .astryx-chat-composer-input > [contenteditable] {
+    min-height: 1lh;
+  }
+
+  /* While a voice note is recorded or held as a draft nothing stands in the input's place, so the recorder takes the
+     composer's whole width: the empty input row gives way, and the action row and its slot grow to hold it. */
+  .astryx-chat-composer > div:not(.astryx-chat-composer-drawer):has(.voice-recorder) > :first-child {
+    display: none;
+  }
+
+  .astryx-chat-composer > div:not(.astryx-chat-composer-drawer):has(.voice-recorder) > :last-child,
+  .astryx-chat-composer > div:not(.astryx-chat-composer-drawer):has(.voice-recorder) > :last-child > :last-child,
+  .voice-recorder {
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* What the drawer holds fills the composer's width instead of shrinking to its content. */
+  .astryx-chat-composer-drawer > div > div {
+    width: 100%;
+  }
+
+  /* A conversation can hold hundreds of messages on screen once scrolled back: the ones out of view are not laid out or
+     painted until they come near it, so a message sent or a key typed lays out what is on screen, not the whole trail.
+     Until one has been drawn it holds the height of a one-line message; after that, the height it was drawn at. */
+  .convo-window .astryx-chat-message,
+  .convo-window .astryx-chat-system-message {
+    content-visibility: auto;
+    contain-intrinsic-size: auto var(--spacing-12);
+  }
+
+  /* A message you jump to from a quoted reply flashes (ConversationBubble.scrollToMessage). */
+  [data-highlighted="true"] {
+    animation: highlight var(--duration-slow) var(--ease-standard);
+  }
+
+  @keyframes highlight {
+    from {
+      background-color: var(--color-accent-muted);
+    }
+  }
+
+  /* What you sent sits on the primary colour (theme/themes/openwork/brand.ts). Its words are Astryx text (Markdown, Text),
+     which read the text tokens, not the bubble's colour, so on a dark theme they were pale on a pale bubble. For the words
+     alone (Selectable) the text tokens are the page colour (--color-background-surface), the quieter one a share of it.
+     The bubble is the primary colour shaded a little towards the theme's text, so the page colour reads on it in light
+     and dark alike (a dark ink on a mid-tone primary was dull in light mode).
+     The cards in a bubble (a link, a quote, a voice note) are surfaces of their own and keep the theme's text. */
+  .astryx-chat-message-bubble[data-sender="user"][data-variant="filled"] .chat-selectable {
+    --color-text-primary: var(--color-background-surface);
+    --color-text-secondary: color-mix(in srgb, var(--color-background-surface) 75%, transparent);
+    --color-text-accent: var(--color-background-surface);
+  }
+
+  /* The time at the foot of a bubble is quieter than the words above it, on any bubble colour. */
+  .chat-stamp {
+    color: color-mix(in srgb, currentColor 65%, transparent);
+  }
+
+  /* The message menu (ContextMenu) turns selection off on its trigger, so words
+     could not be picked out of a bubble. This puts it back for the words alone:
+     dragging across them selects, while right-click and long-press still open
+     the menu (Copy is there). The stamp and the author label stay unselected. */
+  .chat-selectable,
+  .chat-selectable * {
+    -webkit-user-select: text !important;
+    user-select: text !important;
+    -webkit-touch-callout: default !important;
+  }
+
+  .chat-selectable {
+    cursor: text;
+  }
+
+  /* A voice note in a message: one row on a surface of its own (VoiceMessage), as wide as a photo. */
+  .voice-note {
+    width: var(--shell-media-width);
+    max-width: 100%;
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius-inner);
+    background-color: var(--color-background-body);
+  }
+
+  /* Its play button is round, as the design draws it: IconButton offers no round shape. */
+  .voice-note .voice-play {
+    border-radius: var(--radius-full);
+  }
+
+  /* Its waveform is its seek track (VoiceMessage Waveform), a band of bars: the part played in the accent colour, the
+     rest in the border colour. An SVG takes no Astryx props, so its size and colours are stated here. */
+  .voice-wave {
+    display: block;
+    width: 100%;
+    height: var(--spacing-6);
+    cursor: pointer;
+    touch-action: none;
+    border-radius: var(--radius-inner);
+  }
+
+  .voice-wave:focus-visible {
+    outline: var(--focus-outline-width) var(--focus-outline-style) var(--focus-outline-color);
+    outline-offset: var(--focus-outline-offset);
+  }
+
+  .voice-bar {
+    fill: var(--color-border);
+  }
+
+  .voice-bar-played {
+    fill: var(--color-accent);
+  }
+
+  /* A photo in a message, and a link's picture: one width for every one, never wider than its column, slightly rounded. */
+  .chat-media {
+    width: var(--shell-media-width);
+    max-width: 100%;
+    border-radius: var(--radius-inner);
+    overflow: hidden;
+  }
+
+  /* A link's card or a photo in a feed post (LinkPreview, MediaMessage isWide): the post's whole width, not a photo's. */
+  .chat-media-wide {
+    width: 100%;
+  }
+
+  /* A cover (shared/CoverImage): the column's whole width, with the design's small radius, which AspectRatio has no prop
+     for. On a board card the card's own corners cut it. */
+  .cover-image {
+    width: 100%;
+    border-radius: var(--radius-inner);
+    overflow: hidden;
+  }
+
+  /* A filled bubble holding a photo sits close around it: a step at every side, not the words' wider sides. */
+  .chat-photo-bubble {
+    padding-inline: var(--spacing-2);
+  }
+
+  /* A video or document row (MediaMessage FileRow), the tile its glyph sits in, a photo's pressable card and a link's
+     card (LinkPreview): the design's small radius, which ClickableCard and Card offer no prop for. */
+  .chat-file,
+  .chat-file-tile,
+  .chat-photo,
+  .chat-link {
+    border-radius: var(--radius-inner);
+  }
+
+  /* The emoji on a message (ConversationBubble pillsOf): each a pill on the surface colour with a border; yours is in the
+     accent, with its count in the accent text colour. ToggleButton is a ghost button with no prop for any of this, so
+     the pills are dressed here, through their stable class and pressed state. */
+  .chat-reactions .astryx-toggle-button {
+    padding-inline: var(--spacing-2);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius-inner);
+    background-color: var(--color-background-surface);
+    color: var(--color-text-primary);
+  }
+
+  .chat-reactions .astryx-toggle-button[data-is-pressed="true"] {
+    border-color: var(--color-accent);
+    background-color: var(--color-accent-muted);
+    color: var(--color-text-accent);
+  }
+
+  /* The card an empty view shows (EmptyCard): square-rounded like every surface, narrow enough to read as one thing. */
+  .empty-card {
+    max-width: calc(var(--spacing-12) * 7);
+    margin: auto;
+    border-radius: var(--radius-container);
+    text-align: center;
+  }
+
+  .empty-card-art {
+    width: calc(var(--spacing-12) * 4);
+    height: auto;
+  }
+
+  /* What a reply answers, above its own words: WhatsApp-style, a filled quote with an accent edge so it never
+     reads flat against the filled bubble around it. A ghost ChatMessageBubble is transparent by design, so it
+     cannot be the quote — this is its own surface on top of the bubble. Used in the window (ConversationBubble),
+     the feed (FeedQuote) and the composer's reply bar. Its edge is three borders wide. */
+  .chat-quote {
+    border-left: calc(var(--border-width) * 3) solid var(--color-accent);
+    border-radius: var(--radius-inner);
+    background-color: var(--color-accent-muted);
+    /* The accent edge already carries 3 border-widths of inset on the left, so its padding is cut by that much — otherwise the left reads more indented than the right. */
+    padding: var(--spacing-2) var(--spacing-3) var(--spacing-2) calc(var(--spacing-3) - var(--border-width) * 3);
+    min-width: 0;
+  }
+
+  /* In the window the quote is one pressable card (it jumps to the message), padded inside, so the press covers it all. */
+  .chat-quote.chat-quote-pressable {
+    padding: 0;
+  }
+
+  .chat-quote > div {
+    min-width: 0;
+  }
+
+  /* A quoted photo's thumbnail at the quote's end: it keeps its size while the words beside it are cut to fit. */
+  .chat-quote-thumb {
+    flex-shrink: 0;
+    border-radius: var(--radius-inner);
+    overflow: hidden;
+  }
+
+  /* A message while messages are being picked (ConversationBubble Pickable): the whole row is pressed, and a picked one is tinted. */
+  .chat-pickable {
+    cursor: pointer;
+    border-radius: var(--radius-element);
+    padding-inline: var(--spacing-1);
+  }
+
+  .chat-pickable[data-picked="true"] {
+    background-color: var(--color-accent-muted);
+  }
+
+  /* Copy and Retry sit out of sight until the pointer is on the message or they are reached by
+     keyboard; on a touch screen they remain available in the message's held menu. */
+  .chat-hover-action {
+    opacity: 0;
+    transition: opacity var(--duration-fast) ease;
+  }
+  [id^="msg-"]:hover .chat-hover-action,
+  .chat-hover-action:focus-visible {
+    opacity: 1;
+  }
+}
