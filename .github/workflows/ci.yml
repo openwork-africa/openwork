@@ -42,6 +42,15 @@ jobs:
           deno-version: 2.9.x
       - run: deno task fitness
 
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: 2.9.x
+      - run: deno task build
+
   base-only:
     if: false # waits for app/ (WP9): builds the app with zero plugins
     runs-on: ubuntu-latest

@@ -1,7 +1,7 @@
 {
   "name": "@openwork/ui",
   "version": "0.1.0",
-  "exports": "./mod.ts",
+  "exports": { ".": "./mod.ts", "./css": "./css/index.css" },
   "imports": {
     "react": "npm:react@^19.3",
     "react/jsx-runtime": "npm:react@^19.3/jsx-runtime",
