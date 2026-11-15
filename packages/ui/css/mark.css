@@ -1,5 +1,5 @@
 @layer components {
-  /* Loading.tsx: the mark over a moving bar, wherever the app is waiting. Always small: it marks a wait, it is not a
+  /* Loading.tsx: the Openwork logo over a moving bar, wherever the app is waiting. Always small: it marks a wait, it is not a
      screen of its own. Its width is a step of the 48px token. */
   .loading-mark {
     flex: none;

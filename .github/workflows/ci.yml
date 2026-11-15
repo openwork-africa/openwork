@@ -52,7 +52,6 @@ jobs:
       - run: deno task build
 
   base-only:
-    if: false # waits for app/ (WP9): builds the app with zero plugins
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -62,7 +61,6 @@ jobs:
       - run: deno task test:base-only
 
   remove-each:
-    if: false # waits for app/ and the chat plugins (WP7, WP9): builds the app with each plugin removed in turn
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -75,7 +73,6 @@ jobs:
       - run: deno task test:remove-each ${{ matrix.plugin }}
 
   cargo:
-    if: false # waits for server/ (WP8)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -83,11 +80,20 @@ jobs:
       - run: cargo test --manifest-path server/Cargo.toml
 
   e2e:
-    if: false # waits for the app and the server (WP8, WP9): the offline end-to-end checklist
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: denoland/setup-deno@v2
         with:
           deno-version: 2.9.x
+      - uses: dtolnay/rust-toolchain@stable
+      - run: deno task build
+      - run: cargo build --manifest-path server/Cargo.toml
+      - name: Start the server
+        run: |
+          mkdir -p "$RUNNER_TEMP/openwork-data"
+          cargo run --manifest-path server/Cargo.toml -p ow-server -- --static app/dist --data "$RUNNER_TEMP/openwork-data" &
+          for attempt in $(seq 1 30); do curl -sf http://127.0.0.1:47410/healthz && break; sleep 1; done
       - run: deno task test:e2e
+        env:
+          OW_SERVER_URL: http://127.0.0.1:47410
