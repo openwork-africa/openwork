@@ -29,6 +29,13 @@ Deno.test("regions the product passes in are rendered in their panes and told th
   await unmount();
 });
 
+Deno.test("with no room open the window region is not asked for: the no-room mark shows instead", async () => {
+  const { container, unmount } = await mount(<Frame window={Marker("window")} drawer="none" onDrawer={noop} />);
+  assertEquals(container.querySelector('[data-region="window"]'), null);
+  assert((container.textContent ?? "").includes(copy.noRoomTitle));
+  await unmount();
+});
+
 Deno.test("a drawer is open by class, and the scrim closes it", async () => {
   const closed: string[] = [];
   const { container, unmount } = await mount(<Frame drawer="panel" onDrawer={(drawer) => closed.push(drawer)} />);
