@@ -1,0 +1,32 @@
+@layer components {
+  .app-shell {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    height: 100vh;
+    height: 100dvh;
+    transition: opacity 600ms var(--ease-standard);
+  }
+  .app-page {
+    flex: 1;
+    min-width: 0;
+    height: 100vh;
+    height: 100dvh;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: center;
+    gap: var(--spacing-6);
+    overflow: hidden;
+  }
+
+  @media (max-width: 767px) {
+    .app-shell {
+      flex-direction: column;
+    }
+    .app-page {
+      height: auto;
+    }
+  }
+}

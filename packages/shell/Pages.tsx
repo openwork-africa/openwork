@@ -1,5 +1,6 @@
 import { type ComponentType, lazy, Suspense, useEffect, useMemo, type ReactElement } from "react";
 import { Button } from "@astryxdesign/core/Button";
+import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { shellPage, type PageValue, useCtx, useSlot } from "@openwork/kit";
 import { EmptyCard, ErrorBoundary, Loading } from "@openwork/ui";
 import { copy } from "./copy.ts";
@@ -64,5 +65,12 @@ function PluginPage({ path }: { path: string }): ReactElement {
 /** The shell.page host: the conversation routes are the shell's own, every other path is a page a plugin contributed. */
 export function ShellRoutes({ regions }: { regions: Regions }): ReactElement {
   const route = useRoute();
-  return route.name === "other" ? <PluginPage path={route.path} /> : <RoomRoutes regions={regions} route={route} />;
+  const page = route.name === "other" ? "page" : "conversation";
+  return (
+    <HStack className="app-shell">
+      <VStack className={`app-page app-page-${page}`}>
+        {route.name === "other" ? <PluginPage path={route.path} /> : <RoomRoutes regions={regions} route={route} />}
+      </VStack>
+    </HStack>
+  );
 }

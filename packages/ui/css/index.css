@@ -1,6 +1,7 @@
 @layer reset, theme, base, astryx-base, astryx-theme, components, utilities;
 
 @import "./base.css";
+@import "./app-scroll.css";
 @import "./mark.css";
 @import "./conversation.css";
 @import "./conversation-window.css";

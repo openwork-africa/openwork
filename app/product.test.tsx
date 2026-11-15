@@ -66,3 +66,14 @@ Deno.test("the product: New, send, profile, rename and describe, end to end", as
   assertEquals(errorNotices(), []);
   await app.stop();
 });
+
+Deno.test("the page frame fills the viewport (.app-shell > .app-page > .convo-shell) and the Circle shows on / with no rooms", async () => {
+  const app = await bootProduct();
+  const { container } = app;
+  assert(container.querySelector(".app-shell > .app-page.app-page-conversation > .convo-shell"), "the page structure");
+  const circle = container.querySelector(".convo-shell nav.convo-circle");
+  assert(circle, "the Circle region is rendered");
+  assert(labelled(container, "Conversations")?.contains(circle), "inside the list panel");
+  assert(circle.querySelector(".convo-circle-list"), "the real Circle, not the shell's placeholder");
+  await app.stop();
+});
