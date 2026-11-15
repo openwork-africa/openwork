@@ -1,0 +1,21 @@
+@layer components {
+  /* Loading.tsx: the mark over a moving bar, wherever the app is waiting. Always small: it marks a wait, it is not a
+     screen of its own. Its width is a step of the 48px token. */
+  .loading-mark {
+    flex: none;
+    width: calc(var(--spacing-12) * 2.5);
+    max-width: 100%;
+  }
+  .loading-mark[data-size="sm"] {
+    width: calc(var(--spacing-12) * 1.5);
+  }
+
+  /* BrandMark.tsx and BrandLockup.tsx: the logo drawn in the text colour, as wide as the space it is given. */
+  .brand-mark,
+  .brand-lockup {
+    display: block;
+    width: 100%;
+    height: auto;
+    color: var(--color-text-primary);
+  }
+}

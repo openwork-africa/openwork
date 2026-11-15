@@ -1,0 +1,188 @@
+@layer components {
+  /* The address bar sits on the same column as the messages and the composer under it: Astryx's spacious chat
+     density insets that column by one step and caps it at 50rem, centred, so the bar does the same. */
+  .convo-thread-title {
+    flex: 0 0 auto;
+    padding: calc(var(--spacing-6) + env(safe-area-inset-top, 0px)) var(--spacing-4) var(--spacing-1);
+    color: var(--color-text-primary);
+  }
+  /* The address bar takes the width, up to the thread's. */
+  .convo-thread-title > :first-child {
+    flex: 1;
+    min-width: 0;
+    max-width: var(--shell-thread-width);
+    margin-inline: auto;
+  }
+
+  @media (max-width: 767px) {
+    .convo-circle {
+      width: 100%;
+    }
+  }
+  /* Positioned, so that what is laid over the address bar is placed against it. */
+  .address-field {
+    position: relative;
+  }
+  .convo-window {
+    position: relative;
+    z-index: 1;
+    flex: 1 1 0;
+    min-width: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    animation: convo-in var(--duration-medium) var(--ease-standard);
+  }
+
+  /* The community feed scrolls down only: a post wider than the page is cut off by the page, never scrolled sideways. */
+  .community-feed-scroll {
+    overflow-x: hidden;
+  }
+
+  /* Keep an empty conversation centred in the space above the composer. */
+  .convo-empty-pin {
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-bottom: var(--spacing-6);
+  }
+
+  /* Beside the list and the panel the thread has its own inset and a divider each side. On a phone it is the screen. */
+  @media (min-width: 768px) {
+    .convo-window {
+      padding-inline: var(--spacing-6);
+      border-inline: var(--border-width) solid var(--color-border);
+    }
+  }
+
+
+  @keyframes convo-in {
+    from {
+      opacity: 0;
+      transform: translateY(var(--spacing-3));
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+
+
+
+
+  @media (max-width: 767px) {
+    .convo-window {
+      max-width: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .convo-window {
+      animation: none;
+    }
+  }
+  /* The conversation before it is known which one it is (ConversationLoading): the window's frame, without its entrance. */
+  .convo-loading {
+    flex: 1 1 0;
+    min-width: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  @media (min-width: 768px) {
+    .convo-loading {
+      padding-inline: var(--spacing-6);
+      border-inline: var(--border-width) solid var(--color-border);
+    }
+  }
+  .voice-canvas {
+    flex: 1;
+    min-width: 0;
+    height: var(--size-element-sm);
+    color: var(--color-accent);
+  }
+
+  /* FeedWelcome: the empty feed's card, a banner of the four kinds of AI over what the feed is for. */
+  .feed-welcome {
+    margin: var(--spacing-4) var(--spacing-2);
+    overflow: hidden;
+    border-radius: var(--radius-container);
+  }
+  .feed-welcome-art {
+    padding: var(--spacing-8) var(--spacing-4);
+    background-color: var(--color-background-muted);
+  }
+  .feed-welcome-sprite {
+    width: calc(var(--spacing-12) * 1.75);
+    aspect-ratio: 1;
+    border-radius: var(--radius-container);
+    color: var(--color-text-primary);
+  }
+  .feed-welcome-sprite[data-view="agent"] {
+    background-color: var(--color-background-teal);
+    transform: rotate(-6deg);
+  }
+  .feed-welcome-sprite[data-view="companion"] {
+    background-color: var(--color-background-blue);
+    transform: translateY(calc(var(--spacing-3) * -1)) rotate(4deg);
+  }
+  .feed-welcome-sprite[data-view="bot"] {
+    background-color: var(--color-background-orange);
+    transform: rotate(-3deg);
+  }
+  .feed-welcome-sprite[data-view="thing"] {
+    background-color: var(--color-background-purple);
+    transform: translateY(calc(var(--spacing-2) * -1)) rotate(7deg);
+  }
+
+  /* The feed's Reply toggle starts where the post's words do: a ghost button's own inline padding (Astryx's
+     --spacing-3) would set its icon in from the text. */
+  .feed-thread-toggle {
+    margin-inline-start: calc(var(--spacing-3) * -1);
+  }
+
+  /* TypingIndicator.tsx: three dots that take turns bouncing, the way a typing reply is shown in a chat. */
+  .typing-dots {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-1);
+    height: var(--spacing-4);
+    padding-inline: var(--spacing-1);
+  }
+  .typing-dots > span {
+    width: var(--spacing-2);
+    height: var(--spacing-2);
+    border-radius: var(--radius-full);
+    background-color: var(--color-text-secondary);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .typing-dots > span {
+      animation: typing-bounce var(--duration-slow) var(--ease-standard) infinite;
+    }
+    .typing-dots > span:nth-child(2) {
+      animation-delay: calc(var(--duration-slow) * 0.15);
+    }
+    .typing-dots > span:nth-child(3) {
+      animation-delay: calc(var(--duration-slow) * 0.3);
+    }
+  }
+  @keyframes typing-bounce {
+    0%, 60%, 100% {
+      transform: translateY(0);
+      opacity: 0.4;
+    }
+    30% {
+      transform: translateY(calc(var(--spacing-2) * -1));
+      opacity: 1;
+    }
+  }
+  /* Bare circle palette: its search and hints are hidden, so the empty header and footer would leave divider lines above and below the choices; drop them. */
+  [aria-label="Your circle"] .astryx-layout-header[data-divider]:not(:has(input)) {
+    border-block-end: none;
+  }
+  [aria-label="Your circle"] .astryx-layout-footer[data-divider]:not(:has(button, a, kbd)) {
+    border-block-start: none;
+  }
+}

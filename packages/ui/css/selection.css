@@ -1,0 +1,81 @@
+/* How the app marks a picture as the current one: the design's inset accent ring, on the rail's space tiles. */
+@layer components {
+  .avatar-frame {
+    position: relative;
+    display: inline-flex;
+    flex: none;
+    border-radius: var(--radius-full);
+  }
+
+  /* A status dot in the corner of a drawn avatar, where Astryx puts it on a pictured one; ringed so it reads over the picture. */
+  .avatar-status {
+    position: absolute;
+    inset-block-end: 0;
+    inset-inline-end: 0;
+    padding: var(--spacing-0-5);
+    border-radius: var(--radius-full);
+    background-color: var(--color-background-body);
+  }
+
+  .avatar-frame[data-shape="rounded"] {
+    border-radius: var(--radius-element);
+  }
+
+  /* Only a square-rounded tile (a space on the rail) is ringed when it is the current one. A round avatar is not: the
+     row or bar behind it already says it is selected. The ring is an overlay, so it paints above the picture. */
+  .avatar-frame[data-shape="rounded"][data-selected] {
+    position: relative;
+  }
+
+  .avatar-frame[data-shape="rounded"][data-selected]::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: inset 0 0 0 var(--spacing-1) var(--color-accent);
+    pointer-events: none;
+  }
+
+  .avatar-frame[data-ring]::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: inset 0 0 0 var(--spacing-1) var(--color-success);
+    pointer-events: none;
+  }
+
+  .person-avatar-ring {
+    display: inline-flex;
+    border-radius: var(--radius-full);
+    box-shadow: inset 0 0 0 var(--spacing-0-5) var(--color-success);
+  }
+
+  /* The sprite's frame matches Astryx's named avatar sizes and the panel's 96px picture, in rem. */
+  .avatar-art[data-size="xsm"] { width: 1.25rem; height: 1.25rem; }
+  .avatar-art[data-size="sm"] { width: 1.5rem; height: 1.5rem; }
+  .avatar-art[data-size="md"] { width: 2.25rem; height: 2.25rem; }
+  .avatar-art[data-size="lg"] { width: 3rem; height: 3rem; }
+  .avatar-art[data-size="xl"] { width: 8rem; height: 8rem; }
+  .avatar-art[data-size="96"] { width: 6rem; height: 6rem; }
+
+  /* A drawn avatar (the AI's sprite) is a bare button: no box of its own, so what shows is the circle. */
+  .avatar-frame > button {
+    display: inline-flex;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    border-radius: inherit;
+    cursor: pointer;
+  }
+
+  /* The AI's sprite has no picture of its own, so it gets a solid face: the accent bar behind a selected profile tile must not show through it. */
+  .avatar-art {
+    background-color: var(--color-background-muted);
+    display: inline-grid;
+    place-items: center;
+    overflow: hidden;
+    border-radius: inherit;
+  }
+}

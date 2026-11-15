@@ -1,0 +1,198 @@
+@layer components {
+  .convo-shell {
+    position: relative;
+    display: flex;
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+  }
+  /* Astryx's Layout frames the list, thread and panel; it takes the shell's whole width. */
+  .convo-shell > .astryx-layout {
+    flex: 1 1 0;
+    min-width: 0;
+    height: 100%;
+  }
+  .convo-circle {
+    display: flex;
+    flex-direction: column;
+    flex: 0 0 auto;
+    width: var(--shell-list-width);
+    height: 100%;
+    overflow-y: auto;
+    padding: var(--spacing-6) 0 0;
+  } /* Above the circle: whoever has a story up, then fading placeholder circles (all of them, with no stories). */ /* A story's avatar, ringed in the primary colour, with the name under it. */ /* The "+" that opens the stories app: a tonal circle the size of a ringed avatar. */ /* Column layout lets the "+" sit at the bottom even when the list is short; nothing above it shrinks. */
+  /* How many you have not read in a conversation: the count keeps its width, and the last message gives way to it. */
+  .chat-unread {
+    flex: none;
+  }
+  /* A conversation's avatar is a button that marks it read (ChatRow onMarkRead): bare, so what shows is the circle. */
+  .chat-mark-read {
+    position: relative;
+    display: inline-flex;
+    flex: none;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    border-radius: var(--radius-full);
+    cursor: pointer;
+  }
+  /* Hovering it lays an outlined tick over the picture: the picture fades behind it, ringed in the accent. */
+  .chat-mark-read-tick {
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius-full);
+    color: var(--color-accent);
+    background-color: color-mix(in srgb, var(--color-background-body) 75%, transparent);
+    box-shadow: inset 0 0 0 calc(var(--border-width) * 2) var(--color-accent);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--duration-fast) var(--ease-standard);
+  }
+  .chat-mark-read:hover .chat-mark-read-tick,
+  .chat-mark-read:focus-visible .chat-mark-read-tick {
+    opacity: 1;
+  }
+  .chat-mark-read:focus-visible {
+    outline: calc(var(--border-width) * 2) solid var(--color-accent);
+    outline-offset: var(--spacing-0-5);
+  }
+  .convo-circle > * {
+    flex: none;
+  }
+  /* The tabs stay at the top while the conversations scroll under them. With tabs the column's top inset is theirs,
+     painted in the page colour, so no row shows through above them once they pin. */
+  .convo-circle:has(> .convo-tabs) {
+    padding-block-start: 0;
+  }
+  .convo-tabs {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: 1;
+    padding-block-start: var(--spacing-6);
+    background-color: var(--color-background-body);
+  }
+  /* The tags take the rest of the row, so their rail runs to the column's edge and they scroll inside it. */
+  .convo-tabs-tags {
+    flex: 1;
+  }
+  .convo-circle-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-0-5);
+  }
+
+  .conversation-empty-content {
+    width: min(100%, 36rem);
+    margin-inline: auto;
+  }
+
+  .conversation-empty-scroller {
+    display: flex;
+    align-items: stretch;
+    gap: var(--spacing-3);
+    width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    padding: 0 var(--spacing-1) var(--spacing-1);
+  }
+
+  .conversation-empty-scroller::-webkit-scrollbar {
+    display: none;
+  }
+
+  .conversation-empty-card,
+  .conversation-connect-card {
+    display: flex;
+    flex: 0 0 100%;
+    justify-content: center;
+    scroll-snap-align: start;
+  }
+
+  .conversation-connect-scroller {
+    display: contents;
+  }
+
+  .conversation-empty-card > *,
+  .conversation-connect-card > * {
+    width: min(100%, 22rem);
+    height: 100%;
+  }
+
+  .conversation-empty-card > .empty-card {
+    display: flex;
+    align-items: stretch;
+  }
+
+  .conversation-empty-card > .empty-card > * {
+    justify-content: center;
+  }
+
+  .conversation-connect-scroller::-webkit-scrollbar {
+    display: none;
+  }
+
+  .conversation-connect-card {
+    min-width: 0;
+  }
+  /* The new-conversation "+" rests at the list's bottom right, above the rows when they scroll. */
+  .convo-new {
+    position: sticky;
+    inset-block-end: 0;
+    margin-top: auto;
+    align-self: flex-end;
+    padding: var(--spacing-3);
+  }
+  .convo-scrim {
+    display: none;
+  }
+
+  /* Where the list is a drawer, its Layout panel leaves the flow and the drawer slides over the shell. */
+  @media (max-width: 767px) {
+    .convo-shell .astryx-layout-panel[aria-label="Conversations"] {
+      display: contents;
+    }
+    .convo-shell {
+      position: relative;
+      overflow: hidden;
+    }
+    .convo-circle {
+      position: absolute;
+      inset-block: 0;
+      inset-inline-start: 0;
+      z-index: 30;
+      width: 100%;
+      background-color: var(--color-background-body);
+      transform: translateX(-100%);
+      visibility: hidden;
+      transition: transform var(--duration-medium) var(--ease-standard), visibility 0s linear var(--duration-medium);
+    }
+    .convo-shell.is-list-open .convo-circle {
+      transform: none;
+      visibility: visible;
+      box-shadow: var(--shadow-low);
+      transition: transform var(--duration-medium) var(--ease-standard), visibility 0s;
+    }
+    .convo-shell.is-list-open .convo-scrim,
+    .convo-shell.is-panel-open .convo-scrim {
+      display: block;
+      position: absolute;
+      inset: 0;
+      z-index: 20;
+      background: var(--color-overlay);
+    }
+  }
+
+  @media (max-width: 767px) and (prefers-reduced-motion: reduce) {
+    .convo-circle,
+    .convo-shell.is-list-open .convo-circle {
+      transition: none;
+    }
+  }
+}

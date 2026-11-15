@@ -1,0 +1,32 @@
+/* The stack of notices (components/feedback): cards floating at the foot of the screen, above the home bar. Every
+   notice is one set width, so a short one and a long one line up: on a phone the width of the screen less its gutters
+   (capped at the floor below), on a wider screen the circle's width (the width the stack had since it was made), never
+   narrower than the floor. The floor is 9 steps of 48px, so a notice and its button share a line. */
+@layer components {
+  .notice-stack {
+    --notice-floor: calc(var(--spacing-12) * 9);
+    position: fixed;
+    inset-inline: auto var(--spacing-3);
+    width: min(var(--notice-floor), calc(100vw - var(--spacing-6)));
+    bottom: calc(var(--spacing-3) + env(safe-area-inset-bottom));
+    z-index: 30;
+    display: flex;
+    flex-direction: column-reverse;
+    gap: var(--spacing-2);
+    pointer-events: none;
+  }
+  /* The stack lets the page be pressed through its gaps; the notices themselves take presses, each the stack's width. */
+  .notice-stack > * {
+    pointer-events: auto;
+    width: 100%;
+  }
+
+  @media (min-width: 768px) {
+    .notice-stack {
+      inset-inline: auto var(--spacing-4);
+      bottom: calc(var(--spacing-4) + env(safe-area-inset-bottom));
+      width: max(var(--shell-list-width), var(--notice-floor));
+      max-width: calc(100vw - var(--spacing-8));
+    }
+  }
+}

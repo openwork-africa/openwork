@@ -1,0 +1,20 @@
+{
+  "workspace": [
+    "./packages/kit",
+    "./packages/ui"
+  ],
+  "tasks": {
+    "test": "deno test -A --ignore=tools",
+    "lint": "deno lint packages tools",
+    "check": "deno check packages tools",
+    "fitness": "deno test -A tools/fitness.test.ts"
+  },
+  "lint": {
+    "rules": { "tags": ["recommended"] }
+  },
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
+    "lib": ["dom", "dom.iterable", "deno.ns"]
+  }
+}
