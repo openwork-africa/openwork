@@ -57,7 +57,7 @@ export function Frame({ circle = EmptyCircle, window = NoRoom, panel = EmptyPane
           </LayoutPanel>
         }
       >
-        <Island name={copy.windowName} region={window} roomId={roomId} resetKey={roomId} />
+        <Island name={copy.windowName} region={roomId ? window : NoRoom} roomId={roomId} resetKey={roomId} />
       </Layout>
       <VStack className="convo-scrim" aria-hidden="true" onClick={() => onDrawer("none")} />
     </HStack>

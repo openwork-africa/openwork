@@ -32,6 +32,8 @@ export default defineConfig({
       { find: /^@openwork\/ui$/, replacement: here("../packages/ui/mod.ts") },
       { find: /^@openwork\/ui\/css$/, replacement: here("../packages/ui/css/index.css") },
       { find: /^@openwork\/store$/, replacement: here("../packages/store/mod.ts") },
+      { find: /^@openwork\/conversation$/, replacement: here("../packages/conversation/mod.ts") },
+      { find: /^@openwork\/plugin-text$/, replacement: here("../plugins/text/mod.ts") },
       { find: /^@openwork\/shell\/app$/, replacement: here("../packages/shell/createApp.tsx") },
       { find: /^@openwork\/shell$/, replacement: here("../packages/shell/mod.ts") },
     ],
