@@ -2,8 +2,6 @@
 
 # Openwork
 
-**An offline-first workspace for the people and operators you work with.**
-
 [openwork.africa](https://openwork.africa)
 
 ## Why Openwork
