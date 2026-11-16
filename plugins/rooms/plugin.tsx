@@ -1,6 +1,5 @@
 import { Trash2 } from "lucide-react";
 import {
-  circleEmpty,
   circleRowMenu,
   circleSource,
   contribute,
@@ -14,12 +13,11 @@ import { roomPath } from "@openwork/shell";
 import { Icon } from "@astryxdesign/core/Icon";
 import { copy } from "./copy.ts";
 import { deviceReadMarks, type ReadMarks } from "./readMarks.ts";
-import { RoomsEmpty } from "./RoomsEmpty.tsx";
 import { roomRows } from "./roomRows.ts";
 
 const ROOT = "/";
 
-/** The rooms of this device: the circle's source, delete, the empty card, and the `rooms.create` and `rooms.delete` commands. */
+/** The rooms of this device: the circle's source, delete, and the `rooms.create` and `rooms.delete` commands. */
 export function rooms(marks: ReadMarks = deviceReadMarks()): Plugin {
   const create = async (ctx: SlotContext): Promise<void> => {
     const room = await devicePorts(ctx.ports).store.createRoom(
@@ -50,11 +48,6 @@ export function rooms(marks: ReadMarks = deviceReadMarks()): Plugin {
           void (ctx.commands["rooms.delete"] as (id: string) => Promise<void>)(
             row.id,
           ),
-      }),
-      contribute(circleEmpty, {
-        id: "rooms.empty",
-        order: 10,
-        render: () => <RoomsEmpty />,
       }),
     ],
     provides: [

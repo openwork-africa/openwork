@@ -2,7 +2,6 @@ import { type ReactElement, useRef } from "react";
 import { Layout, LayoutPanel } from "@astryxdesign/core/Layout";
 import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
-import { EmptyCard } from "@openwork/ui";
 import { copy } from "./copy.ts";
 import type { Drawer } from "./drawer.ts";
 import { listIsDrawer, nextDrawer } from "./drawer.ts";
@@ -25,11 +24,7 @@ export interface FrameProps extends Regions {
   onDrawer: (drawer: Drawer) => void;
 }
 
-const EmptyCircle = (): ReactElement => (
-  <VStack className="convo-circle">
-    <EmptyCard art="chat" title={copy.circleEmptyTitle} description={copy.circleEmptyDescription} />
-  </VStack>
-);
+const EmptyCircle = (): ReactElement => <VStack className="convo-circle" />;
 
 const ClosedWindow = (): ReactElement => <NoRoom />;
 

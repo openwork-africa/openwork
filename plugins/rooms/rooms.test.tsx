@@ -54,10 +54,8 @@ Deno.test("New creates a room that appears first and opens it", async () => {
   const { store, clock, opened, view } = setup();
   const { container, unmount } = await mount(view());
   await flush();
-  assert(
-    (container.textContent ?? "").includes(copy.emptyTitle),
-    "the rooms empty card",
-  );
+  assertEquals(container.querySelector(".convo-circle-list")?.textContent, "");
+  assert(container.querySelector('button[aria-label="New"]'), "New stays");
   await store.createRoom("Older");
   clock.tick(10);
   await flush();

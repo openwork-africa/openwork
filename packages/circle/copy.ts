@@ -1,8 +1,6 @@
 export const copy = {
   listLabel: "Conversations",
   circleName: "circle",
-  emptyTitle: "Nothing here yet",
-  emptyDescription: "Press New to start one.",
   newLabel: "New",
   loadingLabel: "Loading",
   tabsLabel: "Circle",

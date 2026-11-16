@@ -18,7 +18,7 @@ const componentOf = (page: PageValue): ComponentType => {
   return component;
 };
 
-const drawerFor = (route: Route): Drawer => (route.name === "profile" ? "panel" : route.name === "home" ? "list" : "none");
+const drawerFor = (route: Route, noRooms: boolean): Drawer => (route.name === "profile" ? "panel" : route.name === "home" && !noRooms ? "list" : "none");
 
 /** The conversation routes: `/`, `/c/:roomId` and `/c/:roomId/profile` (the panel open on a phone). */
 function RoomRoutes({ regions, route }: { regions: Regions; route: Route }): ReactElement {
@@ -30,7 +30,8 @@ function RoomRoutes({ regions, route }: { regions: Regions; route: Route }): Rea
   const rooms = useRooms(devicePorts(ctx.ports).store);
   const latest = rooms?.[0]?.id;
   const create = ctx.commands["rooms.create"] as (() => unknown) | undefined;
-  useEffect(() => shellUi.setDrawer(drawerFor(route)), [route.name, roomId]);
+  const noRooms = rooms?.length === 0;
+  useEffect(() => shellUi.setDrawer(drawerFor(route, noRooms)), [route.name, roomId, noRooms]);
   useEffect(() => {
     if (route.name === "home" && latest && !listIsDrawer()) router.replace(roomPath(latest));
   }, [route.name, latest]);
@@ -42,7 +43,7 @@ function RoomRoutes({ regions, route }: { regions: Regions; route: Route }): Rea
     else if (route.name === "profile") navigate(roomPath(roomId));
   };
 
-  return <Frame {...regions} roomId={roomId} noRooms={rooms?.length === 0} onStart={create && (() => void create())} drawer={drawer} onDrawer={onDrawer} />;
+  return <Frame {...regions} roomId={roomId} noRooms={noRooms} onStart={create && (() => void create())} drawer={drawer} onDrawer={onDrawer} />;
 }
 
 function NotFound(): ReactElement {

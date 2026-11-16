@@ -49,14 +49,13 @@ Deno.test("while a source has not answered the list is a loading skeleton, then 
     ),
     "skeleton",
   );
-  assert(!(container.textContent ?? "").includes(copy.emptyTitle));
   await act(() => source.set([row("a", "Alpha", 1)]));
   assert(!container.querySelector('[role="status"]'));
   assert((container.textContent ?? "").includes("Alpha"));
   await unmount();
 });
 
-Deno.test("with nothing to show the default empty card, or what circle.empty plugins draw", async () => {
+Deno.test("with nothing to show the circle draws no card, only what circle.empty plugins draw", async () => {
   const source = fakeSource();
   source.set([]);
   const plain = await mount(
@@ -66,7 +65,8 @@ Deno.test("with nothing to show the default empty card, or what circle.empty plu
       <Circle />,
     ),
   );
-  assert((plain.container.textContent ?? "").includes(copy.emptyTitle));
+  assertEquals(plain.container.querySelector(".empty-card"), null);
+  assertEquals(plain.container.querySelector(".convo-circle-list")?.textContent, "");
   await plain.unmount();
   const own = await mount(
     host(
@@ -79,7 +79,7 @@ Deno.test("with nothing to show the default empty card, or what circle.empty plu
     ),
   );
   const text = own.container.textContent ?? "";
-  assert(text.includes("Start here") && !text.includes(copy.emptyTitle));
+  assert(text.includes("Start here"));
   await own.unmount();
 });
 
@@ -207,23 +207,26 @@ Deno.test("while the device is catching up, loading rows follow the rows and the
   await act(() => store.journal.setStatus("catchingUp"));
   const { container, unmount } = await mount(
     host(
-      [fakePlugin({ sources: [{ id: "one", observable: source.observable }] })],
+      [fakePlugin({
+        sources: [{ id: "one", observable: source.observable }],
+        empty: [{ id: "e", text: "Start here" }],
+      })],
       ports,
       <Circle />,
     ),
   );
   await flush();
   assert(container.querySelector('[role="status"]'), "catching-up rows");
-  assert(!(container.textContent ?? "").includes(copy.emptyTitle));
+  assert(!(container.textContent ?? "").includes("Start here"));
   await act(() => store.journal.setStatus("current"));
   await flush();
-  assert((container.textContent ?? "").includes(copy.emptyTitle));
+  assert((container.textContent ?? "").includes("Start here"));
   await unmount();
 });
 
 Deno.test("with zero plugins the circle is the empty frame, without errors", async () => {
   const { container, unmount } = await mount(host([], ports, <Circle />));
-  assert((container.textContent ?? "").includes(copy.emptyTitle));
+  assertEquals(container.querySelector(".convo-circle-list")?.textContent, "");
   assertEquals(button(container, copy.newLabel), null);
   assert(!names(container).includes(copy.loadingLabel));
   await unmount();

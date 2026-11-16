@@ -52,3 +52,27 @@ Deno.test("phone: / stays with the list drawer open, even with rooms", () =>
     assert(app.container.querySelector(".convo-loading")?.textContent?.includes(copy.noRoomTitle));
     await app.stop();
   }));
+
+Deno.test("zero rooms: exactly one empty card, in the window with the Start button; the circle has none and keeps New", () =>
+  withScreen(DESKTOP, async () => {
+    const app = await bootProduct(openPlugins, "/");
+    await flush();
+    assertEquals(app.container.querySelectorAll(".empty-card").length, 1);
+    const card = app.container.querySelector(".convo-loading .conversation-empty-card > .empty-card");
+    assert(card?.textContent?.includes(copy.noRoomsTitle));
+    assert(card?.querySelector("button"), "the Start button");
+    assert(app.container.querySelector(".convo-loading.is-empty"), "the empty frame has no dividers");
+    const circle = app.container.querySelector(".convo-circle");
+    assertEquals(circle?.querySelector(".empty-card"), null);
+    assert(circle?.querySelector('button[aria-label="New"]'), "New stays");
+    await app.stop();
+  }));
+
+Deno.test("phone: with zero rooms the window and its card show, not a blank list drawer", () =>
+  withScreen(PHONE, async () => {
+    const app = await bootProduct(openPlugins, "/");
+    await flush();
+    assert(!app.container.querySelector(".convo-shell")?.classList.contains("is-list-open"));
+    assert(app.container.querySelector(".convo-loading .empty-card"));
+    await app.stop();
+  }));
