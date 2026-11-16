@@ -1,3 +1,4 @@
+mod copy;
 mod files;
 mod records;
 

@@ -1,6 +1,6 @@
 import { assert, assertEquals, assertThrows } from "@std/assert";
 import { renderToStaticMarkup } from "react-dom/server";
-import { compose, contribute, definePlugin, getNotices, provide, provideCommand, service, slot, useCtx, useSlot } from "./mod.ts";
+import { compose, contribute, createNotices, definePlugin, getNotices, provide, provideCommand, service, slot, useCtx, useSlot } from "./mod.ts";
 import { clearNotices, type Item, itemsSlot, placed, pluginWith } from "./testing.ts";
 
 const labelsOf = (product: ReturnType<typeof compose>): string[] => product.registry.slot(itemsSlot).map((item) => item.label);
@@ -243,4 +243,13 @@ Deno.test("a provided command is on ctx.commands, bound to the context, and a gi
   const html = renderToStaticMarkup(<product.Root roomId="r1" navigate={() => {}} commands={{ other: () => 1 }}><Probe /></product.Root>);
   assertEquals(seen, [["r1", "now"]]);
   assert(html.includes("other,do.it"));
+});
+
+Deno.test("compose can take its own notices, and the product carries them", () => {
+  clearNotices();
+  const notices = createNotices();
+  const product = compose([pluginWith("stickers", [placed("s", 1)], { requires: { emoji: "^1" } })], {}, { notices });
+  assertEquals(product.notices, notices);
+  assertEquals(notices.list().map((notice) => notice.text), product.problems);
+  assertEquals(getNotices(), []);
 });

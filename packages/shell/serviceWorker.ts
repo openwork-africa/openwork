@@ -1,4 +1,4 @@
-import { dismiss, notify } from "@openwork/kit";
+import type { Notices } from "@openwork/kit";
 import { copy } from "./copy.ts";
 
 const CHECK_INTERVAL_MS = 30 * 60 * 1000;
@@ -6,19 +6,22 @@ const CHECK_INTERVAL_MS = 30 * 60 * 1000;
 export interface WorkerEnv {
   container: ServiceWorkerContainer;
   reload: () => void;
+  notices: Pick<Notices, "notify" | "dismiss">;
   enabled?: boolean;
 }
 
-const browserEnv = (): WorkerEnv | undefined =>
-  "serviceWorker" in globalThis.navigator ? { container: globalThis.navigator.serviceWorker, reload: () => globalThis.location.reload() } : undefined;
+export const browserWorkerEnv = (notices: WorkerEnv["notices"]): WorkerEnv | undefined =>
+  "serviceWorker" in globalThis.navigator ? { container: globalThis.navigator.serviceWorker, reload: () => globalThis.location.reload(), notices } : undefined;
+
+const ignoreOffline = (): void => {};
 
 /**
  * Registers `/sw.js`. A new version installs in the background and waits; the person is told once ("New version
  * ready.") and the Update button is what lets it take over, and only then does the page reload. Never forced.
  */
-export function startServiceWorker(env: WorkerEnv | undefined = browserEnv()): () => void {
+export function startServiceWorker(env: WorkerEnv | undefined): () => void {
   if (!env || env.enabled === false) return () => {};
-  const { container, reload } = env;
+  const { container, reload, notices } = env;
   let waiting: ServiceWorker | undefined;
   let noticeId: string | undefined;
   let updating = false;
@@ -32,8 +35,8 @@ export function startServiceWorker(env: WorkerEnv | undefined = browserEnv()): (
 
   const announce = (worker: ServiceWorker): void => {
     waiting = worker;
-    if (noticeId !== undefined) dismiss(noticeId);
-    noticeId = notify(copy.updateReady, { status: "info", holdMs: 0, action: { label: copy.update, run: update } });
+    if (noticeId !== undefined) notices.dismiss(noticeId);
+    noticeId = notices.notify(copy.updateReady, { status: "info", holdMs: 0, action: { label: copy.update, run: update } });
   };
 
   const onControllerChange = (): void => {
@@ -41,21 +44,21 @@ export function startServiceWorker(env: WorkerEnv | undefined = browserEnv()): (
   };
   container.addEventListener("controllerchange", onControllerChange);
 
-  const check = (): void => void registration?.update().catch(() => {});
+  const check = (): void => void registration?.update().catch(ignoreOffline);
   const onVisible = (): void => {
     if (globalThis.document?.visibilityState === "visible") check();
   };
 
-  void container.register("/sw.js", { updateViaCache: "none" }).then((reg) => {
-    registration = reg;
-    if (reg.waiting && container.controller) announce(reg.waiting);
-    reg.addEventListener("updatefound", () => {
-      const worker = reg.installing;
+  void container.register("/sw.js", { updateViaCache: "none" }).then((registered) => {
+    registration = registered;
+    if (registered.waiting && container.controller) announce(registered.waiting);
+    registered.addEventListener("updatefound", () => {
+      const worker = registered.installing;
       worker?.addEventListener("statechange", () => {
         if (worker.state === "installed" && container.controller) announce(worker);
       });
     });
-  }).catch(() => {});
+  }).catch(ignoreOffline);
 
   globalThis.document?.addEventListener("visibilitychange", onVisible);
   const interval = setInterval(check, CHECK_INTERVAL_MS);

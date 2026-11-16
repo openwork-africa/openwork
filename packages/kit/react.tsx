@@ -1,7 +1,7 @@
 import { createContext, type ReactElement, type ReactNode, useContext, useMemo } from "react";
 import type { Commands, Ports, SlotContext } from "./context.ts";
 import type { Placed, ServiceKey, SlotKey } from "./keys.ts";
-import { notify } from "./notices.ts";
+import { defaultNotices, type Notify } from "./notices.ts";
 import type { Registry } from "./registry.ts";
 
 export interface RootProps {
@@ -17,6 +17,7 @@ interface Kit {
   roomId?: string;
   navigate: (path: string) => void;
   commands: Commands;
+  notify: Notify;
 }
 
 const KitContext = createContext<Kit | null>(null);
@@ -24,9 +25,9 @@ const KitContext = createContext<Kit | null>(null);
 const none: Commands = Object.freeze({});
 
 export function KitProvider(
-  { registry, ports, roomId, navigate, commands = none, children }: RootProps & Pick<Kit, "registry" | "ports">,
+  { registry, ports, roomId, navigate, commands = none, notify = defaultNotices.notify, children }: RootProps & Pick<Kit, "registry" | "ports"> & { notify?: Notify },
 ): ReactElement {
-  const value = useMemo(() => ({ registry, ports, roomId, navigate, commands }), [registry, ports, roomId, navigate, commands]);
+  const value = useMemo(() => ({ registry, ports, roomId, navigate, commands, notify }), [registry, ports, roomId, navigate, commands, notify]);
   return <KitContext.Provider value={value}>{children}</KitContext.Provider>;
 }
 
@@ -37,13 +38,13 @@ function useKit(): Kit {
 }
 
 export function useCtx(): SlotContext {
-  const { registry, ports, roomId, navigate, commands } = useKit();
+  const { registry, ports, roomId, navigate, commands, notify } = useKit();
   return useMemo(() => {
     const bound: Record<string, (...args: never[]) => unknown> = { ...commands };
     const ctx: SlotContext = { roomId, navigate, notify, commands: bound, ports, service: <T,>(key: ServiceKey<T>) => registry.service(key) };
     for (const [name, handler] of Object.entries(registry.commands())) bound[name] = (...args) => handler(ctx, ...args);
     return ctx;
-  }, [registry, ports, roomId, navigate, commands]);
+  }, [registry, ports, roomId, navigate, commands, notify]);
 }
 
 export function useSlot<T>(key: SlotKey<T>, ctx: SlotContext): readonly (T & Placed)[] {

@@ -17,4 +17,12 @@ pub struct Config {
         default_value = "../app/dist"
     )]
     pub static_dir: PathBuf,
+    /// The origins the Vite dev server is served from; the server answers them across origins.
+    #[arg(
+        long = "dev-origin",
+        env = "OPENWORK_DEV_ORIGINS",
+        value_delimiter = ',',
+        default_values = ["http://127.0.0.1:47411", "http://localhost:47411"]
+    )]
+    pub dev_origins: Vec<String>,
 }

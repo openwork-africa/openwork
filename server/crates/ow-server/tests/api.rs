@@ -21,6 +21,10 @@ async fn harness() -> Harness {
         port: 0,
         data_dir: data.path().join("nested"),
         static_dir: static_dir.path().to_path_buf(),
+        dev_origins: vec![
+            "http://127.0.0.1:47411".into(),
+            "http://localhost:47411".into(),
+        ],
     };
     Harness {
         app: build_app(&config).await.unwrap(),

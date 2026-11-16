@@ -1,5 +1,5 @@
 import { assertEquals } from "@std/assert";
-import { dismiss, getNotices } from "@openwork/kit";
+import { createNotices } from "@openwork/kit";
 import { copy } from "./copy.ts";
 import { startServiceWorker } from "./serviceWorker.ts";
 
@@ -20,13 +20,13 @@ function fakeContainer(waiting: FakeWorker) {
 }
 
 Deno.test("a waiting version is told once as a notice with an Update action, and nothing reloads until it is pressed", async () => {
-  getNotices().forEach((notice) => dismiss(notice.id));
+  const kitNotices = createNotices();
   const waiting = new FakeWorker();
   const container = fakeContainer(waiting);
   let reloads = 0;
-  const stop = startServiceWorker({ container, reload: () => reloads++ });
+  const stop = startServiceWorker({ container, reload: () => reloads++, notices: kitNotices });
   await new Promise((done) => setTimeout(done, 5));
-  const notices = getNotices();
+  const notices = kitNotices.list();
   assertEquals(notices.map((notice) => [notice.text, notice.action?.label]), [[copy.updateReady, copy.update]]);
 
   container.dispatchEvent(new Event("controllerchange"));
@@ -36,13 +36,13 @@ Deno.test("a waiting version is told once as a notice with an Update action, and
   assertEquals(waiting.posted, [{ type: "SKIP_WAITING" }]);
   container.dispatchEvent(new Event("controllerchange"));
   assertEquals(reloads, 1);
-  assertEquals(getNotices(), []);
+  assertEquals(kitNotices.list(), []);
   stop();
 });
 
 Deno.test("a disabled worker registers nothing", () => {
   let registered = 0;
   const container = { register: () => (registered++, Promise.resolve()) } as unknown as ServiceWorkerContainer;
-  startServiceWorker({ container, reload: () => {}, enabled: false })();
+  startServiceWorker({ container, reload: () => {}, notices: createNotices(), enabled: false })();
   assertEquals(registered, 0);
 });

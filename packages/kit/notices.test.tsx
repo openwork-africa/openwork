@@ -1,6 +1,6 @@
 import { assertEquals } from "@std/assert";
 import { renderToStaticMarkup } from "react-dom/server";
-import { dismiss, getNotices, notify, useNotices } from "./mod.ts";
+import { createNotices, dismiss, getNotices, notify, useNotices } from "./mod.ts";
 import { clearNotices } from "./testing.ts";
 
 Deno.test("notify adds a notice with its status and dismiss removes it", () => {
@@ -38,5 +38,14 @@ Deno.test("useNotices reads the current notices", () => {
     return <ul>{useNotices().map((notice) => <li key={notice.id}>{notice.text}</li>)}</ul>;
   }
   assertEquals(renderToStaticMarkup(<List />), "<ul><li>One</li></ul>");
+  clearNotices();
+});
+
+Deno.test("each createNotices instance keeps its own list, apart from the default", () => {
+  clearNotices();
+  const mine = createNotices();
+  mine.notify("Mine", { holdMs: 0 });
+  notify("Shared", { holdMs: 0 });
+  assertEquals([mine.list().map((notice) => notice.text), getNotices().map((notice) => notice.text)], [["Mine"], ["Shared"]]);
   clearNotices();
 });

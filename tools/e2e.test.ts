@@ -1,6 +1,7 @@
 import { assert, assertEquals } from "jsr:@std/assert@^1";
 import { createSyncEngine, HttpTransport, ManualClock, manualConnectivity, MemoryDeviceStore, MemoryFileStore } from "@openwork/store";
 import type { Live } from "@openwork/store";
+import { createNotices } from "@openwork/kit";
 
 /** Start the server (`cd server && cargo run -p ow-server -- --static ../app/dist --data <dir>`), then run this with OW_SERVER_URL=http://127.0.0.1:47410. */
 const serverUrl = Deno.env.get("OW_SERVER_URL");
@@ -12,7 +13,7 @@ function device() {
   const store = new MemoryDeviceStore(clock);
   const files = new MemoryFileStore();
   const transport = new HttpTransport(serverUrl);
-  const engine = createSyncEngine({ store, files, transport, connectivity: manualConnectivity(true), notify: () => "" });
+  const engine = createSyncEngine({ store, files, transport, connectivity: manualConnectivity(true), notices: createNotices() });
   return { store, files, transport, engine };
 }
 

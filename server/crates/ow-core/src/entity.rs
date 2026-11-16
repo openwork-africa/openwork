@@ -1,6 +1,10 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+use std::fmt;
+use std::str::FromStr;
+
+use crate::copy;
 use crate::error::CoreError;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -54,24 +58,52 @@ pub enum Kind {
     File,
 }
 
-impl Kind {
-    pub fn as_str(self) -> &'static str {
-        match self {
+impl fmt::Display for Kind {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str(match self {
             Kind::Room => "room",
             Kind::Message => "message",
             Kind::File => "file",
-        }
+        })
     }
+}
 
-    pub fn parse(text: &str) -> Option<Kind> {
+impl FromStr for Kind {
+    type Err = CoreError;
+
+    fn from_str(text: &str) -> Result<Kind, CoreError> {
         match text {
-            "room" => Some(Kind::Room),
-            "message" => Some(Kind::Message),
-            "file" => Some(Kind::File),
-            _ => None,
+            "room" => Ok(Kind::Room),
+            "message" => Ok(Kind::Message),
+            "file" => Ok(Kind::File),
+            _ => Err(CoreError::Invalid(copy::UNKNOWN_KIND.into())),
         }
     }
 }
+
+/// What every stored record has in common.
+pub trait Record {
+    fn id(&self) -> &str;
+    fn updated_at(&self) -> i64;
+}
+
+macro_rules! record {
+    ($type:ty) => {
+        impl Record for $type {
+            fn id(&self) -> &str {
+                &self.id
+            }
+
+            fn updated_at(&self) -> i64 {
+                self.updated_at
+            }
+        }
+    };
+}
+
+record!(Room);
+record!(Message);
+record!(FileItem);
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
@@ -98,20 +130,20 @@ impl Entity {
         }
     }
 
-    pub fn id(&self) -> &str {
+    fn record(&self) -> &dyn Record {
         match self {
-            Entity::Room(item) => &item.id,
-            Entity::Message(item) => &item.id,
-            Entity::File(item) => &item.id,
+            Entity::Room(item) => item,
+            Entity::Message(item) => item,
+            Entity::File(item) => item,
         }
     }
 
+    pub fn id(&self) -> &str {
+        self.record().id()
+    }
+
     pub fn updated_at(&self) -> i64 {
-        match self {
-            Entity::Room(item) => item.updated_at,
-            Entity::Message(item) => item.updated_at,
-            Entity::File(item) => item.updated_at,
-        }
+        self.record().updated_at()
     }
 }
 
@@ -149,24 +181,20 @@ impl<'de> Deserialize<'de> for Change {
 impl Change {
     pub fn from_value(value: Value) -> Result<Change, CoreError> {
         let change: Change = serde_json::from_value(value)
-            .map_err(|error| CoreError::Invalid(format!("This change is not readable: {error}")))?;
+            .map_err(|error| CoreError::Invalid(format!("{}: {error}", copy::NOT_READABLE)))?;
         change.validate()?;
         Ok(change)
     }
 
     fn validate(&self) -> Result<(), CoreError> {
         if self.id.is_empty() {
-            return Err(CoreError::Invalid("This change has no id.".into()));
+            return Err(CoreError::Invalid(copy::NO_ID.into()));
         }
         if self.data.id() != self.id {
-            return Err(CoreError::Invalid(
-                "The change id and the record id differ.".into(),
-            ));
+            return Err(CoreError::Invalid(copy::IDS_DIFFER.into()));
         }
         if self.data.updated_at() != self.updated_at {
-            return Err(CoreError::Invalid(
-                "The change time and the record time differ.".into(),
-            ));
+            return Err(CoreError::Invalid(copy::TIMES_DIFFER.into()));
         }
         Ok(())
     }

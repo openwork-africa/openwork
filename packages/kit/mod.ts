@@ -1,12 +1,14 @@
-export { COMMAND_PREFIX, provideCommand } from "./commands.ts";
-export type { CommandHandler } from "./commands.ts";
+export { COMMAND_PREFIX, commandKey, createRoomCommand, deleteRoomCommand, provideCommand, runCommand } from "./commands.ts";
+export type { CommandHandler, CommandKey } from "./commands.ts";
+export { createCell } from "./cell.ts";
+export type { Cell } from "./cell.ts";
 export { compose } from "./compose.tsx";
 export type { ComposeOptions, Product } from "./compose.tsx";
 export type { Commands, Ports, SetupContext, SlotContext } from "./context.ts";
 export { contribute, provide, service, slot } from "./keys.ts";
 export type { Contribution, Placed, Provision, ServiceKey, SlotKey } from "./keys.ts";
-export { dismiss, getNotices, notify, useNotices } from "./notices.ts";
-export type { Notice, NoticeAction, NoticeOptions, NoticeStatus } from "./notices.ts";
+export { createNotices, defaultNotices, dismiss, getNotices, notify, useNotices } from "./notices.ts";
+export type { Notice, NoticeAction, NoticeOptions, Notices, NoticeStatus, Notify } from "./notices.ts";
 export { definePlugin } from "./plugin.ts";
 export type { Plugin } from "./plugin.ts";
 export { KitProvider, useCtx, useSlot } from "./react.tsx";
