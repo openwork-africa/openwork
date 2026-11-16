@@ -7,7 +7,7 @@ import { Layout, LayoutContent } from "@astryxdesign/core/Layout";
 import { Stack } from "@astryxdesign/core/Stack";
 
 const PHONE = "(max-width: 47.9375rem)";
-const PANEL_WIDTH = "calc(var(--spacing-12) * 9)";
+const PANEL_WIDTH = "calc(var(--spacing-10) * 11)";
 
 /** An overlay for a list of choices: a dialog on a desktop, a sheet rising from the bottom edge on a phone. The owner closes it by unmounting. */
 export function Modal({ title, children, onClose }: { title: string; children: ReactNode; onClose: () => void }): ReactElement {
