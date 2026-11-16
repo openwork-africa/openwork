@@ -1,6 +1,6 @@
 import { type ReactElement, useCallback, useRef } from "react";
 import { type RegionProps } from "@openwork/shell";
-import { devicePorts, useRoom, useTrail } from "@openwork/store";
+import { devicePorts, useRoom, useSyncStatus, useTrail } from "@openwork/store";
 import { useCtx, useSlot, windowBanner, windowEmpty } from "@openwork/kit";
 import { ChatLayout } from "@astryxdesign/core/Chat";
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
@@ -23,7 +23,8 @@ function Conversation({ roomId }: { roomId: string }): ReactElement | null {
   const [empty] = useSlot(windowEmpty, ctx);
   const frame = useRef<HTMLElement | null>(null);
   const retry = useCallback((messageId: string) => void store.retry(messageId), [store]);
-  const isEmpty = trail?.length === 0 && !isWorking;
+  const isCatchingUp = useSyncStatus(store) === "catchingUp";
+  const isEmpty = trail?.length === 0 && !isWorking && !isCatchingUp;
   const showLoading = useAfterAMoment(trail === undefined);
   useFollowNewest(frame, !showLoading && !isEmpty && roomId);
 
@@ -41,7 +42,7 @@ function Conversation({ roomId }: { roomId: string }): ReactElement | null {
       >
         {showLoading
           ? <MessagesLoading />
-          : !isEmpty && trail && <ConversationTrail items={trail} ctx={ctx} onRetry={retry}>{isWorking && <TypingIndicator />}</ConversationTrail>}
+          : !isEmpty && trail && <ConversationTrail items={trail} ctx={ctx} onRetry={retry} isCatchingUp={isCatchingUp}>{isWorking && <TypingIndicator />}</ConversationTrail>}
       </ChatLayout>
     </VStack>
   );

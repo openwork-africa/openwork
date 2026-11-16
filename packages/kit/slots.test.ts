@@ -9,7 +9,7 @@ Deno.test("every frame-owned slot of the catalogue has a unique key", () => {
     "composer.addMenu", "composer.tray", "composer.action", "composer.beforeSend",
     "trail.body", "trail.extra", "trail.action",
     "window.empty", "window.banner",
-    "panel.tab", "panel.section", "settings.row",
+    "panel.tab", "panel.cover", "panel.section", "settings.row",
   ];
   assertEquals(frameSlots.map((key) => key.id), expected);
   assertEquals(frameSlotIds.size, expected.length);

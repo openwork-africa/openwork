@@ -4,13 +4,15 @@ import { HStack } from "@astryxdesign/core/Stack";
 import { Icon } from "@astryxdesign/core/Icon";
 import { Tooltip } from "@astryxdesign/core/Tooltip";
 import { copy } from "./copy.ts";
+import { friendlyDeliveryError } from "./deliveryError.ts";
 
 // One tick: saved on this device. Two neutral ticks: the server has it. Two red ticks: it could not be delivered.
-export function DeliveryTicks({ state }: { state: MessageState }): ReactElement {
+export function DeliveryTicks({ state, reason }: { state: MessageState; reason?: string }): ReactElement {
   if (state === "failed") {
+    const why = friendlyDeliveryError(reason);
     return (
-      <Tooltip content={copy.notDelivered}>
-        <HStack as="span" tabIndex={0} aria-label={copy.notDelivered}><Icon icon="checkDouble" size="xsm" color="error" label={copy.notDelivered} /></HStack>
+      <Tooltip content={why}>
+        <HStack as="span" tabIndex={0} aria-label={why}><Icon icon="checkDouble" size="xsm" color="error" label={why} /></HStack>
       </Tooltip>
     );
   }

@@ -1,8 +1,7 @@
 import { assert, assertEquals } from "@std/assert";
 import { act } from "react";
-import { getNotices } from "@openwork/kit";
 import { ConversationWindow } from "@openwork/conversation";
-import { flush, labelled, mount, press, rig, trailOf } from "@openwork/conversation/testing";
+import { flush, mount, press, rig, trailOf } from "@openwork/conversation/testing";
 import { text } from "./mod.ts";
 import { trimmedOf } from "./trimmed.ts";
 
@@ -49,22 +48,21 @@ Deno.test("Copy in the message menu puts its words on the clipboard", async () =
   Object.defineProperty(globalThis.navigator, "clipboard", { configurable: true, value: { writeText: (words: string) => (written.push(words), Promise.resolve()) } });
   const { container, unmount } = await open(["copy me"]);
   await openMenu(container);
-  assertEquals(itemNamed("Error details"), null, "not offered on a message that went through");
+  assertEquals(itemNamed("Error details"), null);
   await press(itemNamed("Copy"));
   assertEquals(written, ["copy me"]);
   await unmount();
 });
 
-Deno.test("a failed message offers Error details, which says why in a notice, beside Send again", async () => {
+Deno.test("a failed message's menu has Copy and Retry, and no generic Error details item", async () => {
   const { container, store, room, unmount } = await open(["hello"]);
   const [row] = (await store.journal.pending()).filter((item) => item.kind === "message");
   await store.journal.fail(row, "Too long.");
   await settle();
   await openMenu(container);
-  assert(itemNamed("Send again") && itemNamed("Copy"));
-  await press(itemNamed("Error details"));
-  assert(getNotices().some((notice) => notice.status === "error" && notice.text.includes("could not be delivered")));
-  await press(labelled(container, "Send again"));
+  assert(itemNamed("Copy") && itemNamed("Retry"));
+  assertEquals(itemNamed("Error details"), null);
+  await press(itemNamed("Retry"));
   await settle();
   assertEquals((await trailOf(store, room.id))[0].state, "sending");
   await unmount();

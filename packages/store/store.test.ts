@@ -70,8 +70,10 @@ for (const make of devices) {
     await store.journal.fail(row, "Too long.");
     assertEquals((await until(store.trail(room.id), (list) => list[0]?.state === "failed"))[0].state, "failed");
     assertEquals((await store.journal.pending()).some((item) => item.kind === "message"), false);
+    assertEquals((await until(store.trail(room.id)))[0].failureReason, "Too long.");
     await store.retry(message.id);
     assertEquals((await until(store.trail(room.id), (list) => list[0]?.state === "sending"))[0].state, "sending");
+    assertEquals((await until(store.trail(room.id)))[0].failureReason, undefined);
   });
 
   run("sending to a room that is gone says so", async ({ store }) => {

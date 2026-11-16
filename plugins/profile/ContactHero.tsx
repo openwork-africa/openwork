@@ -2,7 +2,6 @@ import { type ReactElement, useState } from "react";
 import { StackItem, VStack, HStack } from "@astryxdesign/core/Stack";
 import type { Room } from "@openwork/store";
 import { Avatar } from "@openwork/ui";
-import { ContactCover } from "./ContactCover.tsx";
 import { copy } from "./copy.ts";
 import { DescriptionField } from "./DescriptionField.tsx";
 import { ProfileImagePicker } from "./ProfileImagePicker.tsx";
@@ -38,11 +37,3 @@ export function ContactHeroBody({ room }: { room: Room }): ReactElement {
   );
 }
 
-export function ContactHero({ room }: { room: Room }): ReactElement {
-  return (
-    <VStack gap={0}>
-      <ContactCover roomId={room.id} background={room.background} />
-      <ContactHeroBody room={room} />
-    </VStack>
-  );
-}

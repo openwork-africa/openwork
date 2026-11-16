@@ -1,6 +1,6 @@
 import { assert, assertEquals } from "@std/assert";
 import { act } from "react";
-import { compose, contribute, definePlugin, getNotices, panelSection, panelTab, type Plugin } from "@openwork/kit";
+import { compose, contribute, definePlugin, getNotices, panelCover, panelSection, panelTab, type Plugin } from "@openwork/kit";
 import { ContactPanel } from "./ContactPanel.tsx";
 import { copy } from "./copy.ts";
 import { flush, mount } from "./testing.tsx";
@@ -58,10 +58,14 @@ Deno.test("no room draws nothing", async () => {
   await unmount();
 });
 
-Deno.test("Close goes back to the room", async () => {
-  const paths: string[] = [];
-  const { container, unmount } = await mount(view([], "r1", paths));
-  await act(() => (container.querySelector(`[aria-label="${copy.close}"]`) as HTMLElement).click());
-  assertEquals(paths, ["/c/r1"]);
+Deno.test("a cover sits above the scroll, outside the animated part, and there is no close button", async () => {
+  const cover = definePlugin({ id: "cover", version: "0.1.0", contributes: [contribute(panelCover, { id: "cover", order: 10, render: () => <p data-cover>cover</p> })] });
+  const { container, unmount } = await mount(view([cover, section("first", 10)], "r1"));
+  const panel = container.querySelector(".contact-panel") as HTMLElement;
+  const nodes = [...panel.children];
+  assertEquals(nodes.map((node) => node.hasAttribute("data-cover") || node.classList.contains("contact-scroll")), [true, true]);
+  assert(nodes[0].hasAttribute("data-cover"));
+  assert(!container.querySelector(".contact-scroll [data-cover]"));
+  assertEquals(container.querySelectorAll(".contact-close, button").length, 0);
   await unmount();
 });
