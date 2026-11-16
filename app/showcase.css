@@ -37,7 +37,7 @@ body { color: #24362d; font-family: var(--font-family-body); }
 .cover-art .profile-cover { width: 100%; height: 112px !important; min-height: 112px !important; aspect-ratio: auto; }
 .showcase-hero { grid-area: hero; }
 .hero-art { min-height: 112px; padding-top: 8px; }
-.showcase-sovereignty { grid-area: sovereignty; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 190px; padding: 20px; background: #214d3a url("/digital-sovereignty.png") center / cover no-repeat; text-align: center; }
+.showcase-sovereignty { grid-area: sovereignty; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 190px; padding: 20px; background: #214d3a url("/digital-sovereignty.png") center / cover no-repeat; text-align: center; color: inherit; text-decoration: none; }
 .showcase-sovereignty .showcase-copy { max-width: 82%; }
 .showcase-sovereignty .showcase-copy h2, .showcase-sovereignty .showcase-copy p { color: #fffdf8; text-shadow: 0 1px 10px #1723198c; }
 .showcase-sovereignty .showcase-copy h2 { font-size: clamp(21px, 2.1vw, 29px); line-height: 1.06; }

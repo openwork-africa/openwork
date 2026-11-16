@@ -8,13 +8,11 @@
 
 ## Why Openwork
 
-A small business doesn't run on dashboards. It runs on conversations — with clients, suppliers, staff, and now AI operators. Those conversations are scattered
-across email, chat, spreadsheets and notebooks, and the tools built to hold them together are made for enterprises, not for the person running the shop.
+We want to own our intelligence, our compute, and our conversations. Most of the technology we use is built and hosted outside Africa, so our data, our
+insights and our spend leave with it. Openwork isn't fancy or different. It works like the chat apps you already know. What makes it different is the mission:
+when someone realises they're running technology that doesn't have their interests at heart, they should have somewhere to switch to.
 
-Openwork brings them into one place on your own device: your people, your work and your operators in one list. It works offline, keeps your data on your
-machine, and treats an operator as just another member of the team you can talk to.
-
-We're building it in the open because the people who need it most should be able to own it, run it, and change it.
+[Read the full why](docs/why.md).
 
 ## Getting started
 
