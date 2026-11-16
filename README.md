@@ -78,16 +78,6 @@ deno task fitness
 
 For the server, run `cargo test` from `server/`.
 
-## How it is built
-
-Openwork is a **frame** plus **plugins**. The frame (`packages/*`) is the three-pane shell: the Circle (the room list), the conversation window and the contact
-panel. It owns the design and exposes named **slots**: places such as `circle.source`, `trail.body`, `trail.action` or `panel.section`. A plugin (`plugins/*`)
-contributes data to a slot (a label, an icon, an order, a handler) and the frame draws it. A slot with nothing in it draws nothing.
-
-What the app is made of is one file, `app/product.ts`: a list of plugins. This version ships `rooms`, `text` and `profile`. Taking one out of the list is the
-whole uninstall; the rest still boots. A plugin can also open slots of its own for other plugins to fill. [docs/plugins.md](docs/plugins.md) shows how to write
-one.
-
 ## Links
 
 - Website: [openwork.africa](https://openwork.africa)
