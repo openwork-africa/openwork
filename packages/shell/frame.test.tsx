@@ -11,10 +11,10 @@ const Marker = (name: string) => ({ roomId }: { roomId?: string }): ReactElement
 Deno.test("the frame has a list, a window and a panel, each with its empty state", async () => {
   const { container, unmount } = await mount(<Frame drawer="none" onDrawer={noop} />);
   assert(labelled(container, copy.listLabel), "list panel");
-  assert(labelled(container, copy.panelLabel), "contact panel");
+  assertEquals(labelled(container, copy.panelLabel), null, "no room: the window takes the panel's width");
   assertEquals(container.querySelectorAll(".convo-shell").length, 1);
   const text = container.textContent ?? "";
-  for (const expected of [copy.noRoomTitle, copy.panelEmpty]) assert(text.includes(expected), expected);
+  for (const expected of [copy.noRoomTitle]) assert(text.includes(expected), expected);
   assert(container.querySelector('svg[aria-label="Openwork"]'), "the logo is the no-room mark");
   await unmount();
 });
@@ -86,5 +86,25 @@ Deno.test("a region that fails is an island: the others stay, and Try again brin
   await act(() => retry.click());
   await flush();
   assert(text().includes("window is back"));
+  await unmount();
+});
+
+Deno.test("with a room open the panel column is there; while the room is missing the window shows its loading frame", async () => {
+  const open = await mount(<Frame roomId="r1" drawer="none" onDrawer={noop} />);
+  assert(labelled(open.container, copy.panelLabel));
+  await open.unmount();
+  const missing = await mount(<Frame roomId="r1" isMissing window={Marker("window")} drawer="none" onDrawer={noop} />);
+  await act(async () => {
+    await new Promise((done) => setTimeout(done, 200));
+  });
+  assertEquals(missing.container.querySelector('[data-region="window"]'), null);
+  assert(missing.container.querySelector(".convo-loading .convo-thread-title"), "title bar skeleton in the frame");
+  await missing.unmount();
+});
+
+Deno.test("with no room the empty card is one EmptyState card", async () => {
+  const { container, unmount } = await mount(<Frame noRooms onStart={noop} drawer="none" onDrawer={noop} />);
+  assertEquals(container.querySelectorAll(".empty-card").length, 1);
+  assertEquals(container.querySelectorAll(".conversation-empty-scroller.is-single .empty-card").length, 1);
   await unmount();
 });

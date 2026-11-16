@@ -78,3 +78,24 @@
     }
   }
 }
+
+@layer components {
+  /* No focus highlight on any control, anywhere in the document: not the control's own outline or ring, and not
+     what Astryx draws on the shell around a text field (its accent border and inset ring while it holds the cursor).
+     Overlays in the top layer are covered too, which an app-root scope would not reach. */
+  *:focus,
+  *:focus-visible {
+    outline: none;
+  }
+
+  *:focus:not(dialog, [popover], [role="dialog"]),
+  *:focus-visible:not(dialog, [popover], [role="dialog"]) {
+    box-shadow: none;
+  }
+
+  :focus-within:has(:is(input, textarea, select, [contenteditable="true"], [role="textbox"], [role="combobox"]):focus):not(dialog, [popover], [role="dialog"]) {
+    outline: none;
+    box-shadow: none;
+    border-color: var(--color-border-emphasized);
+  }
+}

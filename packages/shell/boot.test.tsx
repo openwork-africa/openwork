@@ -29,7 +29,8 @@ Deno.test("boot with zero plugins shows the frame and no error notices", async (
   const { shell } = boot("/");
   const { container, unmount } = await mount(view(shell));
   await flush();
-  assert(labelled(container, copy.listLabel) && labelled(container, copy.panelLabel));
+  assert(labelled(container, copy.listLabel));
+  assertEquals(labelled(container, copy.panelLabel), null, "no room is open: no panel column");
   assert(container.querySelector(".convo-loading")?.textContent?.includes(copy.noRoomsTitle));
   assertEquals(shell.product.problems, []);
   assertEquals(getNotices().filter((notice) => notice.status === "error"), []);
@@ -38,11 +39,14 @@ Deno.test("boot with zero plugins shows the frame and no error notices", async (
 });
 
 Deno.test("a room path opens the room, and the profile path opens the panel drawer until it is closed", async () => {
-  const { shell, env } = boot("/c/r1/profile");
+  const { shell, env, store } = boot("/");
+  const room = await store.createRoom("One");
+  env.replace(`/c/${room.id}/profile`);
   const { container, unmount } = await mount(view(shell));
+  await flush();
   assert(container.querySelector(".convo-shell")?.classList.contains("is-panel-open"));
   await act(() => (container.querySelector(".convo-scrim") as HTMLElement).click());
-  assertEquals(env.history.at(-1), "/c/r1");
+  assertEquals(env.history.at(-1), `/c/${room.id}`);
   assert(!container.querySelector(".convo-shell")?.classList.contains("is-panel-open"));
   assertEquals(shellUi.drawer(), "none");
   await unmount();
@@ -72,9 +76,34 @@ Deno.test("a plugin page is a path of its own, and an unknown path says so", asy
   await flush();
   assert(container.textContent?.includes("Settings page"));
   await act(() => shell.router.navigate("/nowhere"));
-  assert(container.textContent?.includes(copy.notFoundTitle));
-  await act(() => (container.querySelector("button") as HTMLElement).click());
+  await flush();
+  assertEquals(shell.router.navigate === undefined, false);
+  assert(labelled(container, copy.listLabel), "an unknown path goes home");
+  await unmount();
+  shell.stop();
+});
+
+Deno.test("a room that is not on the device is left for the latest room, or for home when there is none", async () => {
+  const { shell, env, store } = boot("/c/gone");
+  const { container, unmount } = await mount(view(shell));
+  await flush();
+  assertEquals(env.history.at(-1), "/");
   assert(labelled(container, copy.listLabel));
+  const kept = await store.createRoom("Kept");
+  await act(() => shell.router.navigate("/c/stale"));
+  await flush();
+  assertEquals(env.history.at(-1), `/c/${kept.id}`);
+  await unmount();
+  shell.stop();
+});
+
+Deno.test("a room still being read, or one that is missing, shows the window's own loading frame and not the brand loader", async () => {
+  const { shell, store } = boot("/");
+  const room = await store.createRoom("One");
+  await store.deleteRoom(room.id);
+  const { container, unmount } = await mount(view(shell));
+  await flush();
+  assertEquals(container.querySelector('svg[aria-label="Openwork"]'), null);
   await unmount();
   shell.stop();
 });

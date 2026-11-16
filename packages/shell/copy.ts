@@ -9,10 +9,6 @@ export const copy = {
   noRoomsDescription: "Start one to begin writing.",
   startLabel: "Start a conversation",
   noRoomTitle: "Pick a conversation to start.",
-  panelEmpty: "Details show up here.",
-  notFoundTitle: "Nothing here",
-  notFoundDescription: "This page does not exist.",
-  goHome: "Go home",
   updateReady: "New version ready.",
   update: "Update",
 } as const;

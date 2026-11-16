@@ -20,14 +20,15 @@ async function withScreen<T>(matches: (query: string) => { matches: boolean }, r
 
 Deno.test("desktop: / replaces itself with the most recently active room", () =>
   withScreen(DESKTOP, async () => {
-    const app = await bootProduct(openPlugins, "/c/elsewhere");
+    const app = await bootProduct(openPlugins, "/");
     await app.store.createRoom("Older");
+    await flush();
     app.clock.tick(10);
     const newer = await app.store.createRoom("Newer");
     await act(() => app.shell.router.navigate("/"));
     await flush();
     assertEquals(app.path(), `/c/${newer.id}`);
-    assertEquals(app.history, ["/c/elsewhere", `/c/${newer.id}`], "replaced, not pushed");
+    assertEquals(app.history.includes("/"), false, "home was replaced, never kept");
     await app.stop();
   }));
 
@@ -53,7 +54,7 @@ Deno.test("phone: / stays with the list drawer open, even with rooms", () =>
     await app.stop();
   }));
 
-Deno.test("zero rooms: exactly one empty card, in the window with the Start button; the circle has none and keeps New", () =>
+Deno.test("zero rooms: exactly one empty card, in the window with the Start button; the circle has none and no New", () =>
   withScreen(DESKTOP, async () => {
     const app = await bootProduct(openPlugins, "/");
     await flush();
@@ -64,7 +65,7 @@ Deno.test("zero rooms: exactly one empty card, in the window with the Start butt
     assert(app.container.querySelector(".convo-loading.is-empty"), "the empty frame has no dividers");
     const circle = app.container.querySelector(".convo-circle");
     assertEquals(circle?.querySelector(".empty-card"), null);
-    assert(circle?.querySelector('button[aria-label="New"]'), "New stays");
+    assertEquals(circle?.querySelector('button[aria-label="New"]'), null, "New waits for the first room");
     await app.stop();
   }));
 

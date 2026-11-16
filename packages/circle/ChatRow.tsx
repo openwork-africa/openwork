@@ -9,7 +9,7 @@ import { Skeleton } from "@astryxdesign/core/Skeleton";
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
 import { Timestamp } from "@astryxdesign/core/Timestamp";
-import { Avatar } from "@openwork/ui";
+import { Avatar, dropReleaseClick } from "@openwork/ui";
 import { copy } from "./copy.ts";
 
 interface ChatRowProps {
@@ -102,6 +102,7 @@ export function ChatRow(
         items={menuItems}
         presentation="adaptive"
         label={copy.menuLabel(name)}
+        onOpenChange={dropReleaseClick}
       >
         {row}
       </ContextMenu>

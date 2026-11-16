@@ -42,6 +42,20 @@ for (const make of devices) {
     assertEquals((await store.journal.pending()).map((row) => row.kind), ["room", "room"]);
   });
 
+  run("a deleted room is brought back with its messages, and a room the device never had is refused", async ({ store, clock }) => {
+    const room = await store.createRoom("Family");
+    await store.send(room.id, "Lunch?");
+    clock.tick(10);
+    await store.deleteRoom(room.id);
+    assertEquals(await until(store.room(room.id), (found) => found === null), null);
+    clock.tick(10);
+    await store.restoreRoom(room.id);
+    const back = await until(store.room(room.id), (found) => found !== null);
+    assertEquals([back?.name, back?.deleted], ["Family", undefined]);
+    assertEquals((await until(store.trail(room.id), (trail) => trail.length === 1))[0].content, "Lunch?");
+    await assertRejects(() => store.restoreRoom("nope"));
+  });
+
   run("a sent message is sending, moves its room to the top and queues room then message", async ({ store, clock }) => {
     const first = await store.createRoom("First");
     clock.tick(10);

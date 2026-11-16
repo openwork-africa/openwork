@@ -49,6 +49,14 @@ export class TableDeviceStore implements DeviceStore {
   setRoomBackground = (id: string, background: string | undefined): Promise<void> => this.#edit(id, { background });
   deleteRoom = (id: string): Promise<void> => this.#edit(id, { deleted: true });
 
+  restoreRoom = (id: string): Promise<void> =>
+    this.#write(async (tx, now) => {
+      const room = await tx.room(id);
+      if (!room) throw new Error(copy.noRoom(id));
+      const restored = editedRoom(room, { deleted: undefined }, now);
+      await this.#save(tx, { kind: "room", id, updatedAt: restored.updatedAt, data: restored }, now);
+    });
+
   send = (roomId: string, content: string): Promise<Message> =>
     this.#write(async (tx, now) => {
       const room = await this.#existing(tx, roomId);

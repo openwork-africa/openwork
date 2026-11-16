@@ -1,9 +1,13 @@
 {
   "name": "Openwork",
   "short_name": "Openwork",
+  "description": "Openwork: an offline-first workspace.",
+  "id": "/",
+  "scope": "/",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#ffffff",
+  "orientation": "any",
+  "background_color": "#f8f7f5",
+  "theme_color": "#000000",
   "icons": [{ "src": "/assets/mark.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
 }

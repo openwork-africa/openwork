@@ -29,6 +29,12 @@ fill one, call `contribute(slot, value)`. Every value carries three fields of it
 
 Values may use `ctx`, the slot context: `roomId`, `navigate`, `notify`, `ports`, `commands` and `service(key)`.
 
+### Empty states
+
+A `windowEmpty` contribution draws the card shown in a conversation with nothing said in it. Draw it with `EmptyState` from
+`@openwork/ui` (`art`, `title`, `description`, optional `action` and `label`): it is the one empty-state card the app uses
+everywhere, centred in the window and never scrolling, so a contribution extends that card instead of laying out its own.
+
 ## Commands and services
 
 `provides` is how a plugin gives something to others. `provideCommand("rooms.create", handler)` makes a command: any

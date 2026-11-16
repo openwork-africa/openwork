@@ -39,6 +39,8 @@ export interface DeviceStore {
   setRoomPicture(id: string, picture: string | undefined): Promise<void>;
   setRoomBackground(id: string, background: string | undefined): Promise<void>;
   deleteRoom(id: string): Promise<void>;
+  /** Brings back a deleted room, with its messages. Rejects if the device never had it. */
+  restoreRoom(id: string): Promise<void>;
   trail(roomId: string): Live<TrailMessage[]>;
   send(roomId: string, content: string): Promise<Message>;
   retry(messageId: string): Promise<void>;

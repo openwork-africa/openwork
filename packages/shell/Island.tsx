@@ -1,5 +1,5 @@
-import { type ComponentType, type ReactElement, Suspense } from "react";
-import { ErrorBoundary, Loading, SectionError } from "@openwork/ui";
+import { type ComponentType, type ReactElement, type ReactNode, Suspense } from "react";
+import { ErrorBoundary, SectionError } from "@openwork/ui";
 
 export interface RegionProps {
   roomId?: string;
@@ -13,13 +13,15 @@ interface IslandProps {
   region: Region;
   roomId?: string;
   resetKey?: unknown;
+  /** What shows while the region loads; nothing by default. */
+  loading?: ReactNode;
 }
 
 /** One region of the frame as its own island: if it fails, it shows a note with Try again and the rest carries on. */
-export function Island({ name, region: Content, roomId, resetKey }: IslandProps): ReactElement {
+export function Island({ name, region: Content, roomId, resetKey, loading = null }: IslandProps): ReactElement {
   return (
     <ErrorBoundary name={name} resetKey={resetKey} fallback={(error, retry) => <SectionError name={name} error={error} retry={retry} />}>
-      <Suspense fallback={<Loading />}>
+      <Suspense fallback={loading}>
         <Content roomId={roomId} />
       </Suspense>
     </ErrorBoundary>
