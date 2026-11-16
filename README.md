@@ -1,7 +1,3 @@
-![Openwork OSS showcase with Circle, Notes to self, profile cards, message composer, change feedback, and the digital sovereignty card](docs/components.png)
-
-# Openwork
-
 ## Why Openwork
 
 The goal is to eradicate Google Workspace, Microsoft Office 365, Slack, Teams, and every other tool we depend on but don't own. This is mainly about South Africa and Africa, because almost all the technology we use is hosted outside them. Openwork is a way to own our intelligence, our compute, and our conversations, for those who care about privacy.
@@ -9,6 +5,8 @@ The goal is to eradicate Google Workspace, Microsoft Office 365, Slack, Teams, a
 Openwork isn't fancy or different. It works like the chat apps you already know. What makes it different is the mission: when someone realises they're running technology that doesn't have their interests at heart, they should have somewhere to switch to.
 
 [Read the full why](docs/why.md).
+
+![Openwork OSS showcase with Circle, Notes to self, profile cards, message composer, change feedback, and the digital sovereignty card](docs/components.png)
 
 ## Getting started
 
