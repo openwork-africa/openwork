@@ -24,7 +24,7 @@ import {
 } from "@openwork/kit";
 import { type DeviceStore, makeCell, useLive } from "@openwork/store";
 import { roomPath } from "@openwork/shell";
-import { EmptyCard, ErrorBoundary } from "@openwork/ui";
+import { ErrorBoundary } from "@openwork/ui";
 import { ChatRow, ChatRowsLoading } from "./ChatRow.tsx";
 import { ChatTabs } from "./ChatTabs.tsx";
 import { isLoading, mergeRows, useSourceRows } from "./circleRows.ts";
@@ -100,17 +100,9 @@ export function Circle({ roomId }: { roomId?: string }): ReactElement {
         </ErrorBoundary>
       ))}
       {catchingUp && <ChatRowsLoading count={rows.length ? 1 : 3} />}
-      {!rows.length && !catchingUp && (empties.length
-        ? empties.map((empty) => (
-          <HStack key={empty.id}>{empty.render(ctx)}</HStack>
-        ))
-        : (
-          <EmptyCard
-            art="chat"
-            title={copy.emptyTitle}
-            description={copy.emptyDescription}
-          />
-        ))}
+      {!rows.length && !catchingUp && empties.map((empty) => (
+        <HStack key={empty.id}>{empty.render(ctx)}</HStack>
+      ))}
     </>
   );
 

@@ -9,17 +9,18 @@ import { createRouter } from "./router.ts";
 import { ShellApp } from "./ShellApp.tsx";
 import { flush, labelled, memoryEnv, mount } from "./testing.tsx";
 
-function boot(path: string, plugins: Plugin[] = []): { shell: Shell; env: ReturnType<typeof memoryEnv> } {
+function boot(path: string, plugins: Plugin[] = []): { shell: Shell; env: ReturnType<typeof memoryEnv>; store: MemoryDeviceStore } {
   getNotices().forEach((notice) => dismiss(notice.id));
   const env = memoryEnv(path);
   const clock = new ManualClock();
+  const store = new MemoryDeviceStore(clock);
   const shell = bootShell({
     plugins,
-    ports: { store: new MemoryDeviceStore(clock), files: new MemoryFileStore(), transport: new MemoryTransport(), clock },
+    ports: { store, files: new MemoryFileStore(), transport: new MemoryTransport(), clock },
     connectivity: manualConnectivity(true),
     router: createRouter(env),
   });
-  return { shell, env };
+  return { shell, env, store };
 }
 
 const view = (shell: Shell) => <ShellApp product={shell.product} router={shell.router} regions={shell.regions} />;
@@ -48,9 +49,13 @@ Deno.test("a room path opens the room, and the profile path opens the panel draw
   shell.stop();
 });
 
-Deno.test("the home path opens the list drawer on a phone", async () => {
-  const { shell } = boot("/");
+Deno.test("the home path opens the list drawer on a phone, unless there are no rooms to list", async () => {
+  const { shell, store } = boot("/");
   const { container, unmount } = await mount(view(shell));
+  await flush();
+  assert(!container.querySelector(".convo-shell")?.classList.contains("is-list-open"));
+  await act(() => store.createRoom("One").then(() => undefined));
+  await flush();
   assert(container.querySelector(".convo-shell")?.classList.contains("is-list-open"));
   await unmount();
   shell.stop();

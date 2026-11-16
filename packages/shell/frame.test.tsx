@@ -14,7 +14,7 @@ Deno.test("the frame has a list, a window and a panel, each with its empty state
   assert(labelled(container, copy.panelLabel), "contact panel");
   assertEquals(container.querySelectorAll(".convo-shell").length, 1);
   const text = container.textContent ?? "";
-  for (const expected of [copy.circleEmptyTitle, copy.noRoomTitle, copy.panelEmpty]) assert(text.includes(expected), expected);
+  for (const expected of [copy.noRoomTitle, copy.panelEmpty]) assert(text.includes(expected), expected);
   assert(container.querySelector('svg[aria-label="Openwork"]'), "the logo is the no-room mark");
   await unmount();
 });
@@ -23,6 +23,7 @@ Deno.test("with no room open the window is drawn inside the window's frame, cent
   const { container, unmount } = await mount(<Frame drawer="none" onDrawer={noop} />);
   assert(container.querySelector(".convo-loading")?.querySelector('svg[aria-label="Openwork"]'), "the logo is inside the frame");
   assert(container.querySelector(".convo-loading")?.textContent?.includes(copy.noRoomTitle));
+  assertEquals(container.querySelector(".convo-loading.is-empty"), null, "dividers stay");
   await unmount();
 });
 
@@ -36,6 +37,7 @@ Deno.test("with no rooms at all the frame offers to start one, and only when it 
   await unmount();
   const bare = await mount(<Frame noRooms drawer="none" onDrawer={noop} />);
   assertEquals(bare.container.querySelector(".convo-loading button"), null);
+  assert(bare.container.querySelector(".convo-loading.is-empty"), "the zero-rooms frame carries is-empty");
   await bare.unmount();
 });
 

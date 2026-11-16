@@ -22,6 +22,7 @@ Deno.test("with zero plugins an empty room shows Notes to self, and a sent messa
   const { container, unmount } = await mount(view(<ConversationWindow roomId={room.id} />, room.id));
   await settle();
   assert(textOf(container).includes(copy.emptyTitle) && textOf(container).includes(copy.emptyDescription));
+  assert(container.querySelector(".conversation-empty-card > .empty-card"), "the card sits in the wrapper");
   assertEquals(container.querySelectorAll('[aria-label="Add to this conversation"]').length, 0, "no + without add-menu items");
 
   await write(container, "Lunch at one?");

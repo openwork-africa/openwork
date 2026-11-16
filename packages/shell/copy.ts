@@ -5,8 +5,6 @@ export const copy = {
   windowName: "conversation",
   panelName: "contact panel",
   pageName: "page",
-  circleEmptyTitle: "Nothing here yet",
-  circleEmptyDescription: "Press New to start one.",
   noRoomsTitle: "No conversations yet",
   noRoomsDescription: "Start one to begin writing.",
   startLabel: "Start a conversation",

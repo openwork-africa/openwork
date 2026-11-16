@@ -4,6 +4,13 @@
    composer's stable class. Its corner radius is not here: chat surfaces read the theme's --radius-chat
    (theme/themes/openwork/brand.ts). The drawer above (the @ menu, the reply bar) is a sibling of the body. */
 @layer components {
+  /* No focus outline or ring anywhere in the app, the composer's input included. */
+  #openwork-root *:focus,
+  #openwork-root *:focus-visible {
+    outline: none;
+    box-shadow: none;
+  }
+
   .astryx-chat-composer > div:not(.astryx-chat-composer-drawer) {
     flex-direction: row;
     align-items: flex-end;
