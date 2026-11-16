@@ -19,6 +19,26 @@ Deno.test("the frame has a list, a window and a panel, each with its empty state
   await unmount();
 });
 
+Deno.test("with no room open the window is drawn inside the window's frame, centred", async () => {
+  const { container, unmount } = await mount(<Frame drawer="none" onDrawer={noop} />);
+  assert(container.querySelector(".convo-loading")?.querySelector('svg[aria-label="Openwork"]'), "the logo is inside the frame");
+  assert(container.querySelector(".convo-loading")?.textContent?.includes(copy.noRoomTitle));
+  await unmount();
+});
+
+Deno.test("with no rooms at all the frame offers to start one, and only when it can", async () => {
+  let started = 0;
+  const { container, unmount } = await mount(<Frame noRooms onStart={() => void started++} drawer="none" onDrawer={noop} />);
+  const frame = container.querySelector(".convo-loading") as HTMLElement;
+  assert(frame.textContent?.includes(copy.noRoomsTitle));
+  await act(() => (frame.querySelector("button") as HTMLElement).click());
+  assertEquals(started, 1);
+  await unmount();
+  const bare = await mount(<Frame noRooms drawer="none" onDrawer={noop} />);
+  assertEquals(bare.container.querySelector(".convo-loading button"), null);
+  await bare.unmount();
+});
+
 Deno.test("regions the product passes in are rendered in their panes and told the room", async () => {
   const { container, unmount } = await mount(
     <Frame circle={Marker("circle")} window={Marker("window")} panel={Marker("panel")} roomId="r1" drawer="none" onDrawer={noop} />,

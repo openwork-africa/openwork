@@ -28,3 +28,8 @@ export function nextDrawer(current: Drawer, direction: "left" | "right", listIsD
   }
   return current === "list" ? "none" : "panel";
 }
+
+const PHONE = "(max-width: 47.9375rem)";
+
+/** On a phone the list and the panel are drawers over the window; without a media query the page is taken for a phone. */
+export const listIsDrawer = (): boolean => globalThis.matchMedia?.(PHONE).matches ?? true;

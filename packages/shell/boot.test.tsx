@@ -29,7 +29,7 @@ Deno.test("boot with zero plugins shows the frame and no error notices", async (
   const { container, unmount } = await mount(view(shell));
   await flush();
   assert(labelled(container, copy.listLabel) && labelled(container, copy.panelLabel));
-  assert(container.querySelector('svg[aria-label="Openwork"]'));
+  assert(container.querySelector(".convo-loading")?.textContent?.includes(copy.noRoomsTitle));
   assertEquals(shell.product.problems, []);
   assertEquals(getNotices().filter((notice) => notice.status === "error"), []);
   await unmount();

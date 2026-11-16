@@ -5,7 +5,7 @@ import { Text } from "@astryxdesign/core/Text";
 import { EmptyCard } from "@openwork/ui";
 import { copy } from "./copy.ts";
 import type { Drawer } from "./drawer.ts";
-import { nextDrawer } from "./drawer.ts";
+import { listIsDrawer, nextDrawer } from "./drawer.ts";
 import { Island, type Region } from "./Island.tsx";
 import { NoRoom } from "./NoRoom.tsx";
 import { useSwipe } from "./swipe.ts";
@@ -18,19 +18,20 @@ export interface Regions {
 
 export interface FrameProps extends Regions {
   roomId?: string;
+  /** With no room on the device, the window offers to start one; without `onStart` it only says so. */
+  noRooms?: boolean;
+  onStart?: () => void;
   drawer: Drawer;
   onDrawer: (drawer: Drawer) => void;
 }
-
-const PHONE = "(max-width: 47.9375rem)";
-
-const listIsDrawer = (): boolean => globalThis.matchMedia?.(PHONE).matches ?? true;
 
 const EmptyCircle = (): ReactElement => (
   <VStack className="convo-circle">
     <EmptyCard art="chat" title={copy.circleEmptyTitle} description={copy.circleEmptyDescription} />
   </VStack>
 );
+
+const ClosedWindow = (): ReactElement => <NoRoom />;
 
 const EmptyPanel = (): ReactElement => (
   <VStack className="contact-panel" align="center" padding={6}>
@@ -39,7 +40,7 @@ const EmptyPanel = (): ReactElement => (
 );
 
 /** The three panes: list | window | panel. On a phone the list and the panel are drawers over the window. */
-export function Frame({ circle = EmptyCircle, window = NoRoom, panel = EmptyPanel, roomId, drawer, onDrawer }: FrameProps): ReactElement {
+export function Frame({ circle = EmptyCircle, window = ClosedWindow, panel = EmptyPanel, roomId, noRooms = false, onStart, drawer, onDrawer }: FrameProps): ReactElement {
   const shellRef = useRef<HTMLElement | null>(null);
   useSwipe(shellRef, (direction) => onDrawer(nextDrawer(drawer, direction, listIsDrawer())));
   const open = (drawer === "list" ? " is-list-open" : "") + (drawer === "panel" ? " is-panel-open" : "");
@@ -57,7 +58,7 @@ export function Frame({ circle = EmptyCircle, window = NoRoom, panel = EmptyPane
           </LayoutPanel>
         }
       >
-        <Island name={copy.windowName} region={roomId ? window : NoRoom} roomId={roomId} resetKey={roomId} />
+        {roomId ? <Island name={copy.windowName} region={window} roomId={roomId} resetKey={roomId} /> : <NoRoom isEmpty={noRooms} onStart={onStart} />}
       </Layout>
       <VStack className="convo-scrim" aria-hidden="true" onClick={() => onDrawer("none")} />
     </HStack>

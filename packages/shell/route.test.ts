@@ -10,6 +10,7 @@ const memory = (start: string) => {
     env: {
       read: () => history.at(-1)!,
       push: (path: string) => void history.push(path),
+      replace: (path: string) => void history.splice(-1, 1, path),
       listen: (listener: () => void) => (listeners.add(listener), () => void listeners.delete(listener)),
     },
     back: () => (history.pop(), listeners.forEach((listener) => listener())),

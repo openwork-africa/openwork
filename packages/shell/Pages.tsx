@@ -2,12 +2,13 @@ import { type ComponentType, lazy, Suspense, useEffect, useMemo, type ReactEleme
 import { Button } from "@astryxdesign/core/Button";
 import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { shellPage, type PageValue, useCtx, useSlot } from "@openwork/kit";
+import { devicePorts, useRooms } from "@openwork/store";
 import { EmptyCard, ErrorBoundary, Loading } from "@openwork/ui";
 import { copy } from "./copy.ts";
 import { Frame, type Regions } from "./Frame.tsx";
-import { type Drawer, shellUi, useDrawer } from "./drawer.ts";
+import { type Drawer, listIsDrawer, shellUi, useDrawer } from "./drawer.ts";
 import { matchPath, profilePath, roomIdOf, roomPath, type Route } from "./route.ts";
-import { useRoute } from "./router.ts";
+import { useRoute, useRouter } from "./router.ts";
 
 const lazies = new WeakMap<PageValue, ComponentType>();
 
@@ -21,10 +22,18 @@ const drawerFor = (route: Route): Drawer => (route.name === "profile" ? "panel" 
 
 /** The conversation routes: `/`, `/c/:roomId` and `/c/:roomId/profile` (the panel open on a phone). */
 function RoomRoutes({ regions, route }: { regions: Regions; route: Route }): ReactElement {
-  const { navigate } = useCtx();
+  const ctx = useCtx();
+  const { navigate } = ctx;
+  const router = useRouter();
   const drawer = useDrawer();
   const roomId = roomIdOf(route);
+  const rooms = useRooms(devicePorts(ctx.ports).store);
+  const latest = rooms?.[0]?.id;
+  const create = ctx.commands["rooms.create"] as (() => unknown) | undefined;
   useEffect(() => shellUi.setDrawer(drawerFor(route)), [route.name, roomId]);
+  useEffect(() => {
+    if (route.name === "home" && latest && !listIsDrawer()) router.replace(roomPath(latest));
+  }, [route.name, latest]);
 
   const onDrawer = (next: Drawer): void => {
     shellUi.setDrawer(next);
@@ -33,7 +42,7 @@ function RoomRoutes({ regions, route }: { regions: Regions; route: Route }): Rea
     else if (route.name === "profile") navigate(roomPath(roomId));
   };
 
-  return <Frame {...regions} roomId={roomId} drawer={drawer} onDrawer={onDrawer} />;
+  return <Frame {...regions} roomId={roomId} noRooms={rooms?.length === 0} onStart={create && (() => void create())} drawer={drawer} onDrawer={onDrawer} />;
 }
 
 function NotFound(): ReactElement {

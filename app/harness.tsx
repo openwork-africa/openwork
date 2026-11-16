@@ -16,6 +16,7 @@ export interface Booted {
   container: HTMLElement;
   shell: Shell;
   store: MemoryDeviceStore;
+  clock: ManualClock;
   history: string[];
   path(): string;
   stop(): Promise<void>;
@@ -31,6 +32,7 @@ export async function bootProduct(plugins: readonly Plugin[] = openPlugins, star
   const router = createRouter({
     read: () => history.at(-1)!,
     push: (path) => void history.push(path),
+    replace: (path) => void history.splice(-1, 1, path),
     listen: (listener) => (listeners.add(listener), () => void listeners.delete(listener)),
   });
   const shell = bootShell({
@@ -48,6 +50,7 @@ export async function bootProduct(plugins: readonly Plugin[] = openPlugins, star
     container,
     shell,
     store,
+    clock,
     history,
     path: () => history.at(-1)!,
     async stop() {
