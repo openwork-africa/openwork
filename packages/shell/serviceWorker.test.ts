@@ -1,7 +1,12 @@
 import { assertEquals } from "@std/assert";
 import { createNotices } from "@openwork/kit";
 import { copy } from "./copy.ts";
-import { startServiceWorker } from "./serviceWorker.ts";
+import { isStaleImportError, startServiceWorker } from "./serviceWorker.ts";
+
+Deno.test("lazy import errors are recognized for stale-build recovery", () => {
+  assertEquals(isStaleImportError(new TypeError("Failed to fetch dynamically imported module")), true);
+  assertEquals(isStaleImportError(new Error("ordinary render error")), false);
+});
 
 class FakeWorker extends EventTarget {
   state = "installed";
@@ -45,4 +50,19 @@ Deno.test("a disabled worker registers nothing", () => {
   const container = { register: () => (registered++, Promise.resolve()) } as unknown as ServiceWorkerContainer;
   startServiceWorker({ container, reload: () => {}, notices: createNotices(), enabled: false })();
   assertEquals(registered, 0);
+});
+
+Deno.test("a waiting worker that never takes control falls back to a clean start after the takeover window", async () => {
+  const notices = createNotices();
+  const container = fakeContainer(new FakeWorker());
+  let unregistered = 0;
+  (container as unknown as { getRegistrations: () => Promise<ServiceWorkerRegistration[]> }).getRegistrations = () =>
+    Promise.resolve([Object.assign({}, { unregister: () => (unregistered++, Promise.resolve(true)) }) as ServiceWorkerRegistration]);
+  let reloads = 0;
+  const stop = startServiceWorker({ container, reload: () => reloads++, notices, takeoverWaitMs: 1 });
+  await new Promise((done) => setTimeout(done, 5));
+  notices.list()[0]?.action?.run();
+  await new Promise((done) => setTimeout(done, 50));
+  assertEquals([unregistered, reloads], [1, 1]);
+  stop();
 });

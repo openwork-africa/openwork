@@ -2,7 +2,7 @@ import { assert, assertEquals } from "@std/assert";
 import { act } from "react";
 import { rooms } from "@openwork/plugin-rooms";
 import { text } from "@openwork/plugin-text";
-import { bootProduct, type Booted, click, errorNotices, flush } from "../../app/harness.tsx";
+import { type Booted, bootProduct, click, errorNotices, flush } from "../../app/harness.tsx";
 import { greeting } from "./greeting.tsx";
 import { polite } from "./polite.tsx";
 import { shout } from "./shout.tsx";

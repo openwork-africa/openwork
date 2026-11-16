@@ -2,8 +2,8 @@ import { compose, type Plugin, type Ports, type Product } from "@openwork/kit";
 import {
   browserConnectivity,
   type Connectivity,
-  type DevicePorts,
   createSyncEngine,
+  type DevicePorts,
   DexieDeviceStore,
   HttpTransport,
   IndexedDbFileStore,
@@ -13,6 +13,7 @@ import {
 } from "@openwork/store";
 import type { Regions } from "./Frame.tsx";
 import { createRouter, type Router } from "./router.ts";
+import { createDrawer, type DrawerState } from "./drawer.ts";
 
 export interface ShellOptions {
   plugins: readonly Plugin[];
@@ -30,6 +31,7 @@ export interface Shell {
   ports: Ports;
   router: Router;
   regions: Regions;
+  drawer: DrawerState;
   sync: SyncEngine;
   stop(): void;
 }
@@ -57,6 +59,7 @@ export function bootShell(options: ShellOptions): Shell {
     ports,
     router: options.router ?? createRouter(),
     regions: options.regions ?? {},
+    drawer: createDrawer(),
     sync,
     stop() {
       sync.stop();

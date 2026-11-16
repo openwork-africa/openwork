@@ -40,8 +40,7 @@ function picker(seed: number) {
 
 type Pick = ReturnType<typeof picker>;
 
-const rect = (x: number, y: number, w: number, h: number, fill: string): string =>
-  `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${fill}"/>`;
+const rect = (x: number, y: number, w: number, h: number, fill: string): string => `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${fill}"/>`;
 
 /** Kente: woven bands, every other one a run of blocks, with thin dark threads between them. */
 function kente(p: Pick): string {
@@ -93,7 +92,9 @@ function savanna(p: Pick): string {
   out += `<path d="M0 ${ridge} Q20 ${ridge - 8} 40 ${ridge - 2} T64 ${ridge - 4} V64 H0Z" fill="${far}"/>`;
   out += `<path d="M0 ${ridge + 10} Q24 ${ridge + 2} 64 ${ridge + 8} V64 H0Z" fill="${hill}"/>`;
   // The acacia: a trunk forking into a wide flat crown.
-  out += `<path d="M${treeX - 1.5} ${ridge + 8} L${treeX - 1} ${ridge - 6} L${treeX - 6} ${ridge - 12} L${treeX - 4.5} ${ridge - 13} L${treeX} ${ridge - 8} L${treeX + 5} ${ridge - 13} L${treeX + 6.5} ${ridge - 12} L${treeX + 1} ${ridge - 6} L${treeX + 1.5} ${ridge + 8}Z" fill="${INK}"/>`;
+  out += `<path d="M${treeX - 1.5} ${ridge + 8} L${treeX - 1} ${ridge - 6} L${treeX - 6} ${ridge - 12} L${treeX - 4.5} ${ridge - 13} L${treeX} ${ridge - 8} L${
+    treeX + 5
+  } ${ridge - 13} L${treeX + 6.5} ${ridge - 12} L${treeX + 1} ${ridge - 6} L${treeX + 1.5} ${ridge + 8}Z" fill="${INK}"/>`;
   out += `<ellipse cx="${treeX}" cy="${ridge - 15}" rx="${p.int(11, 14)}" ry="3.5" fill="${INK}"/>`;
   return out;
 }

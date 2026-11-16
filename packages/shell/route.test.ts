@@ -1,20 +1,11 @@
 import { assertEquals } from "@std/assert";
 import { matchPath, parseRoute, pathOf, profilePath, roomPath } from "./route.ts";
 import { createRouter } from "./router.ts";
+import { memoryEnv } from "./testing.tsx";
 
 const memory = (start: string) => {
-  const history = [start];
-  const listeners = new Set<() => void>();
-  return {
-    history,
-    env: {
-      read: () => history.at(-1)!,
-      push: (path: string) => void history.push(path),
-      replace: (path: string) => void history.splice(-1, 1, path),
-      listen: (listener: () => void) => (listeners.add(listener), () => void listeners.delete(listener)),
-    },
-    back: () => (history.pop(), listeners.forEach((listener) => listener())),
-  };
+  const env = memoryEnv(start);
+  return { env, history: env.history, back: env.back };
 };
 
 Deno.test("paths parse to routes: home, a room, its profile, anything else", () => {
@@ -48,10 +39,10 @@ Deno.test("navigate pushes a history entry and tells listeners; back comes throu
   router.navigate("/c/a");
   router.navigate("/c/a");
   router.navigate("/c/a/profile");
-  assertEquals([history, seen], [["/", "/c/a", "/c/a/profile"], ["/c/a", "/c/a/profile"]]);
+  assertEquals([history, seen], [["/", "/c/a", "/c/a/profile"], ["/c/a", "/c/a", "/c/a/profile"]]);
   back();
   assertEquals(seen.at(-1), "/c/a");
   stop();
   router.navigate("/");
-  assertEquals(seen.length, 3);
+  assertEquals(seen.length, 4);
 });

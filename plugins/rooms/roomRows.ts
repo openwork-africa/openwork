@@ -1,12 +1,6 @@
 import type { Observable, RowModel, SlotContext } from "@openwork/kit";
-import {
-  devicePorts,
-  type DeviceStore,
-  type Live,
-  type Room,
-  type TrailMessage,
-} from "@openwork/store";
-import { previewOf } from "./chatRow.ts";
+import { devicePorts, type DeviceStore, type Live, type Room, type TrailMessage } from "@openwork/store";
+import { previewOf } from "./preview.ts";
 import { roomPictures } from "./pictures.ts";
 import type { ReadMarks } from "./readMarks.ts";
 
@@ -14,23 +8,28 @@ export function rowOf(
   room: Room,
   trail: readonly TrailMessage[],
   marks: ReadMarks,
-  openId: string | undefined,
   picture: string | undefined,
 ): RowModel {
   const last = trail.at(-1);
   const newest = last?.createdAt ?? 0;
-  if (room.id === openId || marks.get(room.id) === undefined) {
-    marks.set(room.id, newest);
-  }
   const mark = marks.get(room.id) ?? newest;
   return {
     id: room.id,
     title: room.name,
-    preview: last ? previewOf(last.content, true) : "",
+    preview: last ? previewOf(last.content) : "",
     activityAt: last?.createdAt ?? room.activityAt,
     unread: trail.filter((message) => message.createdAt > mark).length,
     picture,
   };
+}
+
+/** Set first-read and open-room marks before projecting rows. */
+export function markSeen(rooms: readonly Room[], trails: readonly (readonly TrailMessage[])[], marks: ReadMarks, openId: string | undefined): void {
+  rooms.forEach((room, at) => {
+    const seen = marks.get(room.id);
+    const newest = trails[at]?.at(-1)?.createdAt ?? 0;
+    if ((room.id === openId || seen === undefined) && seen !== newest) marks.set(room.id, newest);
+  });
 }
 
 /**
@@ -77,22 +76,24 @@ function watchRooms(
     }
     const loaded = list.map((room) => trails.get(room.id)?.live.get());
     if (loaded.some((trail) => trail === undefined)) return;
+    markSeen(list, loaded as TrailMessage[][], marks, openId);
     listener(
       list.map((room, at) =>
         rowOf(
           room,
           loaded[at] ?? [],
           marks,
-          openId,
           pictures.urlOf(room.picture),
         )
       ),
     );
   };
   const stopRooms = rooms.subscribe(emit);
+  const stopMarks = marks.subscribe?.(emit);
   emit();
   return () => {
     stopRooms();
+    stopMarks?.();
     trails.forEach((trail) => trail.stop());
     trails.clear();
     pictures.stop();

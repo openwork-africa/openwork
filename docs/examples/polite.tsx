@@ -1,5 +1,5 @@
 import { contribute, definePlugin } from "@openwork/kit";
-import { greetingLine } from "./greetingSlots.ts";
+import { greetingLine } from "./slots.ts";
 
 /** A toy plugin on a plugin: it fills the slot `greeting` opened, and is skipped (with a notice) if `greeting` is missing. */
 export const polite = definePlugin({

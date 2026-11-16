@@ -109,9 +109,19 @@ for (const make of devices) {
     clock.tick(100);
     await store.renameRoom(room.id, "Mine");
     const mine = (await until(store.room(room.id)))!;
-    await store.journal.applyPulled([{ kind: "room", id: room.id, updatedAt: mine.updatedAt - 1, data: { ...mine, name: "Older", updatedAt: mine.updatedAt - 1 } }], 3);
+    await store.journal.applyPulled([{
+      kind: "room",
+      id: room.id,
+      updatedAt: mine.updatedAt - 1,
+      data: { ...mine, name: "Older", updatedAt: mine.updatedAt - 1 },
+    }], 3);
     assertEquals((await until(store.room(room.id)))?.name, "Mine");
-    await store.journal.applyPulled([{ kind: "room", id: room.id, updatedAt: mine.updatedAt + 1, data: { ...mine, name: "Theirs", updatedAt: mine.updatedAt + 1 } }], 4);
+    await store.journal.applyPulled([{
+      kind: "room",
+      id: room.id,
+      updatedAt: mine.updatedAt + 1,
+      data: { ...mine, name: "Theirs", updatedAt: mine.updatedAt + 1 },
+    }], 4);
     assertEquals((await until(store.room(room.id), (value) => value?.name === "Theirs"))?.name, "Theirs");
     assertEquals(await store.journal.pending(), []);
     assertEquals(await store.journal.cursor(), 4);

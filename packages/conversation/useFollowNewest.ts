@@ -30,6 +30,8 @@ export function useFollowNewest(inside: RefObject<HTMLElement | null>, trail: un
     for (const gesture of gestures) scroller.addEventListener(gesture, touched, { passive: true });
     scroller.addEventListener("scroll", onScroll, { passive: true });
     grown.observe(content);
+    // The visual viewport shrinking for the on-screen keyboard changes the scroller's clientHeight, not the log's size.
+    grown.observe(scroller);
     return () => {
       for (const gesture of gestures) scroller.removeEventListener(gesture, touched);
       scroller.removeEventListener("scroll", onScroll);

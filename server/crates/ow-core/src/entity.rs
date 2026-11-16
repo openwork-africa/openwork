@@ -18,6 +18,8 @@ pub struct Room {
     pub picture: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub background: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub accent: Option<String>,
     pub created_at: i64,
     pub updated_at: i64,
     pub activity_at: i64,

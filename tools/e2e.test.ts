@@ -6,7 +6,10 @@ import { createNotices } from "@openwork/kit";
 /** Start the server (`cd server && cargo run -p ow-server -- --static ../app/dist --data <dir>`), then run this with OW_SERVER_URL=http://127.0.0.1:47410. */
 const serverUrl = Deno.env.get("OW_SERVER_URL");
 
-const PIXEL = Uint8Array.from(atob("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="), (char) => char.charCodeAt(0));
+const PIXEL = Uint8Array.from(
+  atob("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="),
+  (char) => char.charCodeAt(0),
+);
 
 function device() {
   const clock = new ManualClock();

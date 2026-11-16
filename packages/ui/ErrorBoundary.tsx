@@ -38,19 +38,16 @@ export class ErrorBoundary extends Component<Props, { error: Error | null }> {
     if (!error) return children;
     if (typeof fallback === "function") return fallback(error, this.retry);
     if (fallback !== undefined) return fallback;
-    return <SectionError name={name} error={error} retry={this.retry} />;
+    return <SectionError name={name} retry={this.retry} />;
   }
 }
 
-const isDev = (import.meta as { env?: { DEV?: boolean } }).env?.DEV === true;
-
-export function SectionError({ name, error, retry }: { name: string; error: Error; retry: () => void }): ReactNode {
+export function SectionError({ name, retry }: { name: string; retry: () => void }): ReactNode {
   return (
     <Banner
       status="error"
       container="card"
       title={copy.couldNotShow(name)}
-      description={isDev ? error.message : undefined}
       endContent={<Button label={copy.tryAgain} size="sm" onClick={retry} />}
     />
   );

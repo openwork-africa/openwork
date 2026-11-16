@@ -1,6 +1,6 @@
 import type { ComponentType, ReactNode } from "react";
 import type { SlotContext } from "./context.ts";
-import { type SlotKey, slot } from "./keys.ts";
+import { slot, type SlotKey } from "./keys.ts";
 
 export interface Observable<T> {
   subscribe(listener: (value: T) => void): () => void;
@@ -41,20 +41,6 @@ type Render = (ctx: SlotContext) => ReactNode;
 export interface PageValue {
   path: string;
   load: () => Promise<{ default: ComponentType }>;
-  preload?: () => void;
-}
-
-export interface RailValue {
-  icon: ReactNode;
-  label: string;
-  href: string;
-  badge?: ReactNode;
-}
-
-export interface ShortcutValue {
-  keys: string;
-  label: string;
-  run: (ctx: SlotContext) => void;
 }
 
 export interface SourceValue {
@@ -132,15 +118,7 @@ export interface PanelTabValue {
   render: Render;
 }
 
-export interface SettingsRowValue {
-  label: string;
-  render: Render;
-}
-
 export const shellPage: SlotKey<PageValue> = slot("shell.page");
-export const shellRail: SlotKey<RailValue> = slot("shell.rail");
-export const shellShortcut: SlotKey<ShortcutValue> = slot("shell.shortcut");
-export const shellOverlay: SlotKey<RenderValue> = slot("shell.overlay");
 export const circleSource: SlotKey<SourceValue> = slot("circle.source");
 export const circleTab: SlotKey<TabFilterValue> = slot("circle.tab");
 export const circleRowMenu: SlotKey<RowMenuValue> = slot("circle.rowMenu");
@@ -159,13 +137,9 @@ export const windowBanner: SlotKey<RenderValue> = slot("window.banner");
 export const panelTab: SlotKey<PanelTabValue> = slot("panel.tab");
 export const panelCover: SlotKey<RenderValue> = slot("panel.cover");
 export const panelSection: SlotKey<RenderValue> = slot("panel.section");
-export const settingsRow: SlotKey<SettingsRowValue> = slot("settings.row");
 
 export const frameSlots: readonly SlotKey<unknown>[] = [
   shellPage,
-  shellRail,
-  shellShortcut,
-  shellOverlay,
   circleSource,
   circleTab,
   circleRowMenu,
@@ -184,7 +158,6 @@ export const frameSlots: readonly SlotKey<unknown>[] = [
   panelTab,
   panelCover,
   panelSection,
-  settingsRow,
 ];
 
 export const frameSlotIds: ReadonlySet<string> = new Set(frameSlots.map((key) => key.id));

@@ -1,4 +1,4 @@
-import { contribute, definePlugin, type Plugin, type Placed, type SlotKey, slot } from "./mod.ts";
+import { contribute, definePlugin, type Placed, type Plugin, slot, type SlotKey } from "./mod.ts";
 import { dismiss, getNotices } from "./mod.ts";
 
 export interface Item {

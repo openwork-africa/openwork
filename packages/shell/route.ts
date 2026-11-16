@@ -4,6 +4,8 @@ export type Route =
   | { name: "profile"; roomId: string }
   | { name: "other"; path: string };
 
+import { profilePath, roomPath } from "@openwork/kit";
+
 const ROOM = /^\/c\/([^/]+)$/;
 const PROFILE = /^\/c\/([^/]+)\/profile$/;
 
@@ -17,9 +19,7 @@ export function parseRoute(path: string): Route {
   return { name: "other", path: pathname };
 }
 
-export const roomPath = (roomId: string): string => `/c/${encodeURIComponent(roomId)}`;
-
-export const profilePath = (roomId: string): string => `${roomPath(roomId)}/profile`;
+export { profilePath, roomPath };
 
 export function pathOf(route: Route): string {
   if (route.name === "home") return "/";

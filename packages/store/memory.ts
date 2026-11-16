@@ -2,7 +2,15 @@ import type { Database, Tx } from "./database.ts";
 import { type Live, makeLive } from "./live.ts";
 import { type Clock, type FileStore, systemClock } from "./ports.ts";
 import { TableDeviceStore } from "./tableStore.ts";
-import type { Change, FileItem, Message, OutboxRow, Room } from "./types.ts";
+import type { FileItem, Message, OutboxRow, Room } from "./types.ts";
+
+export class ManualClock implements Clock {
+  constructor(public time = 1_700_000_000_000) {}
+  now = (): number => this.time;
+  tick(ms = 1): number {
+    return (this.time += ms);
+  }
+}
 
 export class MemoryDatabase implements Database {
   readonly #rooms = new Map<string, Room>();
@@ -19,8 +27,13 @@ export class MemoryDatabase implements Database {
     message: (id) => Promise.resolve(this.#messages.get(id)),
     messagesOf: (roomId) => Promise.resolve([...this.#messages.values()].filter((message) => message.roomId === roomId)),
     file: (id) => Promise.resolve(this.#files.get(id)),
-    record: (kind, id) => Promise.resolve(this.#tables[kind].get(id) as Change["data"] | undefined),
-    put: (change) => Promise.resolve(void this.#tables[change.kind].set(change.id, change.data as never)),
+    record: (kind, id) => Promise.resolve(this.#tables[kind].get(id)),
+    put: (change) => {
+      if (change.kind === "room") this.#rooms.set(change.id, change.data);
+      else if (change.kind === "message") this.#messages.set(change.id, change.data);
+      else this.#files.set(change.id, change.data);
+      return Promise.resolve();
+    },
     outbox: () => Promise.resolve([...this.#outbox.values()]),
     outboxRow: (key) => Promise.resolve(this.#outbox.get(key)),
     putOutbox: (row) => Promise.resolve(void this.#outbox.set(row.key, row)),

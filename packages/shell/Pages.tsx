@@ -1,12 +1,12 @@
-import { type ComponentType, lazy, Suspense, useEffect, useMemo, type ReactElement } from "react";
+import { type ComponentType, lazy, type ReactElement, Suspense, useEffect, useMemo } from "react";
 import { HStack, VStack } from "@astryxdesign/core/Stack";
-import { shellPage, type PageValue, useCtx, useSlot } from "@openwork/kit";
+import { createRoomCommand, type PageValue, runCommand, shellPage, useCtx, useSlot } from "@openwork/kit";
 import { devicePorts, useRoom, useRooms } from "@openwork/store";
 import { ErrorBoundary, Loading } from "@openwork/ui";
 import { copy } from "./copy.ts";
 import { Frame, type Regions } from "./Frame.tsx";
-import { type Drawer, listIsDrawer, shellUi, useDrawer } from "./drawer.ts";
-import { matchPath, profilePath, roomIdOf, roomPath, type Route } from "./route.ts";
+import { type Drawer, useDrawer, useDrawerState } from "./drawer.ts";
+import { matchPath, roomIdOf, roomPath, type Route } from "./route.ts";
 import { useRoute, useRouter } from "./router.ts";
 
 const lazies = new WeakMap<PageValue, ComponentType>();
@@ -22,19 +22,19 @@ const drawerFor = (route: Route, noRooms: boolean): Drawer => (route.name === "p
 /** The conversation routes: `/`, `/c/:roomId` and `/c/:roomId/profile` (the panel open on a phone). */
 function RoomRoutes({ regions, route }: { regions: Regions; route: Route }): ReactElement {
   const ctx = useCtx();
-  const { navigate } = ctx;
   const router = useRouter();
   const drawer = useDrawer();
+  const drawerState = useDrawerState();
   const roomId = roomIdOf(route);
   const rooms = useRooms(devicePorts(ctx.ports).store);
   const latest = rooms?.[0]?.id;
-  const create = ctx.commands["rooms.create"] as (() => unknown) | undefined;
+  const create = ctx.commands[createRoomCommand.name] ? () => runCommand(ctx, createRoomCommand) : undefined;
   const room = useRoom(devicePorts(ctx.ports).store, roomId ?? "");
   const isMissing = !!roomId && room === null;
   const noRooms = rooms?.length === 0;
-  useEffect(() => shellUi.setDrawer(drawerFor(route, noRooms)), [route.name, roomId, noRooms]);
+  useEffect(() => drawerState?.setDrawer(drawerFor(route, noRooms)), [route.name, roomId, noRooms, drawerState]);
   useEffect(() => {
-    if (route.name === "home" && latest && !listIsDrawer()) router.replace(roomPath(latest));
+    if (route.name === "home" && latest) router.replace(roomPath(latest));
   }, [route.name, latest]);
 
   useEffect(() => {
@@ -44,13 +44,25 @@ function RoomRoutes({ regions, route }: { regions: Regions; route: Route }): Rea
   }, [isMissing, roomId, rooms]);
 
   const onDrawer = (next: Drawer): void => {
-    shellUi.setDrawer(next);
+    if (noRooms && next === "list") return;
+    drawerState?.setDrawer(next);
     if (!roomId) return;
-    if (next === "panel") navigate(profilePath(roomId));
-    else if (route.name === "profile") navigate(roomPath(roomId));
+    // Opening the contact panel is local UI state; a direct /profile link is
+    // still supported, and closing that link should not leave stale history.
+    if (next !== "panel" && route.name === "profile") router.replace(roomPath(roomId));
   };
 
-  return <Frame {...regions} roomId={roomId} noRooms={noRooms} isMissing={isMissing} onStart={create && (() => void create())} drawer={drawer} onDrawer={onDrawer} />;
+  return (
+    <Frame
+      {...regions}
+      roomId={roomId}
+      noRooms={noRooms}
+      isMissing={isMissing}
+      onStart={create && (() => void create())}
+      drawer={drawer}
+      onDrawer={onDrawer}
+    />
+  );
 }
 
 function NotFound(): null {

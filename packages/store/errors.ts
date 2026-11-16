@@ -29,5 +29,3 @@ export class OfflineError extends NetworkError {
 
 export const isRetryable = (error: unknown): boolean =>
   !(error instanceof OfflineError) && (error instanceof NetworkError || (error instanceof HttpError && error.status >= 500));
-
-export const isOfflineFailure = (error: unknown): boolean => error instanceof NetworkError;

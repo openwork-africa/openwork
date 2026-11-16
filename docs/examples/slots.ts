@@ -1,4 +1,4 @@
-import { type SlotKey, slot } from "@openwork/kit";
+import { slot, type SlotKey } from "@openwork/kit";
 
 export interface GreetingValue {
   text: string;

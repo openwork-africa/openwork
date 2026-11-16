@@ -1,4 +1,5 @@
 export const copy = {
+  syncFailed: "Could not sync your changes. Please try again.",
   offline: "You're offline. Your changes are saved on this device and will go through when you're back.",
   offlineNow: "No connection right now.",
   serverRefused: (status: number) => `The server answered ${status}.`,

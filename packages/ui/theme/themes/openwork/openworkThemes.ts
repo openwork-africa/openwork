@@ -32,6 +32,27 @@ function darkTheme(name: string, canvas: string, accent: Accent, secondary: stri
   });
 }
 
-export const midnightTheme = darkTheme("midnight", "#000000", { accent: "#ffffff", onAccent: "#000000", muted: "#004d65", text: "#bee9ff" }, "#c0c8cd", "#40484c", "#8a9297");
-export const nightshadeTheme = darkTheme("nightshade", "#180b29", { accent: "#c084fc", onAccent: "#180b29", muted: "#4c1d95", text: "#ede9fe" }, "#d6d0e4", "#403458", "#968caa");
-export const emberTheme = darkTheme("ember", "#210f07", { accent: "#fb923c", onAccent: "#210f07", muted: "#78350f", text: "#fef3c7" }, "#cdc0b2", "#543e2c", "#a08e7c");
+export const midnightTheme = darkTheme(
+  "midnight",
+  "#000000",
+  { accent: "#ffffff", onAccent: "#000000", muted: "#004d65", text: "#bee9ff" },
+  "#c0c8cd",
+  "#40484c",
+  "#8a9297",
+);
+export const nightshadeTheme = darkTheme(
+  "nightshade",
+  "#180b29",
+  { accent: "#c084fc", onAccent: "#180b29", muted: "#4c1d95", text: "#ede9fe" },
+  "#d6d0e4",
+  "#403458",
+  "#968caa",
+);
+export const emberTheme = darkTheme(
+  "ember",
+  "#210f07",
+  { accent: "#fb923c", onAccent: "#210f07", muted: "#78350f", text: "#fef3c7" },
+  "#cdc0b2",
+  "#543e2c",
+  "#a08e7c",
+);

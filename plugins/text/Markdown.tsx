@@ -11,7 +11,15 @@ const InLink = createContext(false);
 function MessageLink({ href, children }: { href: string; children: ReactNode }): ReactElement {
   return (
     <InLink.Provider value>
-      <Link href={href} target="_blank" type="inherit" hasUnderline onClick={(event) => (event.preventDefault(), globalThis.open(href, "_blank", "noopener,noreferrer"))}>{children}</Link>
+      <Link
+        href={href}
+        target="_blank"
+        type="inherit"
+        hasUnderline
+        onClick={(event) => (event.preventDefault(), globalThis.open(href, "_blank", "noopener,noreferrer"))}
+      >
+        {children}
+      </Link>
     </InLink.Provider>
   );
 }

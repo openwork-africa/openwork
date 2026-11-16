@@ -7,7 +7,7 @@
     font-family: var(--font-family-body);
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
-        overscroll-behavior: none;
+    overscroll-behavior: none;
   }
   body {
     margin: 0;
@@ -25,7 +25,8 @@
   :focus-visible {
     outline: 2px solid var(--color-accent);
     outline-offset: 2px;
-  }   button,
+  }
+  button,
   a,
   [role="button"] {
     touch-action: manipulation;
@@ -47,24 +48,27 @@
   }
 }
 
-@layer base {  ::view-transition-group(*),
+@layer base {
+  ::view-transition-group(*),
   ::view-transition-old(*),
   ::view-transition-new(*) {
     animation-duration: var(--duration-fast);
     animation-timing-function: var(--ease-standard);
   }
 
-    :root:has(dialog:modal),
+  :root:has(dialog:modal),
   :root:has(dialog:modal) .app-page {
     view-transition-name: none !important;
   }
 
-  @media (prefers-reduced-motion: no-preference) {.enter {
+  @media (prefers-reduced-motion: no-preference) {
+    .enter {
       animation: enter var(--duration-fast) var(--ease-standard);
     }
   }
 
-  @media (prefers-reduced-motion: reduce) {::view-transition-group(*),
+  @media (prefers-reduced-motion: reduce) {
+    ::view-transition-group(*),
     ::view-transition-old(*),
     ::view-transition-new(*) {
       animation: none;

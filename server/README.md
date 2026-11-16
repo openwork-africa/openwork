@@ -1,6 +1,7 @@
 # Openwork server
 
-A small Rust server (Axum + Tokio + SQLite) for the Openwork open-source base. It stores rooms, messages and file records pushed by the browser, hands them back on pull, keeps file bytes on disk, and serves the built frontend. Single user, no accounts: it binds to 127.0.0.1 by default.
+A small Rust server (Axum + Tokio + SQLite) for the Openwork open-source base. It stores rooms, messages and file records pushed by the browser, hands them back
+on pull, keeps file bytes on disk, and serves the built frontend. Single user, no accounts: it binds to 127.0.0.1 by default.
 
 ## Build
 
@@ -13,21 +14,23 @@ The binary is `target/release/openwork-server`. Rust 1.88 or newer.
 
     cargo run -p ow-server -- --static ../app/dist
 
-| Flag | Env | Default |
-|---|---|---|
-| `--host` | `OPENWORK_HOST` | `127.0.0.1` |
-| `--port` | `OPENWORK_PORT` | `47410` |
-| `--data <dir>` | `OPENWORK_DATA` | `./data` (created if missing) |
-| `--static <dir>` | `OPENWORK_STATIC` | `../app/dist` |
+| Flag             | Env               | Default                       |
+| ---------------- | ----------------- | ----------------------------- |
+| `--host`         | `OPENWORK_HOST`   | `127.0.0.1`                   |
+| `--port`         | `OPENWORK_PORT`   | `47410`                       |
+| `--data <dir>`   | `OPENWORK_DATA`   | `./data` (created if missing) |
+| `--static <dir>` | `OPENWORK_STATIC` | `../app/dist`                 |
 
-If the static folder has no `index.html`, every non-API GET answers 503 with a plain message. Exposing the server beyond localhost is your choice; it has no auth.
+If the static folder has no `index.html`, every non-API GET answers 503 with a plain message. Exposing the server beyond localhost is your choice; it has no
+auth.
 
 Data: `<data>/openwork.db` (SQLite, migrations in `crates/ow-store/migrations`) and `<data>/files/<fileId>` (bytes; the content type is kept in the database).
 
 ## API
 
 - `GET /healthz` returns `ok`.
-- `POST /api/push` with `{ "changes": Change[] }` returns `{ "answers": Answer[] }`. Last writer wins by `updatedAt`; an older change is answered `ok: true` and ignored.
+- `POST /api/push` with `{ "changes": Change[] }` returns `{ "answers": Answer[] }`. Last writer wins by `updatedAt`; an older change is answered `ok: true` and
+  ignored.
 - `GET /api/pull?since=<cursor>` returns `{ "changes": Change[], "cursor": number }`. `since=0` returns everything.
 - `PUT /api/files/:id` (raw bytes, `Content-Type`) returns 204; larger than 25 MB returns 413. `GET /api/files/:id` returns the bytes or 404.
 - Any other `/api/*` returns 404 JSON `{ "message": "..." }`.

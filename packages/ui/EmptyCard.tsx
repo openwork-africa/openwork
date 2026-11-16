@@ -10,9 +10,9 @@ export type EmptyArt = "chat" | "calendar";
 export function EmptyCard({ art, title, description, action }: { art: EmptyArt; title: string; description: string; action?: ReactNode }): ReactElement {
   return (
     <Card variant="muted" padding={6} className="empty-card">
-      <VStack gap={3} align="center">
+      <VStack gap={3} hAlign="center" width="100%">
         <img className="empty-card-art" src={`/assets/empty/${art}.png`} alt="" />
-        <VStack gap={1} align="center">
+        <VStack gap={1} hAlign="center" width="100%">
           <Heading level={3}>{title}</Heading>
           <Text color="secondary" justify="center" as="p">{description}</Text>
         </VStack>

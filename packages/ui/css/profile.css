@@ -4,6 +4,63 @@
     padding: 0;
   }
 
+  .background-picker-grid {
+    max-height: min(62vh, 34rem);
+    overflow-y: auto;
+    padding: var(--spacing-1);
+  }
+
+  .background-picker-theme,
+  .background-picker-upload {
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  /* Keep the cover photographs clear; the shared ClickableCard hover wash obscures the previews. */
+  .background-picker-theme {
+    --_press-overlay: transparent !important;
+  }
+
+  .background-picker-cover {
+    width: 100%;
+    overflow: hidden;
+    border-radius: var(--radius-inner);
+    background: var(--color-background-muted);
+  }
+
+  .background-picker-upload-art {
+    aspect-ratio: 16 / 9;
+    border-radius: var(--radius-inner);
+    background: linear-gradient(135deg, var(--color-accent-muted), var(--color-background-muted));
+    color: var(--color-text-accent);
+  }
+
+  .background-picker-cover img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+  }
+
+  .background-picker-caption {
+    min-height: var(--size-element-sm);
+    padding-inline: var(--spacing-1);
+  }
+
+  .background-picker-theme.is-current {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 1px;
+  }
+
+  @media (max-width: 47.9375rem) {
+    .background-picker-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      max-height: min(55dvh, 30rem);
+      gap: var(--spacing-2);
+    }
+  }
+
   /* The cover is the theme: its picture (app/public/assets/covers, or a client's own) over the theme's own colours; a client's theme with no picture shows its colours alone. */
   .profile-cover {
     display: flex;

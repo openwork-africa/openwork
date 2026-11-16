@@ -12,7 +12,9 @@ export function DeliveryTicks({ state, reason }: { state: MessageState; reason?:
     const why = friendlyDeliveryError(reason);
     return (
       <Tooltip content={why}>
-        <HStack as="span" tabIndex={0} aria-label={why}><Icon icon="checkDouble" size="xsm" color="error" label={why} /></HStack>
+        <HStack as="span" tabIndex={0} aria-label={why}>
+          <Icon icon="checkDouble" size="xsm" color="error" label={why} />
+        </HStack>
       </Tooltip>
     );
   }

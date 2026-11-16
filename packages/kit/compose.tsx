@@ -35,8 +35,8 @@ export function compose(plugins: readonly Plugin[], ports: Ports, options: Compo
     try {
       const teardown = plugin.setup?.(setup);
       if (teardown) teardowns.push(teardown);
-    } catch (error) {
-      problems.push(copy.setupFailed(plugin.id, error instanceof Error ? error.message : String(error)));
+    } catch {
+      problems.push(copy.setupFailed(plugin.id));
     }
   }
   for (const problem of problems) notices.notify(problem, { status: "error" });

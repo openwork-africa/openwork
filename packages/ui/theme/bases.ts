@@ -16,6 +16,10 @@ export const BASE_SCHEME = {
 
 export type Base = keyof typeof BASE_SCHEME;
 export const BASES = Object.keys(BASE_SCHEME) as Base[];
+const LEADING_BASES: readonly Base[] = ["white", "midnight", "nightshade", "ember"];
+export const THEME_BASES: readonly Base[] = [...LEADING_BASES, ...BASES.filter((base) => !LEADING_BASES.includes(base))];
+const BASE_LABELS: Partial<Record<Base, string>> = { white: "White", y2k: "Y2K" };
+export const baseLabel = (base: Base): string => BASE_LABELS[base] ?? base.charAt(0).toUpperCase() + base.slice(1);
 
 export const DEFAULT_BASE: Base = "white";
 export const STORAGE_KEY = "ow-base";

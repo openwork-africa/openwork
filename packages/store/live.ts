@@ -49,4 +49,4 @@ export function makeCell<T>(initial: T): Live<T> & { set(next: T): void } {
   };
 }
 
-export const useLive = <T,>(live: Live<T>): T | undefined => useSyncExternalStore(live.subscribe, live.get, live.get);
+export const useLive = <T>(live: Live<T>): T | undefined => useSyncExternalStore(live.subscribe, live.get, live.get);

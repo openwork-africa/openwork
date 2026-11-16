@@ -32,7 +32,7 @@ Deno.test("a clean workspace has no violations", () => {
   assertEquals(
     rulesFor({
       "packages/kit/deno.json": manifest("@openwork/kit"),
-      "packages/kit/mod.ts": 'export const answer = 42;\n',
+      "packages/kit/mod.ts": "export const answer = 42;\n",
       "plugins/a/deno.json": manifest("@openwork/plugin-a"),
       "plugins/a/plugin.ts": 'import { answer } from "@openwork/kit";\nexport const a = answer;\n',
     }),
@@ -64,7 +64,10 @@ Deno.test("a plugin reaching into another plugin is caught, slots.ts with requir
     "plugin-imports:plugins/a/plugin.ts",
   ]);
   assertEquals(
-    rulesFor({ ...base, "plugins/a/plugin.ts": 'import { slot } from "../b/slots.ts";\nexport const requires = { requires: { b: "^1" } };\nexport const a = slot;\n' }),
+    rulesFor({
+      ...base,
+      "plugins/a/plugin.ts": 'import { slot } from "../b/slots.ts";\nexport const requires = { requires: { b: "^1" } };\nexport const a = slot;\n',
+    }),
     [],
   );
 });

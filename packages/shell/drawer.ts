@@ -1,25 +1,40 @@
-import { useSyncExternalStore } from "react";
+import { createContext, useContext, useSyncExternalStore } from "react";
+import { DRAWER_PHONE_QUERY } from "@openwork/ui";
 
 export type Drawer = "none" | "list" | "panel";
 
-let drawer: Drawer = "none";
-const listeners = new Set<() => void>();
+export interface DrawerState {
+  drawer(): Drawer;
+  setDrawer(next: Drawer): void;
+  subscribe(listener: () => void): () => void;
+}
 
-/** Which phone drawer is open over the frame: the list from the left, the panel from the right. */
-export const shellUi = {
-  drawer: (): Drawer => drawer,
-  setDrawer(next: Drawer): void {
-    if (next === drawer) return;
-    drawer = next;
-    listeners.forEach((listener) => listener());
-  },
-  subscribe(listener: () => void): () => void {
-    listeners.add(listener);
-    return () => void listeners.delete(listener);
-  },
+export function createDrawer(): DrawerState {
+  let drawer: Drawer = "none";
+  const listeners = new Set<() => void>();
+  return {
+    drawer: () => drawer,
+    setDrawer(next) {
+      if (next === drawer) return;
+      drawer = next;
+      listeners.forEach((listener) => listener());
+    },
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => void listeners.delete(listener);
+    },
+  };
+}
+
+export const DrawerContext = createContext<DrawerState | null>(null);
+
+export const useDrawerState = (): DrawerState | null => useContext(DrawerContext);
+
+export const useDrawer = (): Drawer => {
+  const state = useDrawerState();
+  if (!state) throw new Error("DrawerContext is missing");
+  return useSyncExternalStore(state.subscribe, state.drawer, state.drawer);
 };
-
-export const useDrawer = (): Drawer => useSyncExternalStore(shellUi.subscribe, shellUi.drawer, shellUi.drawer);
 
 export function nextDrawer(current: Drawer, direction: "left" | "right", listIsDrawer = true): Drawer {
   if (direction === "right") {
@@ -29,7 +44,5 @@ export function nextDrawer(current: Drawer, direction: "left" | "right", listIsD
   return current === "list" ? "none" : "panel";
 }
 
-const PHONE = "(max-width: 47.9375rem)";
-
-/** On a phone the list and the panel are drawers over the window; without a media query the page is taken for a phone. */
-export const listIsDrawer = (): boolean => globalThis.matchMedia?.(PHONE).matches ?? true;
+/** On a phone the list and panel are drawers; without a media query treat the page as a phone. */
+export const listIsDrawer = (): boolean => globalThis.matchMedia?.(DRAWER_PHONE_QUERY).matches ?? true;

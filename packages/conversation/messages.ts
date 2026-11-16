@@ -19,7 +19,8 @@ export const dayLabelOf = (createdAt: number, now: Date = new Date()): string =>
 
 export const timeFormatOf = (createdAt: number, now: number): "time" | "date_time" => (now - createdAt < DAY_MS ? "time" : "date_time");
 
-const continues = (a?: TrailMessage, b?: TrailMessage): boolean => !!a && !!b && a.authorId === b.authorId && Math.abs(b.createdAt - a.createdAt) <= RUN_WINDOW_MS;
+const continues = (a?: TrailMessage, b?: TrailMessage): boolean =>
+  !!a && !!b && a.authorId === b.authorId && Math.abs(b.createdAt - a.createdAt) <= RUN_WINDOW_MS;
 
 /** One speaker's messages in a row, close in time, read as one group: only its first and last bubble keep their outer corners. */
 export function groupOf(items: readonly TrailMessage[], index: number): BubbleGroup {

@@ -1,5 +1,5 @@
 import { Fragment, memo, type ReactElement } from "react";
-import type { SlotContext, TrailActionValue, TrailBodyValue, TrailExtraValue, Placed } from "@openwork/kit";
+import type { Placed, SlotContext, TrailActionValue, TrailBodyValue, TrailExtraValue } from "@openwork/kit";
 import type { TrailMessage } from "@openwork/store";
 import { ChatMessage as AxMessage, ChatMessageBubble } from "@astryxdesign/core/Chat";
 import { ContextMenu } from "@astryxdesign/core/ContextMenu";
@@ -11,7 +11,8 @@ import { Timestamp } from "@astryxdesign/core/Timestamp";
 import { Info, RotateCcw } from "lucide-react";
 import { copy } from "./copy.ts";
 import { DeliveryTicks } from "./DeliveryTicks.tsx";
-import { dropReleaseClick } from "./heldMenu.ts";
+import { friendlyDeliveryError } from "./deliveryError.ts";
+import { dropReleaseClick } from "@openwork/ui";
 import { type BubbleGroup, timeFormatOf } from "./messages.ts";
 import { Selectable } from "./Selectable.tsx";
 
@@ -42,7 +43,11 @@ function Bubble({ message, group, ctx, bodies, extras, actions, onRetry }: Bubbl
   const words = body ? body.render(message, ctx) : <Text as="p">{message.content}</Text>;
   const sendAgain = () => onRetry(message.id);
   const menuItems = [
-    ...actions.filter((action) => action.appliesTo?.(message) ?? true).map((action) => ({ label: action.label, icon: action.icon, onClick: () => action.run(message, ctx) })),
+    ...actions.filter((action) => action.appliesTo?.(message) ?? true).map((action) => ({
+      label: action.label,
+      icon: action.icon,
+      onClick: () => action.run(message, ctx),
+    })),
     ...(isFailed ? [{ label: copy.retry, icon: <Icon icon={RotateCcw} />, onClick: sendAgain }] : []),
   ];
   const shown = (
@@ -57,9 +62,25 @@ function Bubble({ message, group, ctx, bodies, extras, actions, onRetry }: Bubbl
       {isFailed && (
         <HStack gap={1} vAlign="center">
           {message.failureReason && (
-            <IconButton className="chat-hover-action" label={copy.errorDetails} tooltip={message.failureReason} icon={<Icon icon={Info} size="sm" />} variant="ghost" size="sm" onClick={() => {}} />
+            <IconButton
+              className="chat-hover-action"
+              label={copy.errorDetails}
+              tooltip={friendlyDeliveryError(message.failureReason)}
+              icon={<Icon icon={Info} size="sm" />}
+              variant="ghost"
+              size="sm"
+              onClick={() => {}}
+            />
           )}
-          <IconButton className="chat-hover-action" label={copy.sendAgain} tooltip={copy.sendAgain} icon={<Icon icon={RotateCcw} size="sm" />} variant="ghost" size="sm" onClick={sendAgain} />
+          <IconButton
+            className="chat-hover-action"
+            label={copy.sendAgain}
+            tooltip={copy.sendAgain}
+            icon={<Icon icon={RotateCcw} size="sm" />}
+            variant="ghost"
+            size="sm"
+            onClick={sendAgain}
+          />
         </HStack>
       )}
     </AxMessage>

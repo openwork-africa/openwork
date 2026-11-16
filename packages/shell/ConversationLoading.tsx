@@ -20,7 +20,9 @@ export function ConversationLoading(): ReactElement | null {
   return (
     <VStack className="convo-loading">
       <HStack className="convo-thread-title" gap={1} vAlign="center">
-        <StackItem size="fill"><Skeleton width="var(--spacing-24)" height="var(--font-size-lg)" radius={1} /></StackItem>
+        <StackItem size="fill">
+          <Skeleton width="var(--spacing-24)" height="var(--font-size-lg)" radius={1} />
+        </StackItem>
       </HStack>
       <VStack padding={4}>
         <VStack gap={3}>

@@ -1,7 +1,7 @@
 import type { ReactElement } from "react";
 import { Text } from "@astryxdesign/core/Text";
 import { contribute, definePlugin, trailExtra, useCtx, useSlot } from "@openwork/kit";
-import { greetingLine } from "./greetingSlots.ts";
+import { greetingLine } from "./slots.ts";
 
 function Greetings(): ReactElement {
   const lines = useSlot(greetingLine, useCtx());

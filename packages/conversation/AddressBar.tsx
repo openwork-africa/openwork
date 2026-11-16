@@ -75,8 +75,17 @@ export function AddressBar({ room }: { room: Room }): ReactElement {
           {mode === "edit"
             ? (
               <>
-                <IconButton label={copy.back} tooltip={copy.back} icon={<Icon icon="chevronLeft" />} variant="ghost" size="sm" onClick={() => setEditing(false)} />
-                <StackItem size="fill"><AddSomeone providers={addressees} ctx={ctx} /></StackItem>
+                <IconButton
+                  label={copy.back}
+                  tooltip={copy.back}
+                  icon={<Icon icon="chevronLeft" />}
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setEditing(false)}
+                />
+                <StackItem size="fill">
+                  <AddSomeone providers={addressees} ctx={ctx} />
+                </StackItem>
               </>
             )
             : (
@@ -84,10 +93,22 @@ export function AddressBar({ room }: { room: Room }): ReactElement {
                 <StackItem size="fill">
                   {canAdd
                     ? <Button label={room.name} variant="ghost" tooltip={copy.editAddress} onClick={() => setEditing(true)} />
-                    : <HStack paddingInline={3} paddingBlock={1.5}><Text type="label" weight="semibold" maxLines={1}>{room.name}</Text></HStack>}
+                    : (
+                      <HStack paddingInline={3} paddingBlock={1.5}>
+                        <Text type="label" weight="semibold" maxLines={1}>{room.name}</Text>
+                      </HStack>
+                    )}
                 </StackItem>
                 {actions.map((action) => (
-                  <IconButton key={action.id} label={action.label} tooltip={action.label} icon={action.icon} variant="ghost" size="sm" onClick={() => action.run(ctx)} />
+                  <IconButton
+                    key={action.id}
+                    label={action.label}
+                    tooltip={action.label}
+                    icon={action.icon}
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => action.run(ctx)}
+                  />
                 ))}
               </>
             )}

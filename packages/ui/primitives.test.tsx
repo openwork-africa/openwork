@@ -58,5 +58,12 @@ Deno.test("Feedback lists its notices in order, with dismiss and action buttons"
 });
 
 Deno.test("ErrorBoundary renders its children when nothing fails", () => {
-  assertEquals(renderToStaticMarkup(<ErrorBoundary name="circle"><p>fine</p></ErrorBoundary>), "<p>fine</p>");
+  assertEquals(
+    renderToStaticMarkup(
+      <ErrorBoundary name="circle">
+        <p>fine</p>
+      </ErrorBoundary>,
+    ),
+    "<p>fine</p>",
+  );
 });

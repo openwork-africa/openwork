@@ -33,12 +33,18 @@ export function createRouter(env: RouterEnv = browserEnv): Router {
   return {
     path: () => env.read(),
     navigate(path) {
-      if (path === env.read()) return;
+      if (path === env.read()) {
+        changed();
+        return;
+      }
       env.push(path);
       changed();
     },
     replace(path) {
-      if (path === env.read()) return;
+      if (path === env.read()) {
+        changed();
+        return;
+      }
       env.replace(path);
       changed();
     },

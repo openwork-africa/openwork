@@ -21,7 +21,9 @@
     height: 100%;
     overflow-y: auto;
     padding: var(--spacing-6) 0 0;
-  } /* Above the circle: whoever has a story up, then fading placeholder circles (all of them, with no stories). */ /* A story's avatar, ringed in the primary colour, with the name under it. */ /* The "+" that opens the stories app: a tonal circle the size of a ringed avatar. */ /* Column layout lets the "+" sit at the bottom even when the list is short; nothing above it shrinks. */
+  } /* Above the circle: whoever has a story up, then fading placeholder circles (all of them, with no stories). */
+  /* A story's avatar, ringed in the primary colour, with the name under it. */ /* The "+" that opens the stories app: a tonal circle the size of a ringed avatar. */
+  /* Column layout lets the "+" sit at the bottom even when the list is short; nothing above it shrinks. */
   /* How many you have not read in a conversation: the count keeps its width, and the last message gives way to it. */
   .chat-unread {
     flex: none;
@@ -91,6 +93,14 @@
     margin-inline: auto;
   }
 
+  /* Empty cards centre in the full window supplied by NoRoom/IslandBody. */
+  .conversation-empty-content:has(> .conversation-empty-scroller.is-single) {
+    flex: 0 1 36rem;
+    min-height: 100%;
+    height: 100%;
+    justify-content: center;
+  }
+
   .conversation-empty-scroller {
     display: flex;
     align-items: stretch;
@@ -154,6 +164,20 @@
     margin-top: auto;
     align-self: flex-end;
     padding: var(--spacing-3);
+  }
+  @media (max-width: 767px) {
+    .convo-new {
+      padding-bottom: calc(var(--spacing-3) + env(safe-area-inset-bottom, 0px));
+    }
+    .convo-new button {
+      min-width: 44px;
+      min-height: 44px;
+    }
+    .convo-shell button,
+    .contact-panel button {
+      min-width: 44px;
+      min-height: 44px;
+    }
   }
   .convo-scrim {
     display: none;

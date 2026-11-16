@@ -124,18 +124,30 @@ Deno.test("setup runs once at boot, in order, and teardown runs in reverse", () 
 Deno.test("a setup that throws is reported and does not stop the others", () => {
   const log: string[] = [];
   const product = compose([
-    definePlugin({ id: "bad", version: "1.0.0", contributes: [], setup: () => { throw new Error("no disk"); } }),
+    definePlugin({
+      id: "bad",
+      version: "1.0.0",
+      contributes: [],
+      setup: () => {
+        throw new Error("no disk");
+      },
+    }),
     definePlugin({ id: "good", version: "1.0.0", contributes: [], setup: () => void log.push("good") }),
   ], {});
   assertEquals(log, ["good"]);
-  assert(product.problems[0].includes("bad") && product.problems[0].includes("no disk"));
+  assert(product.problems[0].includes("bad") && !product.problems[0].includes("no disk"));
   clearNotices();
 });
 
 const emojiTab = slot<{ label: string }>("emoji.tab");
 
 Deno.test("a plugin opens a slot and another plugin contributes to it", () => {
-  const emoji = definePlugin({ id: "emoji", version: "1.0.0", slots: [emojiTab], contributes: [contribute(emojiTab, { id: "faces", order: 1, label: "Faces" })] });
+  const emoji = definePlugin({
+    id: "emoji",
+    version: "1.0.0",
+    slots: [emojiTab],
+    contributes: [contribute(emojiTab, { id: "faces", order: 1, label: "Faces" })],
+  });
   const stickers = definePlugin({
     id: "stickers",
     version: "1.0.0",
@@ -219,7 +231,11 @@ Deno.test("hooks read slots sorted, filtered by when, and the service through ct
     return <p>{`${labels}|${ctx.service(playerKey)?.play()}|${ctx.roomId}`}</p>;
   }
   const render = (roomId?: string) =>
-    renderToStaticMarkup(<product.Root roomId={roomId} navigate={() => {}}><Probe /></product.Root>);
+    renderToStaticMarkup(
+      <product.Root roomId={roomId} navigate={() => {}}>
+        <Probe />
+      </product.Root>,
+    );
   assertEquals(render(), "<p>early,late|hi|undefined</p>");
   assertEquals(render("r1"), "<p>early,inRoom,late|hi|r1</p>");
   assertThrows(() => renderToStaticMarkup(<Probe />));
@@ -232,7 +248,12 @@ Deno.test("contribute keeps the slot id of its key", () => {
 Deno.test("a provided command is on ctx.commands, bound to the context, and a given command stays", () => {
   const seen: unknown[] = [];
   const product = compose(
-    [definePlugin({ id: "doer", version: "1.0.0", contributes: [], provides: [provideCommand("do.it", (ctx, word: string) => seen.push([ctx.roomId, word]))] })],
+    [definePlugin({
+      id: "doer",
+      version: "1.0.0",
+      contributes: [],
+      provides: [provideCommand("do.it", (ctx, word: string) => seen.push([ctx.roomId, word]))],
+    })],
     {},
   );
   const Probe = () => {
@@ -240,7 +261,11 @@ Deno.test("a provided command is on ctx.commands, bound to the context, and a gi
     (ctx.commands["do.it"] as (word: string) => void)("now");
     return <p>{Object.keys(ctx.commands).join(",")}</p>;
   };
-  const html = renderToStaticMarkup(<product.Root roomId="r1" navigate={() => {}} commands={{ other: () => 1 }}><Probe /></product.Root>);
+  const html = renderToStaticMarkup(
+    <product.Root roomId="r1" navigate={() => {}} commands={{ other: () => 1 }}>
+      <Probe />
+    </product.Root>,
+  );
   assertEquals(seen, [["r1", "now"]]);
   assert(html.includes("other,do.it"));
 });

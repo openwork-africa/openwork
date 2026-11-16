@@ -1,22 +1,21 @@
-import { type ReactElement, useState } from "react";
+import type { ReactElement } from "react";
 import { Button } from "@astryxdesign/core/Button";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import { notify } from "@openwork/kit";
+import { useDevicePorts } from "@openwork/store";
 import { copy } from "./copy.ts";
-import { usePorts } from "./usePorts.ts";
+import { problem } from "./problem.ts";
+import { useInlineEdit } from "./useInlineEdit.ts";
 
 // The room's description, under its name: one flat line, cut to fit; a click turns it into a borderless line typed in
 // place, kept when you leave it or press Enter, put back with Escape (as the name above it).
 export function DescriptionField({ roomId, description }: { roomId: string; description: string }): ReactElement {
-  const { store } = usePorts();
-  const [isEditing, setIsEditing] = useState(false);
-  const [draft, setDraft] = useState(description);
-  const commit = () => {
-    setIsEditing(false);
-    if (draft.trim() === description.trim()) return setDraft(description);
-    void store.setRoomDescription(roomId, draft.trim() || undefined).catch((error: Error) => notify(error.message, { status: "error" }));
-  };
-  return isEditing
+  const { store } = useDevicePorts();
+  const edit = useInlineEdit(description, (draft) => {
+    if (draft.trim() === description.trim()) return;
+    void store.setRoomDescription(roomId, draft.trim() || undefined).catch((error: unknown) => notify(problem(error), { status: "error" }));
+  });
+  return edit.editing
     ? (
       <TextInput
         className="inline-input description-input"
@@ -25,15 +24,13 @@ export function DescriptionField({ roomId, description }: { roomId: string; desc
         placeholder={copy.descriptionPlaceholder}
         size="sm"
         width="100%"
-        value={draft}
-        onChange={setDraft}
+        value={edit.draft}
+        onChange={edit.setDraft}
         hasAutoFocus
-        onEnter={commit}
-        onBlur={commit}
-        onKeyDown={(e) => {
-          if (e.key !== "Escape") return;
-          setDraft(description);
-          setIsEditing(false);
+        onEnter={edit.save}
+        onBlur={edit.save}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") edit.cancel();
         }}
       />
     )
@@ -44,10 +41,7 @@ export function DescriptionField({ roomId, description }: { roomId: string; desc
         variant="ghost"
         size="sm"
         tooltip={copy.descriptionTooltip}
-        onClick={() => {
-          setDraft(description);
-          setIsEditing(true);
-        }}
+        onClick={edit.begin}
       />
     );
 }

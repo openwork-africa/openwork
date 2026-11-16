@@ -4,13 +4,6 @@
    composer's stable class. Its corner radius is not here: chat surfaces read the theme's --radius-chat
    (theme/themes/openwork/brand.ts). The drawer above (the @ menu, the reply bar) is a sibling of the body. */
 @layer components {
-  /* No focus outline or ring anywhere in the app, the composer's input included. */
-  #openwork-root *:focus,
-  #openwork-root *:focus-visible {
-    outline: none;
-    box-shadow: none;
-  }
-
   .astryx-chat-composer > div:not(.astryx-chat-composer-drawer) {
     flex-direction: row;
     align-items: flex-end;
@@ -28,6 +21,20 @@
      place for the caret and takes no typing at all: it is always one line tall. */
   .astryx-chat-composer-input > [contenteditable] {
     min-height: 1lh;
+  }
+
+  @media (max-width: 767px) {
+    .astryx-chat-composer {
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    /* Match the touch-sized action row so the input and its placeholder share its vertical centre. */
+    .astryx-chat-composer > div:not(.astryx-chat-composer-drawer) > :first-child {
+      min-height: max(var(--size-element-md), 44px);
+    }
+    .astryx-chat-composer button {
+      min-width: 44px;
+      min-height: 44px;
+    }
   }
 
   /* While a voice note is recorded or held as a draft nothing stands in the input's place, so the recorder takes the

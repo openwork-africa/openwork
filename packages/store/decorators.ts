@@ -34,7 +34,10 @@ export interface RetryOptions {
   sleep?: (ms: number) => Promise<void>;
 }
 
-export function withRetrying(inner: Transport, { attempts = 3, delayMs = 400, sleep = (ms) => new Promise<void>((done) => setTimeout(done, ms)) }: RetryOptions = {}): Transport {
+export function withRetrying(
+  inner: Transport,
+  { attempts = 3, delayMs = 400, sleep = (ms) => new Promise<void>((done) => setTimeout(done, ms)) }: RetryOptions = {},
+): Transport {
   return wrap(inner, async (_name, call) => {
     for (let attempt = 1;; attempt++) {
       try {

@@ -71,7 +71,9 @@ function declaresRequires(root: string, files: string[], plugin: string, require
 
 function frameImports(file: string, text: string): Violation[] {
   return importsOf(text)
-    .filter((specifier) => /(^|\/)plugins\//.test(specifier) || /^@openwork\/(plugin-|app)/.test(specifier) || /(^|\/)app\//.test(specifier) || /openwork\.africa/.test(specifier))
+    .filter((specifier) =>
+      /(^|\/)plugins\//.test(specifier) || /^@openwork\/(plugin-|app)/.test(specifier) || /(^|\/)app\//.test(specifier) || /openwork\.africa/.test(specifier)
+    )
     .map((specifier) => ({ rule: "frame-imports", file, message: `a package must not import "${specifier}"` }));
 }
 
@@ -83,7 +85,13 @@ function pluginImports(root: string, files: string[], file: string, text: string
     const target = pluginTarget(specifier, file);
     if (!target || target.name === own) continue;
     const allowed = /^(slots|services)(\.ts)?$/.test(target.subpath) && declaresRequires(root, files, own, target.name);
-    if (!allowed) found.push({ rule: "plugin-imports", file, message: `plugin "${own}" must not import "${specifier}" (only slots.ts or services.ts, and only with requires)` });
+    if (!allowed) {
+      found.push({
+        rule: "plugin-imports",
+        file,
+        message: `plugin "${own}" must not import "${specifier}" (only slots.ts or services.ts, and only with requires)`,
+      });
+    }
   }
   return found;
 }

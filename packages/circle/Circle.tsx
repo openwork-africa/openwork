@@ -1,11 +1,4 @@
-import {
-  type ReactElement,
-  useEffect,
-  useId,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { type ReactElement, useEffect, useId, useRef, useState } from "react";
 import type { ContextMenuItemData } from "@astryxdesign/core/ContextMenu";
 import { Icon } from "@astryxdesign/core/Icon";
 import { IconButton } from "@astryxdesign/core/IconButton";
@@ -16,23 +9,25 @@ import {
   circleRowMenu,
   circleSource,
   circleTab,
+  createRoomCommand,
   type RowMenuValue,
   type RowModel,
+  runCommand,
   type SlotContext,
   useCtx,
   useSlot,
 } from "@openwork/kit";
-import { type DeviceStore, makeCell, useLive } from "@openwork/store";
-import { roomPath } from "@openwork/shell";
+import { type DeviceStore, useSyncStatus } from "@openwork/store";
+import { roomPath } from "@openwork/kit";
 import { ErrorBoundary } from "@openwork/ui";
+import { copy as uiCopy } from "@openwork/ui";
+import { IslandBody } from "@openwork/ui";
+import { useDrawerState } from "@openwork/shell";
 import { ChatRow, ChatRowsLoading } from "./ChatRow.tsx";
 import { ChatTabs } from "./ChatTabs.tsx";
 import { isLoading, mergeRows, useSourceRows } from "./circleRows.ts";
 import { ConfirmDelete } from "./ConfirmDelete.tsx";
 import { copy } from "./copy.ts";
-
-const CREATE = "rooms.create";
-const idle = makeCell("current" as const);
 
 interface Asked {
   row: RowModel;
@@ -41,8 +36,7 @@ interface Asked {
 
 const useCatchingUp = (ctx: SlotContext): boolean => {
   const store = ctx.ports.store as DeviceStore | undefined;
-  return (useLive(useMemo(() => store?.syncStatus() ?? idle, [store])) ??
-    "current") === "catchingUp";
+  return useSyncStatus(store) === "catchingUp";
 };
 
 /**
@@ -51,6 +45,7 @@ const useCatchingUp = (ctx: SlotContext): boolean => {
  */
 export function Circle({ roomId }: { roomId?: string }): ReactElement {
   const ctx = useCtx();
+  const drawerState = useDrawerState();
   const activeId = roomId ?? ctx.roomId;
   const sources = useSlot(circleSource, ctx);
   const tabs = useSlot(circleTab, ctx);
@@ -66,7 +61,7 @@ export function Circle({ roomId }: { roomId?: string }): ReactElement {
   const rows = mergeRows(sources, bySource).filter((
     row,
   ) => (tabs.length > 1 && tab ? tab.filter(row) : true));
-  const create = ctx.commands[CREATE] as (() => unknown) | undefined;
+  const create = ctx.commands[createRoomCommand.name] ? () => runCommand(ctx, createRoomCommand) : undefined;
   const isEmptyDevice = !isLoading(sources, bySource) && mergeRows(sources, bySource).length === 0;
 
   useEffect(() => {
@@ -79,12 +74,16 @@ export function Circle({ roomId }: { roomId?: string }): ReactElement {
       label: item.label,
       icon: item.icon,
       variant: item.danger ? "destructive" : undefined,
-      onClick:
-        () => (item.danger ? setAsked({ row, item }) : item.run(row, ctx)),
+      onClick: () => (item.danger ? setAsked({ row, item }) : item.run(row, ctx)),
     }));
 
-  const body = isLoading(sources, bySource) ? <ChatRowsLoading /> : (
-    <>
+  const body = (
+    <IslandBody
+      isLoading={isLoading(sources, bySource)}
+      isEmpty={!rows.length}
+      loading={<ChatRowsLoading />}
+      empty={empties.map((empty) => <HStack key={empty.id}>{empty.render(ctx)}</HStack>)}
+    >
       {rows.map((row) => (
         <ErrorBoundary key={row.id} name={copy.circleName} fallback={null}>
           <ChatRow
@@ -94,21 +93,20 @@ export function Circle({ roomId }: { roomId?: string }): ReactElement {
             imageUrl={row.picture}
             active={row.id === activeId}
             unread={row.id === activeId ? 0 : row.unread}
-            onSelect={() =>
-              ctx.navigate(roomPath(row.id))}
+            onSelect={() => {
+              drawerState?.setDrawer("none");
+              (ctx.replace ?? ctx.navigate)(roomPath(row.id));
+            }}
+            onMarkRead={() => void ctx.commands["rooms.markRead"]?.(row.id as never)}
             menuItems={itemsOf(row)}
           />
         </ErrorBoundary>
       ))}
-      {catchingUp && <ChatRowsLoading count={rows.length ? 1 : 3} />}
-      {!rows.length && !catchingUp && empties.map((empty) => (
-        <HStack key={empty.id}>{empty.render(ctx)}</HStack>
-      ))}
-    </>
+    </IslandBody>
   );
 
   return (
-    <nav className="convo-circle" aria-label={copy.listLabel}>
+    <nav className="convo-circle" aria-label={uiCopy.conversations} aria-busy={catchingUp}>
       <ChatTabs
         tabs={tabs}
         value={tab?.id ?? ""}

@@ -1,29 +1,19 @@
 import { assert, assertEquals } from "@std/assert";
 import { act } from "react";
 import type { MemoryDeviceStore, Room } from "@openwork/store";
-import { click, bootProduct, errorNotices, flush } from "./harness.tsx";
+import { labelled, typeInto } from "@openwork/ui/testing";
+import { bootProduct, click, errorNotices, flush } from "./harness.tsx";
 
-const labelled = (container: HTMLElement, label: string): HTMLElement | null => container.querySelector(`[aria-label="${label}"]`);
-
-async function typeInto(input: HTMLInputElement, value: string): Promise<void> {
-  await act(() => {
-    Object.getOwnPropertyDescriptor(Object.getPrototypeOf(input), "value")!.set!.call(input, value);
-    input.dispatchEvent(new Event("input", { bubbles: true }));
-  });
-  // happy-dom hands React the input event only with the next one.
-  await act(() => void input.dispatchEvent(new KeyboardEvent("keyup", { key: "x", bubbles: true })));
-  await flush();
-}
-
-const roomsOf = (store: MemoryDeviceStore): Promise<Room[]> => new Promise((done) => {
-  const live = store.rooms();
-  const stop = live.subscribe(() => {
+const roomsOf = (store: MemoryDeviceStore): Promise<Room[]> =>
+  new Promise((done) => {
+    const live = store.rooms();
+    const stop = live.subscribe(() => {
+      const value = live.get();
+      if (value?.length) queueMicrotask(stop), done(value);
+    });
     const value = live.get();
     if (value?.length) queueMicrotask(stop), done(value);
   });
-  const value = live.get();
-  if (value?.length) queueMicrotask(stop), done(value);
-});
 
 const addressName = (container: HTMLElement): string => container.querySelector(".address-field")?.textContent ?? "";
 const circleText = (container: HTMLElement): string => labelled(container, "Conversations")?.textContent ?? "";

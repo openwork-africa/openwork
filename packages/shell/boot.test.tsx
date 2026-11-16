@@ -1,29 +1,35 @@
 import { assert, assertEquals } from "@std/assert";
 import { act } from "react";
-import { type Plugin, contribute, definePlugin, getNotices, dismiss, shellPage } from "@openwork/kit";
-import { ManualClock, manualConnectivity, MemoryDeviceStore, MemoryFileStore, MemoryTransport } from "@openwork/store";
-import { type Shell, bootShell } from "./boot.ts";
+import { contribute, definePlugin, getNotices, type Plugin, shellPage } from "@openwork/kit";
+import { clearNotices } from "@openwork/kit/testing";
+import { manualConnectivity, type MemoryDeviceStore } from "@openwork/store";
+import { memoryPorts } from "@openwork/store/testing";
+import { bootShell, type Shell, type ShellOptions } from "./boot.ts";
 import { copy } from "./copy.ts";
-import { shellUi } from "./drawer.ts";
 import { createRouter } from "./router.ts";
 import { ShellApp } from "./ShellApp.tsx";
 import { flush, labelled, memoryEnv, mount } from "./testing.tsx";
 
-function boot(path: string, plugins: Plugin[] = []): { shell: Shell; env: ReturnType<typeof memoryEnv>; store: MemoryDeviceStore } {
-  getNotices().forEach((notice) => dismiss(notice.id));
+function boot(
+  path: string,
+  plugins: Plugin[] = [],
+  regions: ShellOptions["regions"] = {},
+): { shell: Shell; env: ReturnType<typeof memoryEnv>; store: MemoryDeviceStore } {
+  clearNotices();
   const env = memoryEnv(path);
-  const clock = new ManualClock();
-  const store = new MemoryDeviceStore(clock);
+  const ports = memoryPorts();
+  const { store } = ports;
   const shell = bootShell({
     plugins,
-    ports: { store, files: new MemoryFileStore(), transport: new MemoryTransport(), clock },
+    ports,
     connectivity: manualConnectivity(true),
     router: createRouter(env),
+    regions,
   });
   return { shell, env, store };
 }
 
-const view = (shell: Shell) => <ShellApp product={shell.product} router={shell.router} regions={shell.regions} />;
+const view = (shell: Shell) => <ShellApp product={shell.product} router={shell.router} regions={shell.regions} drawer={shell.drawer} />;
 
 Deno.test("boot with zero plugins shows the frame and no error notices", async () => {
   const { shell } = boot("/");
@@ -48,19 +54,20 @@ Deno.test("a room path opens the room, and the profile path opens the panel draw
   await act(() => (container.querySelector(".convo-scrim") as HTMLElement).click());
   assertEquals(env.history.at(-1), `/c/${room.id}`);
   assert(!container.querySelector(".convo-shell")?.classList.contains("is-panel-open"));
-  assertEquals(shellUi.drawer(), "none");
+  assertEquals(shell.drawer.drawer(), "none");
   await unmount();
   shell.stop();
 });
 
-Deno.test("the home path opens the list drawer on a phone, unless there are no rooms to list", async () => {
-  const { shell, store } = boot("/");
+Deno.test("the home path opens the latest room with drawers closed, or the empty state when there are no rooms", async () => {
+  const { shell, store, env } = boot("/");
   const { container, unmount } = await mount(view(shell));
   await flush();
   assert(!container.querySelector(".convo-shell")?.classList.contains("is-list-open"));
-  await act(() => store.createRoom("One").then(() => undefined));
+  const room = await act(() => store.createRoom("One"));
   await flush();
-  assert(container.querySelector(".convo-shell")?.classList.contains("is-list-open"));
+  assertEquals(env.read(), `/c/${room.id}`);
+  assert(!container.querySelector(".convo-shell")?.classList.contains("is-list-open"));
   await unmount();
   shell.stop();
 });

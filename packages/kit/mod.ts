@@ -5,6 +5,7 @@ export type { Cell } from "./cell.ts";
 export { compose } from "./compose.tsx";
 export type { ComposeOptions, Product } from "./compose.tsx";
 export type { Commands, Ports, SetupContext, SlotContext } from "./context.ts";
+export { homePath, profilePath, roomPath } from "./paths.ts";
 export { contribute, provide, service, slot } from "./keys.ts";
 export type { Contribution, Placed, Provision, ServiceKey, SlotKey } from "./keys.ts";
 export { createNotices, defaultNotices, dismiss, getNotices, notify, useNotices } from "./notices.ts";

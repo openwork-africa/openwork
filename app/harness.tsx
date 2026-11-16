@@ -2,15 +2,19 @@ import "./dom.ts";
 import { assert } from "@std/assert";
 import { act } from "react";
 import { createRoot } from "react-dom/client";
-import { dismiss, getNotices, type Plugin } from "@openwork/kit";
-import { type Shell, bootShell, createRouter, ShellApp } from "@openwork/shell";
-import { ManualClock, manualConnectivity, MemoryDeviceStore, MemoryFileStore, MemoryTransport } from "@openwork/store";
+import { getNotices, type Plugin } from "@openwork/kit";
+import { clearNotices } from "@openwork/kit/testing";
+import { bootShell, createRouter, type Shell, ShellApp } from "@openwork/shell";
+import { memoryEnv } from "@openwork/shell/testing";
+import { ManualClock, manualConnectivity, MemoryDeviceStore } from "@openwork/store";
+import { memoryPorts } from "@openwork/store/testing";
 import { openPlugins, regions } from "./product.ts";
 
 /** Waits for lazy regions and the live queries to settle. */
-export const flush = (): Promise<void> => act(async () => {
-  await new Promise((done) => setTimeout(done, 150));
-});
+export const flush = (): Promise<void> =>
+  act(async () => {
+    await new Promise((done) => setTimeout(done, 150));
+  });
 
 export interface Booted {
   container: HTMLElement;
@@ -24,27 +28,22 @@ export interface Booted {
 
 /** The real product (the given plugins and the product's regions) on in-memory ports, drawn at `start`. */
 export async function bootProduct(plugins: readonly Plugin[] = openPlugins, start = "/"): Promise<Booted> {
-  getNotices().forEach((notice) => dismiss(notice.id));
-  const clock = new ManualClock();
-  const store = new MemoryDeviceStore(clock);
-  const history = [start];
-  const listeners = new Set<() => void>();
-  const router = createRouter({
-    read: () => history.at(-1)!,
-    push: (path) => void history.push(path),
-    replace: (path) => void history.splice(-1, 1, path),
-    listen: (listener) => (listeners.add(listener), () => void listeners.delete(listener)),
-  });
+  clearNotices();
+  const ports = memoryPorts();
+  const { clock, store } = ports;
+  const env = memoryEnv(start);
+  const { history } = env;
+  const router = createRouter(env);
   const shell = bootShell({
     plugins,
     regions,
     router,
-    ports: { store, files: new MemoryFileStore(), transport: new MemoryTransport(), clock },
+    ports,
     connectivity: manualConnectivity(true),
   });
   const container = document.body.appendChild(document.createElement("section"));
   const root = createRoot(container, { onCaughtError: () => {}, onUncaughtError: () => {} });
-  await act(() => root.render(<ShellApp product={shell.product} router={shell.router} regions={shell.regions} />));
+  await act(() => root.render(<ShellApp product={shell.product} router={shell.router} regions={shell.regions} drawer={shell.drawer} />));
   await flush();
   return {
     container,

@@ -20,7 +20,7 @@ interface IslandProps {
 /** One region of the frame as its own island: if it fails, it shows a note with Try again and the rest carries on. */
 export function Island({ name, region: Content, roomId, resetKey, loading = null }: IslandProps): ReactElement {
   return (
-    <ErrorBoundary name={name} resetKey={resetKey} fallback={(error, retry) => <SectionError name={name} error={error} retry={retry} />}>
+    <ErrorBoundary name={name} resetKey={resetKey} fallback={(_error, retry) => <SectionError name={name} retry={retry} />}>
       <Suspense fallback={loading}>
         <Content roomId={roomId} />
       </Suspense>

@@ -1,11 +1,8 @@
 import { type Base, isBase } from "@openwork/ui";
 import type { FileStore } from "@openwork/store";
+import { fileIdOf, objectUrlOf } from "@openwork/store";
 
-const PREFIX = "file:";
-
-export const fileIdOf = (ref: string | undefined): string | undefined => ref?.startsWith(PREFIX) && ref.length > PREFIX.length ? ref.slice(PREFIX.length) : undefined;
-
-export const refOf = (fileId: string): string => `${PREFIX}${fileId}`;
+export { fileIdOf, refOf } from "@openwork/store";
 
 export const backgroundOf = (background: string | undefined, theme: Base): Base => (isBase(background) ? background : theme);
 
@@ -26,6 +23,6 @@ export async function resolveImage(files: FileStore, ref: string | undefined): P
   if (!id) return undefined;
   const bytes = await files.get(id);
   if (!bytes) return { url: `/api/files/${encodeURIComponent(id)}`, release: () => {} };
-  const url = URL.createObjectURL(bytes);
+  const url = objectUrlOf(bytes);
   return { url, release: () => URL.revokeObjectURL(url) };
 }

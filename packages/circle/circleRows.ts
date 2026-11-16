@@ -14,11 +14,7 @@ export function useSourceRows(
 ): RowsBySource {
   const [rows, setRows] = useState<RowsBySource>({});
   useEffect(() => {
-    const stops = sources.map((source) =>
-      source.rows(ctx).subscribe((next) =>
-        setRows((known) => ({ ...known, [source.id]: next }))
-      )
-    );
+    const stops = sources.map((source) => source.rows(ctx).subscribe((next) => setRows((known) => ({ ...known, [source.id]: next }))));
     return () => stops.forEach((stop) => stop());
   }, [sources, ctx]);
   return rows;

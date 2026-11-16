@@ -1,39 +1,39 @@
-import type {IconRegistry} from '@astryxdesign/core/Icon';
+import type { IconRegistry } from "@astryxdesign/core/Icon";
 
 import {
-  X,
+  AlertTriangle,
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  Calendar,
+  Check,
+  CheckCheck,
+  CheckCircle,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
-  Check,
-  CheckCircle,
-  XCircle,
-  AlertTriangle,
-  Info,
-  Calendar,
   Clock,
-  ExternalLink,
-  Menu,
-  MoreHorizontal,
-  Search,
-  ArrowUp,
-  ArrowDown,
-  ArrowUpDown,
-  Filter,
-  EyeOff,
   Columns,
   Copy,
-  CheckCheck,
-  Wrench,
-  Square,
+  ExternalLink,
+  EyeOff,
+  Filter,
+  Info,
+  Menu,
   Mic,
-} from 'lucide-react';
+  MoreHorizontal,
+  Search,
+  Square,
+  Wrench,
+  X,
+  XCircle,
+} from "lucide-react";
 
 const iconProps = {
-  size: '1em',
-  'aria-hidden': true as const,
+  size: "1em",
+  "aria-hidden": true as const,
 };
 
 export const y2kIconRegistry: IconRegistry = {

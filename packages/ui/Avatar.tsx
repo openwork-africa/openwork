@@ -13,7 +13,6 @@ export type AvatarSize = "xsm" | "sm" | "md" | "lg" | "xl" | 96;
  */
 export function Avatar(
   { name, imageUrl, size = "lg", shape = "circle", selected = false, label, onClick, art, status, ring = false }: {
-    id?: string;
     name: string;
     imageUrl?: string;
     size?: AvatarSize;

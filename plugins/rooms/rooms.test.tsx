@@ -1,31 +1,23 @@
 import { assert, assertEquals } from "@std/assert";
 import { act, type ReactElement } from "react";
 import { circleRowMenu, compose, dismiss, getNotices, notify, type SlotContext } from "@openwork/kit";
+import { clearNotices } from "@openwork/kit/testing";
+import { until } from "@openwork/ui/testing";
+import { memoryPorts, until as untilLive } from "@openwork/store/testing";
 import { Circle } from "@openwork/circle";
-import {
-  ManualClock,
-  MemoryDeviceStore,
-  MemoryFileStore,
-  MemoryTransport,
-} from "@openwork/store";
 import { flush, host, mount } from "./testing.tsx";
 import { copy } from "./copy.ts";
 import { rooms } from "./plugin.tsx";
 import type { ReadMarks } from "./readMarks.ts";
+import { createDrawer, DrawerContext } from "@openwork/shell";
 
 function setup() {
-  const clock = new ManualClock();
-  const store = new MemoryDeviceStore(clock);
+  const ports = memoryPorts();
+  const { store, clock } = ports;
   const marks = new Map<string, number>();
   const readMarks: ReadMarks = {
     get: (id) => marks.get(id),
     set: (id, at) => void marks.set(id, at),
-  };
-  const ports = {
-    store,
-    files: new MemoryFileStore(),
-    transport: new MemoryTransport(),
-    clock,
   };
   const opened: string[] = [];
   const plugin = rooms(readMarks);
@@ -41,11 +33,9 @@ const titles = (
   container: HTMLElement,
 ): string[] => [
   ...new Set(
-    [...container.querySelectorAll("[aria-label]:not(time)")].map((element) =>
-      element.getAttribute("aria-label") ?? ""
-    ).filter((label) =>
+    [...container.querySelectorAll("[aria-label]:not(time)")].map((element) => element.getAttribute("aria-label") ?? "").filter((label) =>
       !label.endsWith("actions") && label !== "Conversations" &&
-      label !== "New" && !label.endsWith("unread")
+      label !== "New" && !label.endsWith("unread") && !label.startsWith("Mark ")
     ),
   ),
 ];
@@ -60,14 +50,29 @@ Deno.test("New creates a room that appears first and opens it", async () => {
   clock.tick(10);
   await flush();
   assert(container.querySelector('button[aria-label="New"]'), "New comes back with the first room");
-  await act(() =>
-    (container.querySelector('button[aria-label="New"]') as HTMLElement).click()
-  );
+  await act(() => (container.querySelector('button[aria-label="New"]') as HTMLElement).click());
   await flush();
   assertEquals(titles(container).slice(0, 2), [copy.newRoomName, "Older"]);
   assertEquals(opened.length, 1);
   assert(opened[0].startsWith("/c/"));
   await unmount();
+});
+
+Deno.test("selecting the already open room closes the list drawer", async () => {
+  const { store, view } = setup();
+  const room = await store.createRoom("One");
+  const drawer = createDrawer();
+  const mounted = await mount(<DrawerContext.Provider value={drawer}>{view(room.id)}</DrawerContext.Provider>);
+  await flush();
+  drawer.setDrawer("list");
+  await flush();
+  assert(mounted.container.querySelector(".convo-circle"));
+  const row = mounted.container.querySelector('[aria-label="One"]');
+  assert(row, "room row is present");
+  await act(() => (row as HTMLElement).click());
+  await flush();
+  assertEquals(drawer.drawer(), "none");
+  await mounted.unmount();
 });
 
 Deno.test("sending sets the preview and moves the room to the top", async () => {
@@ -149,26 +154,23 @@ Deno.test("deleting a room shows Removed with Undo, which brings it back; a fail
   const product = compose([plugin], ports);
   const ctx = { roomId: undefined, navigate: () => {}, notify, ports, commands: product.registry.commands() } as unknown as SlotContext;
   const remove = product.registry.commands()["rooms.delete"];
-  const wait = () => new Promise((done) => setTimeout(done, 20));
   await remove(ctx, room.id as never);
+  await untilLive(store.room(room.id), (value) => value === null);
   const removed = getNotices().at(-1)!;
   assertEquals([removed.text, removed.action?.label, removed.status], [copy.removed, copy.undo, "info"]);
   removed.action!.run();
-  await wait();
   const live = store.room(room.id);
-  const stop = live.subscribe(() => {});
-  await wait();
+  await untilLive(live, (value) => value?.name === "Gone");
   assertEquals(live.get()?.name, "Gone");
-  stop();
   assert(!getNotices().some((each) => each.id === removed.id));
 
   await store.restoreRoom(room.id);
-  getNotices().forEach((each) => dismiss(each.id));
+  clearNotices();
   const failing = { ...ports, store: Object.assign(Object.create(store), { restoreRoom: () => Promise.reject(new Error("x")) }) };
   const failCtx = { ...ctx, ports: failing } as SlotContext;
   await remove(failCtx, room.id as never);
   getNotices().at(-1)!.action!.run();
-  await wait();
+  await until(() => getNotices().at(-1)?.text === copy.notBroughtBack);
   const failed = getNotices().at(-1)!;
   assertEquals([failed.text, failed.action?.label, failed.status], [copy.notBroughtBack, copy.tryAgain, "error"]);
   dismiss(failed.id);

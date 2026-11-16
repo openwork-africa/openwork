@@ -3,7 +3,7 @@ import type { Database, Tx } from "./database.ts";
 import { type Live, makeCell } from "./live.ts";
 import type { Clock, DeviceStore, FileDraft, RoomDetails, SyncJournal } from "./ports.ts";
 import { systemClock } from "./ports.ts";
-import { editedRoom, liveRooms, newFile, newMessage, newRoom, outboxKey, trailOf } from "./records.ts";
+import { changeOf, editedRoom, liveRooms, newFile, newMessage, newRoom, outboxKey, trailOf } from "./records.ts";
 import type { Change, FileItem, Message, Room, SyncStatus, TrailMessage } from "./types.ts";
 
 const CURSOR = "cursor";
@@ -31,22 +31,21 @@ export class TableDeviceStore implements DeviceStore {
       return room && !room.deleted ? room : null;
     });
 
-  trail = (roomId: string): Live<TrailMessage[]> =>
-    this.#database.watch(async (tx) => trailOf(await tx.messagesOf(roomId), await tx.outbox()));
+  trail = (roomId: string): Live<TrailMessage[]> => this.#database.watch(async (tx) => trailOf(await tx.messagesOf(roomId), await tx.outbox()));
 
   syncStatus = (): Live<SyncStatus> => this.#status;
 
   createRoom = (name: string, details: RoomDetails = {}): Promise<Room> =>
     this.#write(async (tx, now) => {
       const room = newRoom(name, details, now);
-      await this.#save(tx, { kind: "room", id: room.id, updatedAt: room.updatedAt, data: room }, now);
+      await this.#save(tx, changeOf("room", room), now);
       return room;
     });
 
   renameRoom = (id: string, name: string): Promise<void> => this.#edit(id, { name });
   setRoomDescription = (id: string, description: string | undefined): Promise<void> => this.#edit(id, { description });
   setRoomPicture = (id: string, picture: string | undefined): Promise<void> => this.#edit(id, { picture });
-  setRoomBackground = (id: string, background: string | undefined): Promise<void> => this.#edit(id, { background });
+  setRoomBackground = (id: string, background: string | undefined, accent?: string): Promise<void> => this.#edit(id, { background, accent });
   deleteRoom = (id: string): Promise<void> => this.#edit(id, { deleted: true });
 
   restoreRoom = (id: string): Promise<void> =>
@@ -54,7 +53,7 @@ export class TableDeviceStore implements DeviceStore {
       const room = await tx.room(id);
       if (!room) throw new Error(copy.noRoom(id));
       const restored = editedRoom(room, { deleted: undefined }, now);
-      await this.#save(tx, { kind: "room", id, updatedAt: restored.updatedAt, data: restored }, now);
+      await this.#save(tx, changeOf("room", restored), now);
     });
 
   send = (roomId: string, content: string): Promise<Message> =>
@@ -62,8 +61,8 @@ export class TableDeviceStore implements DeviceStore {
       const room = await this.#existing(tx, roomId);
       const message = newMessage(roomId, content, now);
       const touched = editedRoom(room, { activityAt: message.createdAt }, now);
-      await this.#save(tx, { kind: "room", id: roomId, updatedAt: touched.updatedAt, data: touched }, now);
-      await this.#save(tx, { kind: "message", id: message.id, updatedAt: message.updatedAt, data: message }, now);
+      await this.#save(tx, changeOf("room", touched), now);
+      await this.#save(tx, changeOf("message", message), now);
       return message;
     });
 
@@ -76,7 +75,7 @@ export class TableDeviceStore implements DeviceStore {
   putFile = (draft: FileDraft): Promise<FileItem> =>
     this.#write(async (tx, now) => {
       const file = newFile(draft, now);
-      await this.#save(tx, { kind: "file", id: file.id, updatedAt: file.updatedAt, data: file }, now);
+      await this.#save(tx, changeOf("file", file), now);
       return file;
     });
 
@@ -91,7 +90,7 @@ export class TableDeviceStore implements DeviceStore {
   #edit(id: string, patch: Partial<Room>): Promise<void> {
     return this.#write(async (tx, now) => {
       const room = editedRoom(await this.#existing(tx, id), patch, now);
-      await this.#save(tx, { kind: "room", id, updatedAt: room.updatedAt, data: room }, now);
+      await this.#save(tx, changeOf("room", room), now);
     });
   }
 
@@ -113,8 +112,16 @@ export class TableDeviceStore implements DeviceStore {
       pending: () => database.transact(async (tx) => (await tx.outbox()).filter((row) => row.failed === undefined).sort((a, b) => a.queuedAt - b.queuedAt)),
       changeOf: (row) =>
         database.transact(async (tx): Promise<Change | undefined> => {
-          const data = await tx.record(row.kind, row.id);
-          return data && ({ kind: row.kind, id: row.id, updatedAt: data.updatedAt, data } as Change);
+          if (row.kind === "room") {
+            const data = await tx.room(row.id);
+            return data && changeOf("room", data);
+          }
+          if (row.kind === "message") {
+            const data = await tx.message(row.id);
+            return data && changeOf("message", data);
+          }
+          const data = await tx.file(row.id);
+          return data && changeOf("file", data);
         }),
       acknowledge: (row) =>
         database.transact(async (tx) => {

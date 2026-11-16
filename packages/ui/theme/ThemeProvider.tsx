@@ -1,7 +1,47 @@
 import { createContext, type ReactNode, useContext, useEffect, useSyncExternalStore } from "react";
-import { resolveThemeToken, Theme } from "@astryxdesign/core/theme";
+import { defineTheme, resolveThemeToken, Theme } from "@astryxdesign/core/theme";
 import { applyBase, type Base, DEFAULT_BASE, getBase, subscribeBase } from "./bases.ts";
 import { type ChatDensity, DEFAULT_CHAT_DENSITY, THEME_BY_ID } from "./registry.ts";
+
+const rgb = (hex: string): [number, number, number] =>
+  [1, 3, 5].map((at) => parseInt(hex.slice(at, at + 2), 16) / 255).map((value) => value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4) as [
+    number,
+    number,
+    number,
+  ];
+const luminance = (hex: string): number => {
+  const [r, g, b] = rgb(hex);
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+};
+const contrast = (a: string, b: string): number => {
+  const [high, low] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (high + 0.05) / (low + 0.05);
+};
+const mix = (a: string, b: string, amount: number): string =>
+  `#${
+    [1, 3, 5].map((at) =>
+      Math.round(parseInt(a.slice(at, at + 2), 16) * (1 - amount) + parseInt(b.slice(at, at + 2), 16) * amount).toString(16).padStart(2, "0")
+    ).join("")
+  }`;
+
+export function readableAccent(base: Base, accent: string): { accent: string; onAccent: string } {
+  if (!/^#[0-9a-f]{6}$/i.test(accent)) return { accent, onAccent: "#000000" };
+  const { theme, scheme } = THEME_BY_ID[base];
+  const mode = scheme === "system" ? "light" : scheme;
+  const surface = resolveThemeToken(theme, "--color-background-body", { mode });
+  let adjusted = accent;
+  if (contrast(adjusted, surface) < 4.5) {
+    const target = contrast("#000000", surface) >= contrast("#ffffff", surface) ? "#000000" : "#ffffff";
+    for (let step = 1; step <= 100; step++) {
+      const candidate = mix(accent, target, step / 100);
+      if (contrast(candidate, surface) >= 4.5) {
+        adjusted = candidate;
+        break;
+      }
+    }
+  }
+  return { accent: adjusted, onAccent: contrast(adjusted, "#000000") >= contrast(adjusted, "#ffffff") ? "#000000" : "#ffffff" };
+}
 
 function useDeviceBase(): Base {
   return useSyncExternalStore(subscribeBase, getBase, () => DEFAULT_BASE);
@@ -34,15 +74,19 @@ export function useChatDensity(): ChatDensity {
  * here (and a theme's own file) is the only edit a visual change ever needs. `base` overrides the device's
  * base while it is given: the shell passes the open conversation's own.
  */
-export function ThemeProvider({ children, base }: { children: ReactNode; base?: Base }) {
+export function ThemeProvider({ children, base, accent }: { children: ReactNode; base?: Base; accent?: string }) {
   const device = useDeviceBase();
   const active = themeFor(base ?? device);
+  const readable = accent ? readableAccent(active.base, accent) : undefined;
+  const theme = readable && /^#[0-9a-f]{6}$/i.test(readable.accent)
+    ? defineTheme({ name: "room-accent", extends: active.theme, tokens: { "--color-accent": readable.accent, "--color-on-accent": readable.onAccent } })
+    : active.theme;
   useEffect(() => {
     applyBase(active.base);
   }, [active.base]);
   return (
     <ShownBase.Provider value={active.base}>
-      <Theme theme={active.theme} mode={active.scheme}>{children}</Theme>
+      <Theme theme={theme} mode={active.scheme}>{children}</Theme>
     </ShownBase.Provider>
   );
 }

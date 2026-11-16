@@ -53,7 +53,11 @@ function txOf(db: OpenworkDb): Tx {
     messagesOf: (roomId) => db.messages.where("roomId").equals(roomId).toArray(),
     file: (id) => db.files.get(id),
     record: (kind, id) => tables[kind].get(id),
-    put: (change) => tables[change.kind].put(change.data as never).then(() => undefined),
+    put: (change) => {
+      if (change.kind === "room") return db.rooms.put(change.data).then(() => undefined);
+      if (change.kind === "message") return db.messages.put(change.data).then(() => undefined);
+      return db.files.put(change.data).then(() => undefined);
+    },
     outbox: () => db.outbox.toArray(),
     outboxRow: (key) => db.outbox.get(key),
     putOutbox: (row) => db.outbox.put(row).then(() => undefined),
@@ -78,7 +82,10 @@ export class DexieDatabase implements Database {
 
   watch<T>(read: (tx: Tx) => Promise<T>): Live<T> {
     return makeLive<T>((emit) => {
-      const subscription = liveQuery(() => read(this.#tx)).subscribe({ next: emit, error: () => {} });
+      const subscription = liveQuery(() => read(this.#tx)).subscribe({
+        next: emit,
+        error: (error) => console.error("Openwork database live query failed", error),
+      });
       return () => subscription.unsubscribe();
     });
   }

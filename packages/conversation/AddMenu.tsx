@@ -10,7 +10,13 @@ export function AddMenu({ items, onPick }: { items: readonly (AddMenuValue & Pla
     <VStack width="100%">
       <List aria-label={copy.addToConversation} density="compact">
         {items.map((item) => (
-          <ListItem key={item.id} label={item.label} description={item.description} startContent={item.icon} onClick={() => onPick(item)} />
+          <ListItem
+            key={item.id}
+            label={item.label}
+            description={item.description}
+            startContent={item.icon}
+            onClick={() => onPick(item)}
+          />
         ))}
       </List>
     </VStack>

@@ -11,4 +11,6 @@ export const copy = {
   noRoomTitle: "Pick a conversation to start.",
   updateReady: "New version ready.",
   update: "Update",
+  updating: "Updating…",
+  missingRoot: "The app could not start because its mount point is missing.",
 } as const;

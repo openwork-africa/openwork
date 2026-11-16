@@ -52,12 +52,30 @@
   }
 
   /* The sprite's frame matches Astryx's named avatar sizes and the panel's 96px picture, in rem. */
-  .avatar-art[data-size="xsm"] { width: 1.25rem; height: 1.25rem; }
-  .avatar-art[data-size="sm"] { width: 1.5rem; height: 1.5rem; }
-  .avatar-art[data-size="md"] { width: 2.25rem; height: 2.25rem; }
-  .avatar-art[data-size="lg"] { width: 3rem; height: 3rem; }
-  .avatar-art[data-size="xl"] { width: 8rem; height: 8rem; }
-  .avatar-art[data-size="96"] { width: 6rem; height: 6rem; }
+  .avatar-art[data-size="xsm"] {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+  .avatar-art[data-size="sm"] {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+  .avatar-art[data-size="md"] {
+    width: 2.25rem;
+    height: 2.25rem;
+  }
+  .avatar-art[data-size="lg"] {
+    width: 3rem;
+    height: 3rem;
+  }
+  .avatar-art[data-size="xl"] {
+    width: 8rem;
+    height: 8rem;
+  }
+  .avatar-art[data-size="96"] {
+    width: 6rem;
+    height: 6rem;
+  }
 
   /* A drawn avatar (the AI's sprite) is a bare button: no box of its own, so what shows is the circle. */
   .avatar-frame > button {

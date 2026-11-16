@@ -22,25 +22,24 @@ const uiAssetsPlugin = (): Plugin => ({
 });
 
 const SERVER = "http://127.0.0.1:47410";
+const workspace = JSON.parse(readFileSync(here("../deno.json"), "utf8")) as { workspace: string[] };
+const aliases = workspace.workspace.flatMap((member) => {
+  const configPath = here(`../${member}/deno.json`);
+  if (!existsSync(configPath)) return [];
+  const config = JSON.parse(readFileSync(configPath, "utf8")) as { name?: string; exports?: string | Record<string, string> };
+  if (!config.name || !config.exports) return [];
+  const exports = typeof config.exports === "string" ? { ".": config.exports } : config.exports;
+  return Object.entries(exports).map(([key, target]) => ({
+    find: key === "." ? config.name! : `${config.name}/${key.replace(/^\.\//, "")}`,
+    replacement: here(`../${member}/${target}`),
+  }));
+}).sort((a, b) => b.find.length - a.find.length);
 
 export default defineConfig({
   root: here("."),
   plugins: [react(), uiAssetsPlugin()],
   resolve: {
-    alias: [
-      { find: /^@openwork\/kit$/, replacement: here("../packages/kit/mod.ts") },
-      { find: /^@openwork\/ui$/, replacement: here("../packages/ui/mod.ts") },
-      { find: /^@openwork\/ui\/css$/, replacement: here("../packages/ui/css/index.css") },
-      { find: /^@openwork\/store$/, replacement: here("../packages/store/mod.ts") },
-      { find: /^@openwork\/conversation$/, replacement: here("../packages/conversation/mod.ts") },
-      { find: /^@openwork\/plugin-text$/, replacement: here("../plugins/text/mod.ts") },
-      { find: /^@openwork\/circle$/, replacement: here("../packages/circle/mod.ts") },
-      { find: /^@openwork\/plugin-rooms$/, replacement: here("../plugins/rooms/mod.ts") },
-      { find: /^@openwork\/panel$/, replacement: here("../packages/panel/mod.ts") },
-      { find: /^@openwork\/plugin-profile$/, replacement: here("../plugins/profile/mod.ts") },
-      { find: /^@openwork\/shell\/app$/, replacement: here("../packages/shell/createApp.tsx") },
-      { find: /^@openwork\/shell$/, replacement: here("../packages/shell/mod.ts") },
-    ],
+    alias: aliases,
   },
   server: {
     host: "127.0.0.1",

@@ -64,5 +64,9 @@ Deno.test("HttpTransport speaks the server's paths and turns a refusal into the 
   assertEquals(await http.getFile("gone"), undefined);
   await assertRejects(() => http.putFile("x", new Blob(["a"])), NetworkError);
   assertEquals(await http.health(), false);
-  assertEquals(seen.slice(0, 3), ["POST http://127.0.0.1:47410/api/push", "GET http://127.0.0.1:47410/api/pull?since=7", "GET http://127.0.0.1:47410/api/files/gone"]);
+  assertEquals(seen.slice(0, 3), [
+    "POST http://127.0.0.1:47410/api/push",
+    "GET http://127.0.0.1:47410/api/pull?since=7",
+    "GET http://127.0.0.1:47410/api/files/gone",
+  ]);
 });

@@ -8,11 +8,9 @@ export function swipeOf(dx: number, dy: number): "left" | "right" | null {
   return dx > 0 ? "right" : "left";
 }
 
-const isTextField = (target: EventTarget | null): boolean =>
-  target instanceof Element && !!target.closest("textarea, input, [contenteditable='true']");
+const isTextField = (target: EventTarget | null): boolean => target instanceof Element && !!target.closest("textarea, input, [contenteditable='true']");
 
-const isInLayer = (target: EventTarget | null): boolean =>
-  target instanceof Element && !!target.closest("dialog, [role='dialog'], [popover]");
+const isInLayer = (target: EventTarget | null): boolean => target instanceof Element && !!target.closest("dialog, [role='dialog'], [popover]");
 
 /** How far a row can still scroll each way: a swipe that would scroll it is the row's, not the page's. */
 interface SideRoom {
@@ -20,8 +18,7 @@ interface SideRoom {
   ahead: number;
 }
 
-const scrollsInstead = (room: SideRoom | null, direction: "left" | "right"): boolean =>
-  !!room && (direction === "right" ? room.back > 0 : room.ahead > 1);
+const scrollsInstead = (room: SideRoom | null, direction: "left" | "right"): boolean => !!room && (direction === "right" ? room.back > 0 : room.ahead > 1);
 
 function sideRoomAt(target: EventTarget | null): SideRoom | null {
   for (let element = target instanceof Element ? target : null; element; element = element.parentElement) {

@@ -3,53 +3,67 @@
 @import "@openwork/ui/css";
 
 * { box-sizing: border-box; }
-html, body, #showcase { margin: 0; min-height: 100%; background: #f5f5f7; }
-body { color: #1d1d1f; font-family: var(--font-family-body); }
-.showcase { min-height: 100vh; padding: 64px 32px 72px; }
-.showcase-head { max-width: 1320px; margin: 0 auto 34px; text-align: center; }
-.showcase-eyebrow { margin: 0 0 12px; color: #b64400; font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
-.showcase-head h1 { margin: 0; font-size: clamp(32px, 4vw, 52px); font-weight: 650; letter-spacing: -.045em; line-height: 1.04; }
-.showcase-head > p:last-child { max-width: 640px; margin: 14px auto 0; color: #6e6e73; font-size: 17px; line-height: 1.5; }
-.showcase-components { max-width: 1400px; margin: auto; display: grid; grid-template-columns: minmax(300px, .9fr) minmax(480px, 1.6fr) minmax(350px, 1.1fr); grid-template-rows: repeat(3, minmax(205px, auto)); grid-template-areas: "circle address cover" "circle trail hero" "feedback composer ."; gap: 18px; }
-.showcase-item { min-width: 0; overflow: hidden; padding: 26px; border-radius: 28px; background: #fff; box-shadow: 0 4px 20px #1d1d1f08; }
-.showcase-copy h2 { margin: 0; color: #1d1d1f; font-size: clamp(19px, 1.8vw, 25px); font-weight: 650; letter-spacing: -.035em; line-height: 1.13; }
-.showcase-copy p { margin: 8px 0 0; color: #6e6e73; font-size: 14px; line-height: 1.45; }
-.showcase-art { position: relative; min-width: 0; margin-top: 20px; overflow: hidden; border-radius: 20px; background: #f5f5f7; }
+html, body, #showcase { margin: 0; min-height: 100%; background: #f2eee4; }
+body { color: #24362d; font-family: var(--font-family-body); }
+.showcase { min-height: 100vh; padding: 18px 24px; display: flex; flex-direction: column; justify-content: center; }
+.showcase-head { max-width: 1120px; margin: 0 auto 30px; text-align: center; }
+.showcase-eyebrow { margin: 0 0 10px; color: #b65b3d; font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.showcase-head h1 { margin: 0; color: #21392e; font-size: clamp(32px, 4vw, 50px); font-weight: 650; letter-spacing: -.045em; line-height: 1.04; }
+.showcase-head > p:last-child { margin: 12px auto 0; color: #6d756d; font-size: 16px; line-height: 1.45; }
+.showcase-components { width: 100%; max-width: 1320px; margin: 0 auto; display: grid; grid-template-columns: minmax(260px, .9fr) minmax(420px, 1.6fr) minmax(280px, 1fr); grid-template-areas: "circle conversation brand" "circle sovereignty hero" "cover feedback composer"; grid-template-rows: repeat(3, minmax(0, auto)); gap: 10px; }
+.showcase-item { min-width: 0; overflow: hidden; padding: 14px; border: 0; border-radius: 24px; background: #fffdf8; box-shadow: 0 8px 22px #382d1c0b; }
+.showcase-copy h2 { margin: 0; color: #24362d; font-size: clamp(19px, 1.8vw, 24px); font-weight: 650; letter-spacing: -.035em; line-height: 1.12; }
+.showcase-copy p { margin: 7px 0 0; color: #6d756d; font-size: 14px; line-height: 1.4; }
+.showcase-art { position: relative; min-width: 0; margin-top: 10px; overflow: hidden; border-radius: 18px; background: #f2eee4; }
 .showcase-standalone { min-width: 0; --color-background-body: transparent; }
 .showcase-circle { grid-area: circle; display: flex; flex-direction: column; }
-.circle-art { flex: 1; min-height: 230px; padding: 10px; }
+.circle-art { flex: 1; min-height: 110px; padding: 8px; }
 .circle-art .showcase-standalone, .circle-art .convo-circle { width: 100%; height: 100%; }
+.showcase-feedback-row, .showcase-brand-row { width: 100%; max-width: 1320px; margin: 10px auto 0; display: flex; justify-content: center; }
 .showcase-feedback { grid-area: feedback; }
-.feedback-art { min-height: 90px; padding: 6px; }
-.feedback-art .notice-stack { position: relative; inset: auto; width: 100%; max-width: none; }
+.feedback-art { min-height: 0; margin-top: 14px; padding: 0; overflow: visible; background: transparent; }
+.feedback-art .notice-stack { position: relative; inset: auto; display: flex; flex-direction: column-reverse; width: 100%; max-width: 100%; gap: 10px; }
 .feedback-art .notice-stack > * { width: 100%; }
-.showcase-address { grid-area: address; min-height: 205px; }
-.address-art { padding: 6px; }
-.address-art .showcase-standalone { width: 100%; }
-.showcase-trail { grid-area: trail; min-height: 205px; }
-.trail-art { height: 176px; padding: 8px; }
-.trail-art .showcase-standalone { height: 100%; }
-.showcase-composer { grid-area: composer; min-height: 205px; }
-.composer-art { padding: 8px; }
+.showcase-conversation { grid-area: conversation; }
+.conversation-art { min-height: 190px; padding: 8px; }
+.conversation-stack { display: flex; height: 100%; flex-direction: column; gap: 12px; }
+.conversation-stack > :last-child { min-height: 100px; }
+.showcase-composer { grid-area: composer; display: flex; flex-direction: column; justify-content: center; background: #dfe8d7 url("/message-forest.png") center / cover no-repeat; }
+.showcase-composer .showcase-copy { max-width: 220px; align-self: center; padding: 0; text-align: center; }
+.composer-art { margin-top: 12px; padding: 12px; border-radius: 20px; background: #fffdf8; }
 .composer-art .showcase-standalone { width: 100%; }
-.showcase-cover { grid-area: cover; min-height: 205px; }
-.cover-art { height: 150px; margin-top: 18px; }
-.cover-art .profile-cover { width: 100%; height: 150px !important; min-height: 150px !important; aspect-ratio: auto; }
-.showcase-hero { grid-area: hero; min-height: 205px; }
-.hero-art { min-height: 150px; padding-top: 12px; }
+.showcase-cover { grid-area: cover; }
+.cover-art { height: 112px; }
+.cover-art .profile-cover { width: 100%; height: 112px !important; min-height: 112px !important; aspect-ratio: auto; }
+.showcase-hero { grid-area: hero; }
+.hero-art { min-height: 112px; padding-top: 8px; }
+.showcase-sovereignty { grid-area: sovereignty; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 190px; padding: 20px; background: #214d3a url("/digital-sovereignty.png") center / cover no-repeat; text-align: center; }
+.showcase-sovereignty .showcase-copy { max-width: 82%; }
+.showcase-sovereignty .showcase-copy h2, .showcase-sovereignty .showcase-copy p { color: #fffdf8; text-shadow: 0 1px 10px #1723198c; }
+.showcase-sovereignty .showcase-copy h2 { font-size: clamp(21px, 2.1vw, 29px); line-height: 1.06; }
+.showcase-sovereignty .showcase-copy p { margin-top: 10px; }
+.showcase-brand-row { margin-top: 10px; }
+.showcase-brand { grid-area: brand; width: 100%; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; background: #214d3a; color: #fffdf8; text-align: center; }
+.showcase-brand .brand-lockup { width: 142px; height: auto; color: #fffdf8; }
+.showcase-brand p { max-width: 190px; margin: 0; color: #fffdf8; font-size: 15px; font-weight: 600; line-height: 1.3; }
 @media (max-width: 1050px) {
-  .showcase-components { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: auto; grid-template-areas: "circle address" "circle trail" "feedback composer" "cover hero"; }
+  .showcase-components { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: auto; grid-template-areas: "circle conversation" "feedback brand" "sovereignty hero" "composer cover"; }
   .showcase-circle { grid-row: span 2; }
-  .showcase-item { min-height: 220px; }
-  .circle-art { min-height: 280px; }
+  .showcase-item { min-height: 210px; }
+  .circle-art { min-height: 180px; }
+  .showcase-composer { min-height: 0; }
 }
 @media (max-width: 650px) {
-  .showcase { padding: 40px 16px; }
-  .showcase-head { margin-bottom: 24px; }
+  .showcase { padding: 36px 14px 24px; }
+  .showcase-head { margin-bottom: 22px; }
   .showcase-head > p:last-child { font-size: 15px; }
-  .showcase-components { grid-template-columns: minmax(0, 1fr); grid-template-areas: "circle" "feedback" "address" "trail" "composer" "cover" "hero"; gap: 14px; }
-  .showcase-item { min-height: 0; padding: 22px; border-radius: 24px; }
-  .circle-art { min-height: 210px; }
-  .trail-art { height: 138px; }
-  .hero-art { min-height: 180px; }
+  .showcase-components { grid-template-columns: minmax(0, 1fr); grid-template-areas: "circle" "conversation" "brand" "feedback" "sovereignty" "composer" "cover" "hero"; gap: 12px; }
+  .showcase-item { min-height: 0; padding: 20px; border-radius: 22px; }
+  .circle-art { min-height: 200px; }
+  .conversation-art { min-height: 320px; }
+  .conversation-stack > :last-child { min-height: 190px; }
+  .showcase-feedback-row, .showcase-brand-row { margin-top: 12px; }
+  .showcase-feedback { width: 100%; }
+  .showcase-brand { width: 100%; }
+  .showcase-copy p { font-size: 13px; }
 }

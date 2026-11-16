@@ -832,149 +832,28 @@
     }
   },
   "workspace": {
+    "dependencies": [
+      "jsr:@std/assert@1",
+      "npm:@astryxdesign/core@~0.6.5",
+      "npm:@stylexjs/stylex@0.19",
+      "npm:@types/react-dom@19",
+      "npm:@types/react@^19.3.0",
+      "npm:fake-indexeddb@6",
+      "npm:happy-dom@20",
+      "npm:lucide-react@^1.18.0",
+      "npm:react-dom@^19.3.0",
+      "npm:react@^19.3.0"
+    ],
     "members": {
       "app": {
         "dependencies": [
-          "jsr:@std/assert@1",
-          "npm:@types/react-dom@19",
-          "npm:@types/react@^19.3.0",
           "npm:@vitejs/plugin-react@5",
-          "npm:happy-dom@20",
-          "npm:react-dom@^19.3.0",
-          "npm:react@^19.3.0",
           "npm:vite@7"
-        ]
-      },
-      "docs/examples": {
-        "dependencies": [
-          "jsr:@std/assert@1",
-          "npm:@astryxdesign/core@~0.6.5",
-          "npm:@stylexjs/stylex@0.19",
-          "npm:@types/react@^19.3.0",
-          "npm:fake-indexeddb@6",
-          "npm:happy-dom@20",
-          "npm:lucide-react@^1.18.0",
-          "npm:react-dom@^19.3.0",
-          "npm:react@^19.3.0"
-        ]
-      },
-      "packages/circle": {
-        "dependencies": [
-          "jsr:@std/assert@1",
-          "npm:@astryxdesign/core@~0.6.5",
-          "npm:@stylexjs/stylex@0.19",
-          "npm:@types/react@^19.3.0",
-          "npm:fake-indexeddb@6",
-          "npm:happy-dom@20",
-          "npm:lucide-react@^1.18.0",
-          "npm:react-dom@^19.3.0",
-          "npm:react@^19.3.0"
-        ]
-      },
-      "packages/conversation": {
-        "dependencies": [
-          "jsr:@std/assert@1",
-          "npm:@astryxdesign/core@~0.6.5",
-          "npm:@stylexjs/stylex@0.19",
-          "npm:@types/react-dom@19",
-          "npm:@types/react@^19.3.0",
-          "npm:happy-dom@20",
-          "npm:lucide-react@^1.18.0",
-          "npm:react-dom@^19.3.0",
-          "npm:react@^19.3.0"
-        ]
-      },
-      "packages/kit": {
-        "dependencies": [
-          "jsr:@std/assert@1",
-          "npm:@types/react@^19.3.0",
-          "npm:react-dom@^19.3.0",
-          "npm:react@^19.3.0"
-        ]
-      },
-      "packages/panel": {
-        "dependencies": [
-          "jsr:@std/assert@1",
-          "npm:@astryxdesign/core@~0.6.5",
-          "npm:@stylexjs/stylex@0.19",
-          "npm:@types/react-dom@19",
-          "npm:@types/react@^19.3.0",
-          "npm:happy-dom@20",
-          "npm:lucide-react@^1.18.0",
-          "npm:react-dom@^19.3.0",
-          "npm:react@^19.3.0"
-        ]
-      },
-      "packages/shell": {
-        "dependencies": [
-          "jsr:@std/assert@1",
-          "npm:@astryxdesign/core@~0.6.5",
-          "npm:@stylexjs/stylex@0.19",
-          "npm:@types/react-dom@19",
-          "npm:@types/react@^19.3.0",
-          "npm:fake-indexeddb@6",
-          "npm:happy-dom@20",
-          "npm:lucide-react@^1.18.0",
-          "npm:react-dom@^19.3.0",
-          "npm:react@^19.3.0"
         ]
       },
       "packages/store": {
         "dependencies": [
-          "jsr:@std/assert@1",
-          "npm:@types/react@^19.3.0",
-          "npm:dexie@4",
-          "npm:fake-indexeddb@6",
-          "npm:react-dom@^19.3.0",
-          "npm:react@^19.3.0"
-        ]
-      },
-      "packages/ui": {
-        "dependencies": [
-          "jsr:@std/assert@1",
-          "npm:@astryxdesign/core@~0.6.5",
-          "npm:@stylexjs/stylex@0.19",
-          "npm:@types/react@^19.3.0",
-          "npm:lucide-react@^1.18.0",
-          "npm:react-dom@^19.3.0",
-          "npm:react@^19.3.0"
-        ]
-      },
-      "plugins/profile": {
-        "dependencies": [
-          "jsr:@std/assert@1",
-          "npm:@astryxdesign/core@~0.6.5",
-          "npm:@stylexjs/stylex@0.19",
-          "npm:@types/react-dom@19",
-          "npm:@types/react@^19.3.0",
-          "npm:lucide-react@^1.18.0",
-          "npm:react-dom@^19.3.0",
-          "npm:react@^19.3.0"
-        ]
-      },
-      "plugins/rooms": {
-        "dependencies": [
-          "jsr:@std/assert@1",
-          "npm:@astryxdesign/core@~0.6.5",
-          "npm:@stylexjs/stylex@0.19",
-          "npm:@types/react@^19.3.0",
-          "npm:fake-indexeddb@6",
-          "npm:happy-dom@20",
-          "npm:lucide-react@^1.18.0",
-          "npm:react-dom@^19.3.0",
-          "npm:react@^19.3.0"
-        ]
-      },
-      "plugins/text": {
-        "dependencies": [
-          "jsr:@std/assert@1",
-          "npm:@astryxdesign/core@~0.6.5",
-          "npm:@stylexjs/stylex@0.19",
-          "npm:@types/react@^19.3.0",
-          "npm:happy-dom@20",
-          "npm:lucide-react@^1.18.0",
-          "npm:react-dom@^19.3.0",
-          "npm:react@^19.3.0"
+          "npm:dexie@4"
         ]
       }
     }

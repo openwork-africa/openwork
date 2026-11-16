@@ -11,8 +11,6 @@ export const copy = {
   upload: "Upload",
   uploading: "Uploading…",
   current: "Current",
-  changeImage: "Change image",
-  uploadImage: "Upload an image",
   descriptionLabel: "Description",
   descriptionPlaceholder: "Add a description…",
   descriptionTooltip: "Click to edit the description",

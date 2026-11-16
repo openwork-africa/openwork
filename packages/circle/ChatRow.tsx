@@ -1,10 +1,7 @@
 import type { ReactElement } from "react";
 import { Badge } from "@astryxdesign/core/Badge";
 import { ClickableCard } from "@astryxdesign/core/ClickableCard";
-import {
-  ContextMenu,
-  type ContextMenuItemData,
-} from "@astryxdesign/core/ContextMenu";
+import { ContextMenu, type ContextMenuItemData } from "@astryxdesign/core/ContextMenu";
 import { Skeleton } from "@astryxdesign/core/Skeleton";
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
@@ -22,6 +19,7 @@ interface ChatRowProps {
   /** Messages you have not read here; none shows nothing. */
   unread?: number;
   onSelect: () => void;
+  onMarkRead?: () => void;
   /** Right-click or long-press on the row; without items the row has no menu. */
   menuItems?: ContextMenuItemData[];
 }
@@ -30,8 +28,7 @@ const unreadText = (
   unread: number,
 ): string => (unread > copy.unreadMax ? `${copy.unreadMax}+` : String(unread));
 
-const notAhead = (at: number): string =>
-  new Date(Math.min(at, Date.now())).toISOString();
+const notAhead = (at: number): string => new Date(Math.min(at, Date.now())).toISOString();
 
 /**
  * One conversation in the list: a large avatar beside the name and time, with the last message under them. The open
@@ -39,8 +36,7 @@ const notAhead = (at: number): string =>
  * the last message, which is then set heavier. Every measure is a spacing token.
  */
 export function ChatRow(
-  { name, preview, at, imageUrl, active, unread = 0, onSelect, menuItems }:
-    ChatRowProps,
+  { name, preview, at, imageUrl, active, unread = 0, onSelect, onMarkRead, menuItems }: ChatRowProps,
 ): ReactElement {
   const row = (
     <ClickableCard
@@ -50,7 +46,21 @@ export function ChatRow(
       onClick={onSelect}
     >
       <HStack gap={2} vAlign="center" paddingBlock={1.5} paddingInline={2}>
-        <Avatar name={name} imageUrl={imageUrl} size="lg" selected={active} />
+        {onMarkRead && unread > 0
+          ? (
+            <button
+              type="button"
+              className="chat-mark-read"
+              aria-label={`Mark ${name} as read`}
+              onClick={(event) => {
+                event.stopPropagation();
+                onMarkRead();
+              }}
+            >
+              <Avatar name={name} imageUrl={imageUrl} size="lg" selected={active} />
+            </button>
+          )
+          : <Avatar name={name} imageUrl={imageUrl} size="lg" selected={active} />}
         <StackItem size="fill">
           <VStack>
             <HStack gap={1} vAlign="center" hAlign="between">

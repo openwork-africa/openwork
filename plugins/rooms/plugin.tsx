@@ -2,13 +2,15 @@ import {
   circleRowMenu,
   circleSource,
   contribute,
+  createRoomCommand,
   definePlugin,
+  deleteRoomCommand,
   type Plugin,
   provideCommand,
   type SlotContext,
 } from "@openwork/kit";
 import { devicePorts } from "@openwork/store";
-import { roomPath } from "@openwork/shell";
+import { roomPath } from "@openwork/kit";
 import { copy } from "./copy.ts";
 import { deviceReadMarks, type ReadMarks } from "./readMarks.ts";
 import { roomRows } from "./roomRows.ts";
@@ -22,7 +24,7 @@ export function rooms(marks: ReadMarks = deviceReadMarks()): Plugin {
     const room = await devicePorts(ctx.ports).store.createRoom(
       copy.newRoomName,
     );
-    ctx.navigate(roomPath(room.id));
+    (ctx.replace ?? ctx.navigate)(roomPath(room.id));
   };
   const remove = async (ctx: SlotContext, id: string): Promise<void> => {
     const { store } = devicePorts(ctx.ports);
@@ -57,15 +59,17 @@ export function rooms(marks: ReadMarks = deviceReadMarks()): Plugin {
         label: copy.deleteLabel,
         icon: null,
         danger: true,
-        run: (row, ctx) =>
-          void (ctx.commands["rooms.delete"] as (id: string) => Promise<void>)(
-            row.id,
-          ),
+        run: (row, ctx) => void remove(ctx, row.id),
       }),
     ],
     provides: [
-      provideCommand("rooms.create", create),
-      provideCommand("rooms.delete", remove),
+      provideCommand(createRoomCommand, create),
+      provideCommand(deleteRoomCommand, remove),
+      provideCommand("rooms.markRead", (ctx, id: string) => {
+        const { store } = devicePorts(ctx.ports);
+        const messages = store.trail(id).get();
+        marks.set(id, messages?.at(-1)?.createdAt ?? Date.now());
+      }),
     ],
   });
 }

@@ -21,6 +21,16 @@
     width: 100%;
   }
 
+  /* The banner's status tint can be translucent. Give it a solid backing and a distinct floating shadow. */
+  .notice-surface {
+    background: var(--color-background-popover);
+    border-radius: var(--radius-container);
+    box-shadow: var(--shadow-high);
+  }
+  .notice-surface > * {
+    width: 100%;
+  }
+
   @media (min-width: 768px) {
     .notice-stack {
       inset-inline: auto var(--spacing-4);

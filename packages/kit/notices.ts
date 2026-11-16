@@ -58,5 +58,4 @@ export const { notify, dismiss } = defaultNotices;
 
 export const getNotices = (): readonly Notice[] => defaultNotices.list();
 
-export const useNotices = (notices: Notices = defaultNotices): readonly Notice[] =>
-  useSyncExternalStore(notices.subscribe, notices.list, notices.list);
+export const useNotices = (notices: Notices = defaultNotices): readonly Notice[] => useSyncExternalStore(notices.subscribe, notices.list, notices.list);

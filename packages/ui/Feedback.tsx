@@ -16,7 +16,6 @@ export interface FeedbackNotice {
   text: string;
   status: "info" | "success" | "warning" | "error";
   action?: FeedbackAction;
-  undo?: FeedbackAction;
 }
 
 interface FeedbackProps {
@@ -29,22 +28,22 @@ function FeedbackStack({ notices, onDismiss }: FeedbackProps): ReactElement | nu
   return (
     <VStack className="notice-stack">
       {notices.map((notice) => (
-        <Banner
-          key={notice.id}
-          status={notice.status}
-          title={<OneLine text={notice.text} />}
-          dismissLabel={copy.dismiss}
-          container="card"
-          elevation="med"
-          isDismissable
-          onDismiss={() => onDismiss(notice.id)}
-          endContent={(notice.action || notice.undo) && (
-            <HStack gap={2}>
-              {notice.undo && <Button label={notice.undo.label} variant="secondary" size="sm" onClick={notice.undo.run} />}
-              {notice.action && <Button label={notice.action.label} variant="primary" size="sm" onClick={notice.action.run} />}
-            </HStack>
-          )}
-        />
+        <HStack key={notice.id} className="notice-surface">
+          <Banner
+            status={notice.status}
+            title={<OneLine text={notice.text} />}
+            dismissLabel={copy.dismiss}
+            container="card"
+            elevation="none"
+            isDismissable
+            onDismiss={() => onDismiss(notice.id)}
+            endContent={notice.action && (
+              <HStack gap={2}>
+                {notice.action && <Button label={notice.action.label} variant="primary" size="sm" onClick={notice.action.run} />}
+              </HStack>
+            )}
+          />
+        </HStack>
       ))}
     </VStack>
   );

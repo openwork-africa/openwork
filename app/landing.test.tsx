@@ -43,14 +43,13 @@ Deno.test("desktop: with no rooms / stays and the window offers to start one", (
     await app.stop();
   }));
 
-Deno.test("phone: / stays with the list drawer open, even with rooms", () =>
+Deno.test("phone: / opens the latest room with drawers closed", () =>
   withScreen(PHONE, async () => {
     const app = await bootProduct(openPlugins, "/");
     await app.store.createRoom("Older");
     await flush();
-    assertEquals(app.path(), "/");
-    assert(app.container.querySelector(".convo-shell")?.classList.contains("is-list-open"));
-    assert(app.container.querySelector(".convo-loading")?.textContent?.includes(copy.noRoomTitle));
+    assert(app.path().startsWith("/c/"));
+    assert(!app.container.querySelector(".convo-shell")?.classList.contains("is-list-open"));
     await app.stop();
   }));
 

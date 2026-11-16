@@ -2,9 +2,10 @@ import { type ReactElement, useEffect, useState } from "react";
 import { VStack } from "@astryxdesign/core/Stack";
 import { Skeleton } from "@astryxdesign/core/Skeleton";
 
+const PLACEHOLDER_AFTER_MS = 120;
+
 // How long something has to be missing before a placeholder is shown for it: a switch that lands at once shows none,
 // so a placeholder never flashes over a conversation that was about to appear anyway.
-export const PLACEHOLDER_AFTER_MS = 120;
 
 const ROW_WIDTHS = ["62%", "84%", "48%", "72%"];
 

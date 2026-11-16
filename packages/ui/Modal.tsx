@@ -5,38 +5,25 @@ import { Heading } from "@astryxdesign/core/Heading";
 import { useMediaQuery } from "@astryxdesign/core/hooks";
 import { Layout, LayoutContent, LayoutFooter } from "@astryxdesign/core/Layout";
 import { Stack } from "@astryxdesign/core/Stack";
-import { copy } from "./copy.ts";
+import { DRAWER_PHONE_QUERY, PHONE_QUERY } from "./media.ts";
 
-const PHONE = "(max-width: 47.98rem)";
-const CARD_WIDTH = "22.5rem";
-
-interface ModalProps {
+export function Modal({ title, children, onClose, actions, width = 440, phoneQuery = PHONE_QUERY, label = title }: {
   title: string;
   children?: ReactNode;
   onClose: () => void;
   actions?: ReactNode;
-}
-
-/** An overlay for a short answer: an Astryx Dialog centred on desktop, a BottomSheet rising from the bottom edge on a phone. */
-export function Modal(
-  { title, children, onClose, actions }: ModalProps,
-): ReactElement {
-  const isPhone = useMediaQuery(PHONE);
+  width?: number | string;
+  phoneQuery?: string;
+  label?: string;
+}): ReactElement {
+  const isPhone = useMediaQuery(phoneQuery);
   const onOpenChange = (open: boolean): void => {
     if (!open) onClose();
   };
-  const footer = actions
-    ? <Stack direction="horizontal" gap={2} justify="end">{actions}</Stack>
-    : undefined;
+  const footer = actions ? <Stack direction="horizontal" gap={2} justify="end">{actions}</Stack> : undefined;
   if (isPhone) {
     return (
-      <BottomSheet
-        isOpen
-        onOpenChange={onOpenChange}
-        label={title || copy.dialogLabel}
-        purpose="info"
-        height="hug"
-      >
+      <BottomSheet isOpen onOpenChange={onOpenChange} label={label} purpose="info" height="hug">
         <Stack gap={3} padding={3}>
           <Heading level={4}>{title}</Heading>
           {children}
@@ -46,15 +33,10 @@ export function Modal(
     );
   }
   return (
-    <Dialog
-      isOpen
-      onOpenChange={onOpenChange}
-      purpose="info"
-      width={CARD_WIDTH}
-    >
+    <Dialog isOpen onOpenChange={onOpenChange} purpose="info" width={width}>
       <Layout
         height="auto"
-        header={<DialogHeader title={title} onOpenChange={() => onClose()} />}
+        header={<DialogHeader title={title} onOpenChange={onClose} />}
         content={
           <LayoutContent>
             <Stack gap={3}>{children}</Stack>
@@ -65,3 +47,5 @@ export function Modal(
     </Dialog>
   );
 }
+
+export const DEFAULT_MODAL_PHONE_QUERY = DRAWER_PHONE_QUERY;

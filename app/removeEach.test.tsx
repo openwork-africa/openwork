@@ -1,9 +1,9 @@
 import { assert, assertEquals } from "@std/assert";
 import type { Plugin } from "@openwork/kit";
-import { bootProduct, type Booted, click, errorNotices, flush } from "./harness.tsx";
+import { labelled } from "@openwork/ui/testing";
+import { type Booted, bootProduct, click, errorNotices, flush } from "./harness.tsx";
 import { openPlugins } from "./product.ts";
 
-const labelled = (container: HTMLElement, label: string): HTMLElement | null => container.querySelector(`[aria-label="${label}"]`);
 const without = (id: string): Plugin[] => openPlugins.filter((plugin) => plugin.id !== id);
 const message = (app: Booted): Element | null => app.container.querySelector('[id^="msg-"]');
 

@@ -1,7 +1,8 @@
 import { assert, assertEquals } from "@std/assert";
 import { act } from "react";
-import { definePlugin, contribute, windowBanner, windowEmpty, addressAddressee, addressAction } from "@openwork/kit";
+import { addressAction, addressAddressee, contribute, definePlugin, windowBanner, windowEmpty } from "@openwork/kit";
 import { makeCell } from "@openwork/store";
+import { until } from "@openwork/store/testing";
 import { ConversationWindow } from "./ConversationWindow.tsx";
 import { copy } from "./copy.ts";
 import { flush, labelled, mount, press, rig, sendButton, trailOf, write } from "./testing.tsx";
@@ -17,7 +18,7 @@ Deno.test("with no room open the window draws nothing", async () => {
 });
 
 Deno.test("with zero plugins an empty room shows Notes to self, and a sent message is plain text that goes from sending to sent", async () => {
-  const { store, view } = rig();
+  const { store, syncNow, view } = rig();
   const room = await store.createRoom("Notes");
   const { container, unmount } = await mount(view(<ConversationWindow roomId={room.id} />, room.id));
   await settle();
@@ -28,13 +29,12 @@ Deno.test("with zero plugins an empty room shows Notes to self, and a sent messa
   await write(container, "Lunch at one?");
   await press(sendButton(container));
   await settle();
-  const sent = (await trailOf(store, room.id));
+  const sent = await trailOf(store, room.id);
   assertEquals([sent.length, sent[0].content, sent[0].state], [1, "Lunch at one?", "sending"]);
   assert(textOf(container).includes("Lunch at one?") && !textOf(container).includes(copy.emptyTitle));
   assert(labelled(container, copy.saved), "one tick while sending");
 
-  const [row] = (await store.journal.pending()).filter((item) => item.kind === "message");
-  await store.journal.acknowledge(row);
+  await syncNow();
   await settle();
   assertEquals((await trailOf(store, room.id))[0].state, "sent");
   assert(labelled(container, copy.received), "two ticks once the server has it");
@@ -43,11 +43,11 @@ Deno.test("with zero plugins an empty room shows Notes to self, and a sent messa
 });
 
 Deno.test("a failed message says so and Send again puts it back to sending", async () => {
-  const { store, view } = rig();
+  const { store, transport, syncNow, view } = rig();
   const room = await store.createRoom("Notes");
   await store.send(room.id, "hello");
-  const [row] = (await store.journal.pending()).filter((item) => item.kind === "message");
-  await store.journal.fail(row, "Too long.");
+  transport.refuse = () => "Too long.";
+  await syncNow();
   const { container, unmount } = await mount(view(<ConversationWindow roomId={room.id} />, room.id));
   await settle();
   assertEquals((await trailOf(store, room.id))[0].state, "failed");
@@ -55,37 +55,47 @@ Deno.test("a failed message says so and Send again puts it back to sending", asy
   await press(labelled(container, copy.sendAgain));
   await settle();
   assertEquals((await trailOf(store, room.id))[0].state, "sending");
+  transport.refuse = undefined;
+  await syncNow();
   assert(!textOf(container).includes(copy.notDelivered));
   await unmount();
 });
 
-Deno.test("a failed message has Error details with the real reason as its tooltip, before Send again, and the tick says why", async () => {
-  const { store, view } = rig();
+Deno.test("a failed message shows a friendly explanation before Send again", async () => {
+  const { store, transport, syncNow, view } = rig();
   const room = await store.createRoom("Notes");
   await store.send(room.id, "hello");
-  const [row] = (await store.journal.pending()).filter((item) => item.kind === "message");
-  await store.journal.fail(row, "That message is not allowed.");
+  transport.refuse = () => "That message is not allowed.";
+  await syncNow();
   const { container, unmount } = await mount(view(<ConversationWindow roomId={room.id} />, room.id));
   await settle();
   const details = labelled(container, copy.errorDetails)!;
   const again = labelled(container, copy.sendAgain)!;
   assert(details && again);
   assert(details.compareDocumentPosition(again) & 4, "Error details comes before Send again");
-  assert(labelled(container, "That message is not allowed."), "the failed tick carries the reason");
+  assert(labelled(container, copy.notDeliveredTryAgain), "the failed tick carries a friendly explanation");
   await unmount();
 });
 
 Deno.test("catching up with no messages shows Still loading and not the empty card", async () => {
-  const { store, view } = rig();
+  const { store, transport, syncNow, view } = rig();
   const room = await store.createRoom("Notes");
   const { container, unmount } = await mount(view(<ConversationWindow roomId={room.id} />, room.id));
   await settle();
-  assert(!textOf(container).includes(copy.stillLoading));
+  assert(!textOf(container).includes("Still loading…"));
   assert(textOf(container).includes(copy.emptyTitle));
-  await act(() => store.journal.setStatus("catchingUp"));
-  await settle();
-  assert(textOf(container).includes(copy.stillLoading));
+  let release!: () => void;
+  transport.pull = () =>
+    new Promise((resolve) => {
+      release = () => resolve({ changes: [], cursor: 0 });
+    });
+  const syncing = syncNow();
+  await until(store.syncStatus(), (status) => status === "catchingUp");
+  while (!release) await flush(5);
+  assert(textOf(container).includes("Still loading…"));
   assert(!textOf(container).includes(copy.emptyTitle));
+  release();
+  await syncing;
   await unmount();
 });
 

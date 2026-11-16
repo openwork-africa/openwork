@@ -1,15 +1,14 @@
 import type { Change, FileItem, Message, PullAnswer, PushBody, Room } from "./types.ts";
-
-const present = <T extends object>(value: T): T =>
-  Object.fromEntries(Object.entries(value).filter(([, field]) => field !== undefined)) as T;
+import { definedOnly } from "./records.ts";
 
 export const roomWire = (room: Room): Room =>
-  present({
+  definedOnly({
     id: room.id,
     name: room.name,
     description: room.description,
     picture: room.picture,
     background: room.background,
+    accent: room.accent,
     createdAt: room.createdAt,
     updatedAt: room.updatedAt,
     activityAt: room.activityAt,
@@ -17,7 +16,7 @@ export const roomWire = (room: Room): Room =>
   });
 
 export const messageWire = (message: Message): Message =>
-  present({
+  definedOnly({
     id: message.id,
     roomId: message.roomId,
     authorId: message.authorId,
@@ -37,11 +36,15 @@ export const fileWire = (file: FileItem): FileItem => ({
   updatedAt: file.updatedAt,
 });
 
+const wireOf = {
+  room: (change: Extract<Change, { kind: "room" }>): Change => ({ ...change, data: roomWire(change.data) }),
+  message: (change: Extract<Change, { kind: "message" }>): Change => ({ ...change, data: messageWire(change.data) }),
+  file: (change: Extract<Change, { kind: "file" }>): Change => ({ ...change, data: fileWire(change.data) }),
+};
+
 export function changeWire(change: Change): Change {
-  const head = { kind: change.kind, id: change.id, updatedAt: change.updatedAt };
-  if (change.kind === "room") return { ...head, kind: "room", data: roomWire(change.data) };
-  if (change.kind === "message") return { ...head, kind: "message", data: messageWire(change.data) };
-  return { ...head, kind: "file", data: fileWire(change.data) };
+  const serialize: (value: Change) => Change = wireOf[change.kind] as (value: Change) => Change;
+  return serialize(change);
 }
 
 export const pushBodyWire = (body: PushBody): PushBody => ({ changes: body.changes.map(changeWire) });

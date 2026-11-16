@@ -8,61 +8,73 @@
     <meta name="description" content="Openwork: an offline-first workspace." />
     <meta name="theme-color" content="#000000" />
     <link rel="icon" href="/assets/mark.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png" />
+    <link rel="icon" href="/favicon-16.png" sizes="16x16" type="image/png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black" />
     <meta name="apple-mobile-web-app-title" content="Openwork" />
     <style>
-      /* The loader, for before the app's own code runs: the Openwork lockup in the text's colour with a bar moving under it. */
-      .ow-loader {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        width: 120px;
-        max-width: 100%;
+    /* The loader, for before the app's own code runs: the Openwork lockup in the text's colour with a bar moving under it. */
+    .ow-loader {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      width: 120px;
+      max-width: 100%;
+    }
+    .ow-loader-mark {
+      aspect-ratio: 222.42 / 40;
+      background-color: currentColor;
+      -webkit-mask: url("/assets/lockup.svg") center / contain no-repeat;
+      mask: url("/assets/lockup.svg") center / contain no-repeat;
+    }
+    .ow-loader-bar {
+      position: relative;
+      height: 3px;
+      border-radius: 999px;
+      overflow: hidden;
+      background-color: color-mix(in srgb, currentColor 20%, transparent);
+    }
+    .ow-loader-bar::after {
+      content: "";
+      position: absolute;
+      inset-block: 0;
+      width: 40%;
+      border-radius: inherit;
+      background-color: currentColor;
+      animation: ow-loader-slide 1.2s ease-in-out infinite;
+    }
+    @keyframes ow-loader-slide {
+      from {
+        left: -40%;
       }
-      .ow-loader-mark {
-        aspect-ratio: 222.42 / 40;
-        background-color: currentColor;
-        -webkit-mask: url("/assets/lockup.svg") center / contain no-repeat;
-        mask: url("/assets/lockup.svg") center / contain no-repeat;
+      to {
+        left: 100%;
       }
-      .ow-loader-bar {
-        position: relative;
-        height: 3px;
-        border-radius: 999px;
-        overflow: hidden;
-        background-color: color-mix(in srgb, currentColor 20%, transparent);
-      }
+    }
+    @media (prefers-reduced-motion: reduce) {
       .ow-loader-bar::after {
-        content: "";
-        position: absolute;
-        inset-block: 0;
-        width: 40%;
-        border-radius: inherit;
-        background-color: currentColor;
-        animation: ow-loader-slide 1.2s ease-in-out infinite;
+        animation: none;
+        left: 30%;
       }
-      @keyframes ow-loader-slide {
-        from { left: -40%; }
-        to { left: 100%; }
-      }
-      @media (prefers-reduced-motion: reduce) {
-        .ow-loader-bar::after {
-          animation: none;
-          left: 30%;
-        }
-      }
-      .ow-boot {
-        position: absolute;
-        inset: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--color-text-primary, currentColor);
-        opacity: 0.6;
-      }
+    }
+    .ow-boot {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--color-text-primary, currentColor);
+      opacity: 0.6;
+    }
+    #ow-update {
+      position: fixed;
+      z-index: 10000;
+      background: var(--color-background-body, Canvas);
+    }
     </style>
   </head>
   <body>
@@ -70,7 +82,12 @@
       <div class="grain-overlay" aria-hidden="true"></div>
       <div id="openwork-root" style="position: relative; z-index: 1; width: 100%; height: 100%">
         <div id="root" style="width: 100%; height: 100%">
-          <div class="ow-boot" aria-hidden="true"><div class="ow-loader"><div class="ow-loader-mark"></div><div class="ow-loader-bar"></div></div></div>
+          <div class="ow-boot" aria-hidden="true">
+            <div class="ow-loader">
+              <div class="ow-loader-mark"></div>
+              <div class="ow-loader-bar"></div>
+            </div>
+          </div>
         </div>
       </div>
     </main>

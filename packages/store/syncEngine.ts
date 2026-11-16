@@ -27,7 +27,6 @@ export function createSyncEngine(options: SyncOptions): SyncEngine {
   const { journal } = store;
   let running: Promise<void> | undefined;
   let again = false;
-  let offlineNotice: string | undefined;
   let stops: (() => void)[] = [];
   let lastReported: string | undefined;
   let timer: ReturnType<typeof setInterval> | undefined;
@@ -38,7 +37,6 @@ export function createSyncEngine(options: SyncOptions): SyncEngine {
   const settle = (outcome: Outcome): void => {
     if (outcome.kind === "offline") {
       journal.setStatus("offline");
-      offlineNotice ??= notices.notify(copy.offline, { status: "warning", holdMs: 0 });
       return;
     }
     if (outcome.kind === "failed") {
@@ -46,10 +44,6 @@ export function createSyncEngine(options: SyncOptions): SyncEngine {
       if (outcome.message !== lastReported) notices.notify(outcome.message, { status: "error" });
       lastReported = outcome.message;
       return;
-    }
-    if (offlineNotice !== undefined) {
-      notices.dismiss(offlineNotice);
-      offlineNotice = undefined;
     }
     lastReported = undefined;
     journal.setStatus(outcome.failedCount > 0 ? "attention" : "current");
@@ -79,8 +73,8 @@ export function createSyncEngine(options: SyncOptions): SyncEngine {
         await uploadAccepted(item.change);
         await journal.acknowledge(item.row);
       } else {
-        await journal.fail(item.row, answer.message);
-        notices.notify(answer.message, { status: "error" });
+        await journal.fail(item.row, copy.syncFailed);
+        notices.notify(copy.syncFailed, { status: "error" });
       }
     }
   }
@@ -99,7 +93,7 @@ export function createSyncEngine(options: SyncOptions): SyncEngine {
       settle({ kind: "done", failedCount: await journal.failedCount() });
     } catch (error) {
       if (error instanceof OfflineError || isRetryable(error)) return settle({ kind: "offline" });
-      settle({ kind: "failed", message: error instanceof Error ? error.message : String(error) });
+      settle({ kind: "failed", message: copy.syncFailed });
     }
   }
 

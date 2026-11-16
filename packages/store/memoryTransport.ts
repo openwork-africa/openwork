@@ -1,5 +1,5 @@
 import { NetworkError } from "./errors.ts";
-import type { Clock, Transport } from "./ports.ts";
+import type { Transport } from "./ports.ts";
 import type { Answer, Change, PullAnswer } from "./types.ts";
 
 interface Stored {
@@ -49,13 +49,5 @@ export class MemoryTransport implements Transport {
   /** Writes a change as another device would have. */
   other(change: Change): void {
     this.stored.set(`${change.kind}:${change.id}`, { change: structuredClone(change), seq: ++this.#seq });
-  }
-}
-
-export class ManualClock implements Clock {
-  constructor(public time = 1_700_000_000_000) {}
-  now = (): number => this.time;
-  tick(ms = 1): number {
-    return (this.time += ms);
   }
 }

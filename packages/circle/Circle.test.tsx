@@ -8,12 +8,8 @@ import { fakePlugin, fakeSource, flush, host, mount, row } from "./testing.tsx";
 
 const store = new MemoryDeviceStore();
 const ports = { store };
-const names = (container: HTMLElement): string[] =>
-  [...container.querySelectorAll("[aria-label]")].map((element) =>
-    element.getAttribute("aria-label") ?? ""
-  );
-const button = (container: HTMLElement, label: string): HTMLElement | null =>
-  container.querySelector(`button[aria-label="${label}"]`);
+const names = (container: HTMLElement): string[] => [...container.querySelectorAll("[aria-label]")].map((element) => element.getAttribute("aria-label") ?? "");
+const button = (container: HTMLElement, label: string): HTMLElement | null => container.querySelector(`button[aria-label="${label}"]`);
 
 Deno.test("rows from every source are merged, most recent first, and a row id is shown once", async () => {
   const first = fakeSource();
@@ -150,9 +146,7 @@ Deno.test("the unread count shows on a row, except the open one; selecting a row
   );
   assert(container.querySelector('[aria-label="3 unread"]'));
   assert(!container.querySelector('[aria-label="5 unread"]'));
-  await act(() =>
-    (container.querySelector('[aria-label="Alpha"]') as HTMLElement).click()
-  );
+  await act(() => (container.querySelector('[aria-label="Alpha"]') as HTMLElement).click());
   assertEquals(opened, ["/c/a"]);
   await unmount();
 });
@@ -213,7 +207,7 @@ Deno.test("New is hidden while there are no rooms and once the rows are known, a
   await unmount();
 });
 
-Deno.test("while the device is catching up, loading rows follow the rows and the empty card waits", async () => {
+Deno.test("while the device is catching up, only the first pending read shows loading rows", async () => {
   const source = fakeSource();
   source.set([]);
   await act(() => store.journal.setStatus("catchingUp"));
@@ -228,8 +222,8 @@ Deno.test("while the device is catching up, loading rows follow the rows and the
     ),
   );
   await flush();
-  assert(container.querySelector('[role="status"]'), "catching-up rows");
-  assert(!(container.textContent ?? "").includes("Start here"));
+  assert(!container.querySelector('[role="status"]'), "the answered source has no loading rows");
+  assert((container.textContent ?? "").includes("Start here"));
   await act(() => store.journal.setStatus("current"));
   await flush();
   assert((container.textContent ?? "").includes("Start here"));
@@ -246,7 +240,9 @@ Deno.test("with zero plugins the circle is the empty frame, without errors", asy
 
 Deno.test("deleting asks first: Cancel and the danger label are the two answers", async () => {
   const answers: string[] = [];
-  const { unmount } = await mount(<ConfirmDelete name="Alpha" label="Delete" onCancel={() => answers.push("cancel")} onConfirm={() => answers.push("confirm")} />);
+  const { unmount } = await mount(
+    <ConfirmDelete name="Alpha" label="Delete" onCancel={() => answers.push("cancel")} onConfirm={() => answers.push("confirm")} />,
+  );
   const buttons = [...document.querySelectorAll("button")].filter((each) => ["Cancel", "Delete"].includes(each.textContent ?? ""));
   assertEquals(buttons.map((each) => each.textContent), ["Cancel", "Delete"]);
   assert(document.body.textContent?.includes("“Alpha” will be deleted."));

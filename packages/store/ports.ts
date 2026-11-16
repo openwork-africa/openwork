@@ -15,9 +15,9 @@ export interface RoomDetails {
   background?: string;
 }
 
-/** What the sync loop reads and writes on the device: the queue of changes, the cursor, pulled records. */
 export type FileDraft = Omit<FileItem, "createdAt" | "updatedAt"> & Partial<Pick<FileItem, "createdAt" | "updatedAt">>;
 
+/** What the sync loop reads and writes on the device: the queue of changes, the cursor, pulled records. */
 export interface SyncJournal {
   pending(): Promise<OutboxRow[]>;
   changeOf(row: OutboxRow): Promise<Change | undefined>;
@@ -37,7 +37,7 @@ export interface DeviceStore {
   renameRoom(id: string, name: string): Promise<void>;
   setRoomDescription(id: string, description: string | undefined): Promise<void>;
   setRoomPicture(id: string, picture: string | undefined): Promise<void>;
-  setRoomBackground(id: string, background: string | undefined): Promise<void>;
+  setRoomBackground(id: string, background: string | undefined, accent?: string): Promise<void>;
   deleteRoom(id: string): Promise<void>;
   /** Brings back a deleted room, with its messages. Rejects if the device never had it. */
   restoreRoom(id: string): Promise<void>;
@@ -68,6 +68,11 @@ export interface Connectivity {
   subscribe(listener: () => void): () => void;
 }
 
+/** Optional answer-generation capability; conversation UI only needs its working state. */
+export interface Brain {
+  isWorking(roomId: string): Live<boolean>;
+}
+
 export interface DevicePorts {
   store: DeviceStore;
   files: FileStore;
@@ -80,4 +85,8 @@ export function devicePorts(ports: Ports): DevicePorts {
   const { store, files, transport, clock } = ports as Partial<DevicePorts>;
   if (!store || !files || !transport || !clock) throw new Error(copy.missingPorts);
   return { store, files, transport, clock };
+}
+
+export function brainOf(ports: Ports): Brain | undefined {
+  return (ports as { brain?: Brain }).brain;
 }

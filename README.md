@@ -1,4 +1,4 @@
-![Standalone OSS component renders: Circle, Feedback, AddressBar, ConversationTrail, ConversationComposer, ContactCover, and ContactHeroBody](docs/components.png)
+![Openwork OSS showcase with Circle, Notes to self, profile cards, message composer, change feedback, and the digital sovereignty card](docs/components.png)
 
 # Openwork
 

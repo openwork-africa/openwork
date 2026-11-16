@@ -1,8 +1,7 @@
 import { assert, assertEquals } from "@std/assert";
 import { copy } from "@openwork/shell";
+import { labelled } from "@openwork/ui/testing";
 import { bootProduct, errorNotices, flush } from "./harness.tsx";
-
-const labelled = (container: HTMLElement, label: string): HTMLElement | null => container.querySelector(`[aria-label="${label}"]`);
 
 Deno.test("base only: zero plugins boot, draw the frame's empty states and raise no error notice", async () => {
   const app = await bootProduct([]);

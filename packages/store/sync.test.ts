@@ -1,10 +1,11 @@
 import { assert, assertEquals } from "@std/assert";
 import { createNotices } from "@openwork/kit";
 import { manualConnectivity } from "./connectivity.ts";
-import { ManualClock, MemoryTransport } from "./memoryTransport.ts";
+import { MemoryTransport } from "./memoryTransport.ts";
+import { ManualClock } from "./memory.ts";
 import type { SyncStatus } from "./types.ts";
 import { createSyncEngine } from "./syncEngine.ts";
-import { dexieDevice, type Device, memoryDevice, settle, until } from "./testing.ts";
+import { type Device, dexieDevice, memoryDevice, settle, until } from "./testing.ts";
 
 interface Rig {
   device: Device;
@@ -35,7 +36,7 @@ for (const make of [memoryDevice, dexieDevice]) {
     const room = await a.device.store.createRoom("Family");
     await a.device.store.send(room.id, "Lunch at one?");
     await a.engine.syncNow();
-    assertEquals((await a.device.store.journal.pending()), []);
+    assertEquals(await a.device.store.journal.pending(), []);
     assertEquals([...a.transport.stored.keys()].sort(), [`message:${(await until(a.device.store.trail(room.id)))[0].id}`, `room:${room.id}`].sort());
     assertEquals((await until(a.device.store.trail(room.id)))[0].state, "sent");
     assertEquals(await a.device.store.journal.cursor(), 2);
@@ -63,7 +64,7 @@ for (const make of [memoryDevice, dexieDevice]) {
     await a.engine.syncNow();
     assertEquals((await until(a.device.store.room(room.id), (r) => r?.name === "Newer"))?.name, "Newer");
     assertEquals(([...a.transport.stored.values()].find((row) => row.change.id === room.id)!.change.data as { name: string }).name, "Newer");
-    assertEquals((await a.device.store.journal.pending()), []);
+    assertEquals(await a.device.store.journal.pending(), []);
     const pushes = a.transport.pushes;
     await a.engine.syncNow();
     assertEquals(a.transport.pushes, pushes);
@@ -71,14 +72,14 @@ for (const make of [memoryDevice, dexieDevice]) {
     b.device.close();
   });
 
-  run("offline shows one notice however many actions, and everything goes through when back", async () => {
+  run("offline uses status without a notice and syncs when back", async () => {
     const a = rig(make());
     a.engine.start();
     a.connectivity.set(false);
     await settle();
     for (const name of ["One", "Two", "Three"]) await a.device.store.createRoom(name);
     await settle();
-    assertEquals(a.told.filter((notice) => notice.status === "warning").length, 1);
+    assertEquals(a.told.filter((notice) => notice.status === "warning").length, 0);
     assertEquals(a.statuses.at(-1), "offline");
     assertEquals(a.transport.stored.size, 0);
 
@@ -97,21 +98,21 @@ for (const make of [memoryDevice, dexieDevice]) {
     await a.device.store.createRoom("While down");
     await settle();
     assertEquals(a.statuses.at(-1), "offline");
-    assertEquals(a.told.filter((notice) => notice.status === "warning").length, 1);
+    assertEquals(a.told.filter((notice) => notice.status === "warning").length, 0);
     a.transport.down = false;
     await until(a.device.store.syncStatus(), (status) => status === "current" && a.transport.stored.size === 1);
     a.engine.stop();
     a.device.close();
   });
 
-  run("a refused change is told once in the server's words and left for attention; retry sends it again", async () => {
+  run("a refused change shows a friendly notice and retry sends it again", async () => {
     const a = rig(make());
     const room = await a.device.store.createRoom("Strict");
     const message = await a.device.store.send(room.id, "no");
     a.transport.refuse = (change) => (change.kind === "message" ? "That message is not allowed." : undefined);
     await a.engine.syncNow();
     await a.engine.syncNow();
-    assertEquals(a.told, [{ text: "That message is not allowed.", status: "error" }]);
+    assertEquals(a.told, [{ text: "Could not sync your changes. Please try again.", status: "error" }]);
     assertEquals(a.device.store.syncStatus().get(), "attention");
     assertEquals((await until(a.device.store.trail(room.id)))[0].state, "failed");
     a.transport.refuse = undefined;

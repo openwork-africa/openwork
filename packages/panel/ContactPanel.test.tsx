@@ -17,7 +17,11 @@ const tab = (id: string, order: number) =>
 
 const view = (plugins: Plugin[], roomId?: string, paths: string[] = []) => {
   const product = compose(plugins, {});
-  return <product.Root roomId={roomId} navigate={(path) => void paths.push(path)}><ContactPanel roomId={roomId} /></product.Root>;
+  return (
+    <product.Root roomId={roomId} navigate={(path) => void paths.push(path)}>
+      <ContactPanel roomId={roomId} />
+    </product.Root>
+  );
 };
 
 Deno.test("sections show top to bottom by order, whatever the order the plugins were listed in", async () => {
@@ -59,7 +63,11 @@ Deno.test("no room draws nothing", async () => {
 });
 
 Deno.test("a cover sits above the scroll, outside the animated part, and there is no close button", async () => {
-  const cover = definePlugin({ id: "cover", version: "0.1.0", contributes: [contribute(panelCover, { id: "cover", order: 10, render: () => <p data-cover>cover</p> })] });
+  const cover = definePlugin({
+    id: "cover",
+    version: "0.1.0",
+    contributes: [contribute(panelCover, { id: "cover", order: 10, render: () => <p data-cover>cover</p> })],
+  });
   const { container, unmount } = await mount(view([cover, section("first", 10)], "r1"));
   const panel = container.querySelector(".contact-panel") as HTMLElement;
   const nodes = [...panel.children];

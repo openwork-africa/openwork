@@ -1,8 +1,8 @@
 import type { ReactElement } from "react";
 import { Button } from "@astryxdesign/core/Button";
 import { Text } from "@astryxdesign/core/Text";
+import { Modal } from "@openwork/ui";
 import { copy } from "./copy.ts";
-import { Modal } from "./Modal.tsx";
 
 interface ConfirmDeleteProps {
   name: string;

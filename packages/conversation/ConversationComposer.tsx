@@ -8,14 +8,10 @@ import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { ToggleButton } from "@astryxdesign/core/ToggleButton";
 import { useMediaQuery } from "@astryxdesign/core/hooks";
 import { Plus, X } from "lucide-react";
-import { AddMenu } from "./AddMenu.tsx";
 import { copy } from "./copy.ts";
-import { runBeforeSend } from "./sendChain.ts";
-
-const MOBILE_QUERY = "(max-width: 47.98rem)";
-
-/** Closed, the + menu (no id) or the tray of one add-menu item. */
-type Tray = { id?: string } | null;
+import { PHONE_QUERY } from "@openwork/ui";
+import { useComposerTray } from "./useComposerTray.tsx";
+import { useSend } from "./useSend.ts";
 
 /**
  * The text field and Send. `composer.beforeSend` handlers run on the draft before the store sends it; `composer.action`
@@ -26,40 +22,25 @@ export function ConversationComposer({ roomId }: { roomId: string }): ReactEleme
   const ctx = useCtx();
   const { store } = devicePorts(ctx.ports);
   const [value, setValue] = useState("");
-  const [tray, setTray] = useState<Tray>(null);
-  const isPhone = useMediaQuery(MOBILE_QUERY);
+  const isPhone = useMediaQuery(PHONE_QUERY);
   const input = useRef<ChatComposerInputHandle | null>(null);
   const addItems = useSlot(composerAddMenu, ctx);
   const trays = useSlot(composerTray, ctx);
   const actions = useSlot(composerAction, ctx);
   const handlers = useSlot(composerBeforeSend, ctx);
+  const { content: adding, isAdding, closeTray, openTray } = useComposerTray(addItems, trays, ctx);
+  const send = useSend(roomId, store, handlers, ctx, closeTray, setValue);
 
   useEffect(() => input.current?.focus(), [roomId]);
 
-  const isAdding = tray !== null;
-  const closeTray = () => setTray(null);
-  const send = async (text: string): Promise<void> => {
-    try {
-      const draft = await runBeforeSend(handlers, { text }, ctx);
-      if (!draft) return setValue(text);
-      const words = draft.text.trim();
-      if (!words) return;
-      closeTray();
-      setValue("");
-      await store.send(roomId, words);
-    } catch (error) {
-      ctx.notify(copy.sendFailed(error instanceof Error ? error.message : String(error)), { status: "error" });
-    }
-  };
   const onKeyDown = (event: KeyboardEvent) => {
     if (event.key === "Escape" && isAdding) return closeTray(), event.preventDefault();
-    if (event.key === "Enter" && !event.shiftKey && isPhone) event.preventDefault();
+    if (event.key === "Enter" && !event.shiftKey && isPhone) {
+      event.preventDefault();
+      input.current?.insertText("\n");
+    }
   };
 
-  const open = trays.find((candidate) => candidate.id === tray?.id);
-  const adding = tray && !tray.id
-    ? <AddMenu items={addItems} onPick={(item) => (item.opens ? setTray({ id: item.opens }) : (closeTray(), item.run?.(ctx)))} />
-    : open?.render(ctx, closeTray);
   const plus = addItems.length > 0 && (
     <ToggleButton
       label={isAdding ? copy.close : copy.addToConversation}
@@ -67,12 +48,20 @@ export function ConversationComposer({ roomId }: { roomId: string }): ReactEleme
       icon={<Icon icon={isAdding ? X : Plus} />}
       isIconOnly
       isPressed={isAdding}
-      onPressedChange={(isOn) => setTray(isOn ? {} : null)}
+      onPressedChange={openTray}
     />
   );
   const buttonsAt = (placement: "start" | "end") =>
     actions.filter((action) => action.placement === placement).map((action) => (
-      <IconButton key={action.id} label={action.label} tooltip={action.label} icon={action.icon} variant="ghost" size={placement === "end" ? "md" : "sm"} onClick={() => action.run(ctx)} />
+      <IconButton
+        key={action.id}
+        label={action.label}
+        tooltip={action.label}
+        icon={action.icon}
+        variant="ghost"
+        size={placement === "end" ? "md" : "sm"}
+        onClick={() => action.run(ctx)}
+      />
     ));
   const field = <ChatComposerInput handleRef={input} maxRows={6} hasHistory={false} onKeyDown={onKeyDown} />;
 

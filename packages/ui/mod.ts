@@ -12,9 +12,26 @@ export type { FeedbackAction, FeedbackNotice } from "./Feedback.tsx";
 export { dropReleaseClick } from "./heldMenu.ts";
 export { identiconOf } from "./identicon.ts";
 export { Loading } from "./Loading.tsx";
-export { applyBase, BASE_ATTR, BASE_SCHEME, BASES, DEFAULT_BASE, getBase, isBase, setBase, STORAGE_KEY, subscribeBase } from "./theme/bases.ts";
+export { IslandBody } from "./IslandBody.tsx";
+export { copy } from "./copy.ts";
+export { Modal } from "./Modal.tsx";
+export { DRAWER_PHONE_QUERY, PHONE_QUERY } from "./media.ts";
+export {
+  applyBase,
+  BASE_ATTR,
+  BASE_SCHEME,
+  baseLabel,
+  BASES,
+  DEFAULT_BASE,
+  getBase,
+  isBase,
+  setBase,
+  STORAGE_KEY,
+  subscribeBase,
+  THEME_BASES,
+} from "./theme/bases.ts";
 export type { Base, Scheme } from "./theme/bases.ts";
-export { swatchOf, themeFor, ThemeProvider, useBase, useChatDensity } from "./theme/ThemeProvider.tsx";
+export { readableAccent, swatchOf, themeFor, ThemeProvider, useBase, useChatDensity } from "./theme/ThemeProvider.tsx";
 export { DEFAULT_CHAT_DENSITY, THEME_BY_ID } from "./theme/registry.ts";
 export type { ChatDensity } from "./theme/registry.ts";
 export {

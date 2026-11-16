@@ -40,7 +40,10 @@ export const appComponents = {
   "chat-message-bubble": {
     "variant:filled": { paddingBlock: "var(--spacing-2)", paddingInline: "var(--spacing-3)", borderRadius: "var(--radius-inner)" },
     // What you sent is the theme's primary colour shaded a little towards its text, with the page colour as the words (chat.css), so it reads in light and dark.
-    "variant:filled+sender:user": { backgroundColor: "color-mix(in srgb, var(--color-accent) 82%, var(--color-text-primary))", color: "var(--color-background-surface)" },
+    "variant:filled+sender:user": {
+      backgroundColor: "color-mix(in srgb, var(--color-accent) 82%, var(--color-text-primary))",
+      color: "var(--color-background-surface)",
+    },
   },
   // Astryx wraps tooltip text onto multiple lines up to its 300px default; ours stay a single line,
   // truncated with an ellipsis once a tip runs past this width rather than wrapping.
@@ -67,7 +70,8 @@ export const REPLY_WIDTH = { share: 0.45, floorTiles: 6 } as const;
 const TILE_PX = 48;
 /** The width a reply is drawn at, in pixels, for a thread column of `threadPx` with `roomPx` free for the message.
  * It restates the --shell-reply-width formula below only so a test can check the rule; the CSS is what draws it. */
-export const replyWidthPx = (threadPx: number, roomPx: number): number => Math.min(roomPx, Math.max(TILE_PX * REPLY_WIDTH.floorTiles, threadPx * REPLY_WIDTH.share));
+export const replyWidthPx = (threadPx: number, roomPx: number): number =>
+  Math.min(roomPx, Math.max(TILE_PX * REPLY_WIDTH.floorTiles, threadPx * REPLY_WIDTH.share));
 
 export const shellTokens = {
   "--shell-list-width": grows(DESIGN.list, 6),

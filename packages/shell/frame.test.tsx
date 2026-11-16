@@ -1,5 +1,5 @@
 import { assert, assertEquals } from "@std/assert";
-import { act, useState, type ReactElement } from "react";
+import { act, type ReactElement, useState } from "react";
 import { Frame } from "./Frame.tsx";
 import { copy } from "./copy.ts";
 import { flush, labelled, mount } from "./testing.tsx";

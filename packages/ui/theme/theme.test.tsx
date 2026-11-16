@@ -1,9 +1,9 @@
-import { assertEquals, assertExists } from "@std/assert";
+import { assert, assertEquals, assertExists } from "@std/assert";
 import { renderToStaticMarkup } from "react-dom/server";
 import { resolveThemeToken } from "@astryxdesign/core/theme";
 import { applyBase, BASE_SCHEME, BASES, DEFAULT_BASE, getBase, isBase, setBase, STORAGE_KEY, subscribeBase } from "./bases.ts";
 import { THEME_BY_ID } from "./registry.ts";
-import { themeFor, ThemeProvider } from "./ThemeProvider.tsx";
+import { readableAccent, themeFor, ThemeProvider } from "./ThemeProvider.tsx";
 import { appTokens, brandFoundations, REPLY_WIDTH, replyWidthPx, shellTokens } from "./themes/openwork/brand.ts";
 
 const COVERS = new URL("../assets/covers/", import.meta.url);
@@ -29,8 +29,14 @@ Deno.test("the default base is white, in light, with compact chat", () => {
   assertEquals(THEME_BY_ID.white.chat, "compact");
 });
 
-const colour = (base: keyof typeof THEME_BY_ID, token: string, mode: "light" | "dark") =>
-  resolveThemeToken(THEME_BY_ID[base].theme, token, { mode });
+Deno.test("uploaded accents are contrast-adjusted against the base and choose readable foreground text", () => {
+  const result = readableAccent("white", "#ffff00");
+  assert(result.accent !== "#ffff00");
+  assert(["#000000", "#ffffff"].includes(result.onAccent));
+  assert(["#000000", "#ffffff"].includes(readableAccent("white", "#d14c2c").onAccent));
+});
+
+const colour = (base: keyof typeof THEME_BY_ID, token: string, mode: "light" | "dark") => resolveThemeToken(THEME_BY_ID[base].theme, token, { mode });
 
 Deno.test("token values equal the source's", () => {
   const table: [keyof typeof THEME_BY_ID, "light" | "dark", string, string][] = [
@@ -95,5 +101,12 @@ Deno.test("the base is put on the page as data-base", () => {
 });
 
 Deno.test("ThemeProvider renders its children under the default theme", () => {
-  assertEquals(renderToStaticMarkup(<ThemeProvider><p>inside</p></ThemeProvider>).includes("<p>inside</p>"), true);
+  assertEquals(
+    renderToStaticMarkup(
+      <ThemeProvider>
+        <p>inside</p>
+      </ThemeProvider>,
+    ).includes("<p>inside</p>"),
+    true,
+  );
 });

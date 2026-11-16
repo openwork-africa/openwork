@@ -4,6 +4,7 @@ export interface Room {
   description?: string;
   picture?: string;
   background?: string;
+  accent?: string;
   createdAt: number;
   updatedAt: number;
   activityAt: number;
@@ -50,12 +51,17 @@ export interface PullAnswer {
 
 export type SyncStatus = "offline" | "sending" | "catchingUp" | "attention" | "current";
 
-export type MessageState = "sending" | "sent" | "failed";
-
-export interface TrailMessage extends Message {
-  state: MessageState;
-  /** Why the server refused it, in plain words, when `state` is `failed`. */
+export interface MessageView extends Message {
+  state?: "sending" | "sent" | "failed";
   failureReason?: string;
+}
+
+export type MessageState = NonNullable<MessageView["state"]>;
+
+export const YOU = "you" as const;
+
+export interface TrailMessage extends MessageView {
+  state: MessageState;
 }
 
 /** A change waiting to go to the server: one per record, replaced when the record changes again. */

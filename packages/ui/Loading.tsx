@@ -20,6 +20,13 @@ export function Loading(
       <ProgressBar label={label} isLabelHidden isIndeterminate />
     </VStack>
   );
-  if (size === "sm") return <VStack gap={2}>{mark}<Text type="supporting">{label}</Text></VStack>;
+  if (size === "sm") {
+    return (
+      <VStack gap={2}>
+        {mark}
+        <Text type="supporting">{label}</Text>
+      </VStack>
+    );
+  }
   return inline ? mark : <Center width="100%" height="100%">{mark}</Center>;
 }
