@@ -139,7 +139,7 @@ function Showcase(): ReactElement {
         <a className="showcase-item showcase-sovereignty" href="https://github.com/openwork-africa/openwork/blob/main/docs/why.md">
           <div className="showcase-copy">
             <h2>A road to digital sovereignty</h2>
-            <p>When someone realises they're running technology that doesn't have their interests at heart, they should have somewhere to switch to.</p>
+            <p>The end of big tech.</p>
           </div>
         </a>
         <article className="showcase-item showcase-brand">
