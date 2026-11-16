@@ -59,6 +59,47 @@ Deno.test("a failed message says so and Send again puts it back to sending", asy
   await unmount();
 });
 
+Deno.test("a failed message has Error details with the real reason as its tooltip, before Send again, and the tick says why", async () => {
+  const { store, view } = rig();
+  const room = await store.createRoom("Notes");
+  await store.send(room.id, "hello");
+  const [row] = (await store.journal.pending()).filter((item) => item.kind === "message");
+  await store.journal.fail(row, "That message is not allowed.");
+  const { container, unmount } = await mount(view(<ConversationWindow roomId={room.id} />, room.id));
+  await settle();
+  const details = labelled(container, copy.errorDetails)!;
+  const again = labelled(container, copy.sendAgain)!;
+  assert(details && again);
+  assert(details.compareDocumentPosition(again) & 4, "Error details comes before Send again");
+  assert(labelled(container, "That message is not allowed."), "the failed tick carries the reason");
+  await unmount();
+});
+
+Deno.test("catching up with no messages shows Still loading and not the empty card", async () => {
+  const { store, view } = rig();
+  const room = await store.createRoom("Notes");
+  const { container, unmount } = await mount(view(<ConversationWindow roomId={room.id} />, room.id));
+  await settle();
+  assert(!textOf(container).includes(copy.stillLoading));
+  assert(textOf(container).includes(copy.emptyTitle));
+  await act(() => store.journal.setStatus("catchingUp"));
+  await settle();
+  assert(textOf(container).includes(copy.stillLoading));
+  assert(!textOf(container).includes(copy.emptyTitle));
+  await unmount();
+});
+
+Deno.test("the empty card's slot is a row, so the card centres", async () => {
+  const { store, view } = rig();
+  const room = await store.createRoom("Notes");
+  const { container, unmount } = await mount(view(<ConversationWindow roomId={room.id} />, room.id));
+  await settle();
+  const slot = container.querySelector(".conversation-empty-card") as HTMLElement;
+  assert(slot && slot.querySelector(".empty-card, [class*=empty]"));
+  assert(!slot.className.includes("vstack") && !slot.getAttribute("data-direction")?.includes("column"));
+  await unmount();
+});
+
 Deno.test("the day separator labels the day, and nothing else is added between messages of one day", async () => {
   const { store, view } = rig();
   const room = await store.createRoom("Notes");
@@ -110,16 +151,15 @@ Deno.test("only a Brain that says it is working shows the typing indicator, neve
   await unmount();
 });
 
-Deno.test("the address bar shows the room name; its picture opens the panel; with no addressee there is no picker", async () => {
+Deno.test("the address bar shows the room name; it has no picture; with no addressee there is no picker", async () => {
   const { store, view, navigated } = rig();
   const room = await store.createRoom("Family");
   const { container, unmount } = await mount(view(<ConversationWindow roomId={room.id} />, room.id));
   await settle();
   const bar = container.querySelector(".address-field")!;
   assertEquals(bar.textContent, "Family");
-  assertEquals(bar.querySelectorAll("button").length, 1, "just the avatar");
-  await press(labelled(container, copy.openPanel));
-  assertEquals(navigated, [`/c/${room.id}/profile`]);
+  assertEquals(bar.querySelectorAll("button, img, [role=img]").length, 0, "no avatar, no button");
+  assertEquals(navigated, []);
   await unmount();
 });
 

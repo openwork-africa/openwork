@@ -54,6 +54,8 @@ export type MessageState = "sending" | "sent" | "failed";
 
 export interface TrailMessage extends Message {
   state: MessageState;
+  /** Why the server refused it, in plain words, when `state` is `failed`. */
+  failureReason?: string;
 }
 
 /** A change waiting to go to the server: one per record, replaced when the record changes again. */

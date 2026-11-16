@@ -1,6 +1,5 @@
 import { type ReactElement, useMemo, useState } from "react";
 import { addressAction, addressAddressee, type Addressee, type AddresseeValue, type Placed, type SlotContext, useCtx, useSlot } from "@openwork/kit";
-import { profilePath } from "@openwork/shell";
 import type { Room } from "@openwork/store";
 import { Avatar } from "@openwork/ui";
 import { Button } from "@astryxdesign/core/Button";
@@ -12,7 +11,6 @@ import { Text } from "@astryxdesign/core/Text";
 import { Typeahead } from "@astryxdesign/core/Typeahead";
 import type { SearchableItem } from "@astryxdesign/core/Typeahead";
 import { copy } from "./copy.ts";
-import { usePictureUrl } from "./usePictureUrl.ts";
 
 type Suggestion = SearchableItem<{ description?: string }>;
 
@@ -59,7 +57,7 @@ function AddSomeone({ providers, ctx }: { providers: readonly (AddresseeValue & 
 }
 
 /**
- * The room's name, with its picture opening the contact panel, and the `address.action` buttons. When `address.addressee`
+ * The room's name and the `address.action` buttons. When `address.addressee`
  * has contributions the name opens an editing bar to add someone; with none, the name is plain text and there is no picker.
  */
 export function AddressBar({ room }: { room: Room }): ReactElement {
@@ -67,7 +65,6 @@ export function AddressBar({ room }: { room: Room }): ReactElement {
   const [isEditing, setEditing] = useState(false);
   const actions = useSlot(addressAction, ctx);
   const addressees = useSlot(addressAddressee, ctx);
-  const picture = usePictureUrl(ctx.ports, room.picture);
   const canAdd = addressees.length > 0;
   const mode = isEditing && canAdd ? "edit" : "preview";
 
@@ -84,7 +81,6 @@ export function AddressBar({ room }: { room: Room }): ReactElement {
             )
             : (
               <>
-                <Avatar name={room.name} imageUrl={picture} size="sm" label={copy.openPanel} onClick={() => ctx.navigate(profilePath(room.id))} />
                 <StackItem size="fill">
                   {canAdd
                     ? <Button label={room.name} variant="ghost" tooltip={copy.editAddress} onClick={() => setEditing(true)} />

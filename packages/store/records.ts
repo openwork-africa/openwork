@@ -35,7 +35,10 @@ export function trailOf(messages: readonly Message[], outbox: readonly OutboxRow
   return messages
     .filter((message) => !message.deleted)
     .sort((a, b) => a.createdAt - b.createdAt)
-    .map((message) => ({ ...message, state: stateOf(rows.get(message.id)) }));
+    .map((message) => {
+      const row = rows.get(message.id);
+      return row?.failed === undefined ? { ...message, state: stateOf(row) } : { ...message, state: stateOf(row), failureReason: row.failed };
+    });
 }
 
 export const liveRooms = (rooms: readonly Room[]): Room[] =>

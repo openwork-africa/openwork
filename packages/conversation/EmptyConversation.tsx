@@ -8,9 +8,9 @@ export function EmptyConversation(): ReactElement {
   return (
     <VStack gap={2} align="center" className="conversation-empty-content">
       <HStack className="conversation-empty-scroller" aria-label={copy.emptyScroller}>
-        <VStack className="conversation-empty-card">
+        <HStack className="conversation-empty-card">
           <EmptyCard art="chat" title={copy.emptyTitle} description={copy.emptyDescription} />
-        </VStack>
+        </HStack>
       </HStack>
     </VStack>
   );

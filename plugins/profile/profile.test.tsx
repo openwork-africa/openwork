@@ -26,7 +26,7 @@ async function setup() {
 
 const byLabel = (label: string): HTMLElement | null =>
   [...document.querySelectorAll<HTMLElement>("[aria-label], button, [role='button']")].find((node) =>
-    node.getAttribute("aria-label") === label || (node.textContent ?? "").trim().startsWith(label)
+    node.getAttribute("aria-label") === label || (node.matches("button, [role='button']") && (node.textContent ?? "").trim().startsWith(label))
   ) ?? null;
 
 async function typeInto(input: HTMLInputElement, value: string): Promise<void> {
@@ -70,8 +70,9 @@ const labelled = (label: string): HTMLElement => {
 
 Deno.test("the profile is the panel's section: cover, picture, name and description", async () => {
   const { container, unmount } = await setup();
-  assert(container.querySelector(".profile-cover"));
-  assert(container.querySelector(".profile-avatar"));
+  assert(container.querySelector(".contact-panel > .profile-cover"), "the cover is above the scroll");
+  assert(!container.querySelector(".contact-scroll .profile-cover"));
+  assert(container.querySelector(".contact-scroll .profile-avatar"));
   assert(byLabel(copy.changeBackground));
   assert(container.textContent?.includes("Notes"));
   assert(container.textContent?.includes(copy.descriptionPlaceholder));

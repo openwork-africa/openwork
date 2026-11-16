@@ -157,6 +157,7 @@ export const trailAction: SlotKey<TrailActionValue> = slot("trail.action");
 export const windowEmpty: SlotKey<RenderValue> = slot("window.empty");
 export const windowBanner: SlotKey<RenderValue> = slot("window.banner");
 export const panelTab: SlotKey<PanelTabValue> = slot("panel.tab");
+export const panelCover: SlotKey<RenderValue> = slot("panel.cover");
 export const panelSection: SlotKey<RenderValue> = slot("panel.section");
 export const settingsRow: SlotKey<SettingsRowValue> = slot("settings.row");
 
@@ -181,6 +182,7 @@ export const frameSlots: readonly SlotKey<unknown>[] = [
   windowEmpty,
   windowBanner,
   panelTab,
+  panelCover,
   panelSection,
   settingsRow,
 ];

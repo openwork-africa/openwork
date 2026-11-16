@@ -46,8 +46,8 @@ Deno.test("the product: New, send, profile, rename and describe, end to end", as
   assert((container.querySelector(`[id^="msg-"]`)?.textContent ?? "").includes("Lunch at one?"), "in the trail");
   assert(circleText(container).includes("Lunch at one?"), "as the row preview");
 
-  await click(labelled(container, "Open contact details"));
-  assertEquals(app.path(), `/c/${room.id}/profile`);
+  assertEquals(container.querySelector(".address-field img, .address-field [role=img]"), null, "no picture in the address bar");
+  assert(container.querySelector(".contact-panel > .profile-cover"), "the panel shows the cover above the scroll");
 
   await click([...container.querySelectorAll<HTMLElement>(".contact-hero-body button")].find((button) => button.textContent === room.name) ?? null);
   const input = container.querySelector("input") as HTMLInputElement;
