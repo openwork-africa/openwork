@@ -4,18 +4,21 @@ import { parseRoute, type Route } from "./route.ts";
 export interface RouterEnv {
   read(): string;
   push(path: string): void;
+  replace(path: string): void;
   listen(listener: () => void): () => void;
 }
 
 export interface Router {
   path(): string;
   navigate(path: string): void;
+  replace(path: string): void;
   subscribe(listener: () => void): () => void;
 }
 
 export const browserEnv: RouterEnv = {
   read: () => globalThis.location.pathname + globalThis.location.search,
   push: (path) => globalThis.history.pushState(null, "", path),
+  replace: (path) => globalThis.history.replaceState(null, "", path),
   listen(listener) {
     globalThis.addEventListener("popstate", listener);
     return () => globalThis.removeEventListener("popstate", listener);
@@ -32,6 +35,11 @@ export function createRouter(env: RouterEnv = browserEnv): Router {
     navigate(path) {
       if (path === env.read()) return;
       env.push(path);
+      changed();
+    },
+    replace(path) {
+      if (path === env.read()) return;
+      env.replace(path);
       changed();
     },
     subscribe(listener) {

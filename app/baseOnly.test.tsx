@@ -8,7 +8,8 @@ Deno.test("base only: zero plugins boot, draw the frame's empty states and raise
   const app = await bootProduct([]);
   assertEquals(app.shell.product.problems, []);
   assert(app.container.querySelector(".convo-shell"), "the frame");
-  assert(app.container.querySelector('svg[aria-label="Openwork"]'), "the logo where no room is open");
+  assert(app.container.querySelector(".convo-loading")?.textContent?.includes(copy.noRoomsTitle), "the empty state in the window frame");
+  assertEquals(app.container.querySelector(".convo-loading button"), null, "no way to start one without the rooms plugin");
   assert(app.container.textContent?.includes(copy.circleEmptyTitle), "the empty circle");
   assertEquals(labelled(app.container, "New"), null, "no New button without rooms");
   await app.shell.router.navigate("/c/some-room");

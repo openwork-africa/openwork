@@ -46,6 +46,7 @@ export function memoryEnv(start = "/"): RouterEnv & { history: string[] } {
     history,
     read: () => history.at(-1)!,
     push: (path) => void history.push(path),
+    replace: (path) => void history.splice(-1, 1, path),
     listen(listener) {
       listeners.add(listener);
       return () => void listeners.delete(listener);
