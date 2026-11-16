@@ -15,18 +15,18 @@ const isInLayer = (target: EventTarget | null): boolean =>
   target instanceof Element && !!target.closest("dialog, [role='dialog'], [popover]");
 
 /** How far a row can still scroll each way: a swipe that would scroll it is the row's, not the page's. */
-export interface SideRoom {
+interface SideRoom {
   back: number;
   ahead: number;
 }
 
-export const scrollsInstead = (room: SideRoom | null, direction: "left" | "right"): boolean =>
+const scrollsInstead = (room: SideRoom | null, direction: "left" | "right"): boolean =>
   !!room && (direction === "right" ? room.back > 0 : room.ahead > 1);
 
 function sideRoomAt(target: EventTarget | null): SideRoom | null {
-  for (let el = target instanceof Element ? target : null; el; el = el.parentElement) {
-    if (/auto|scroll/.test(getComputedStyle(el).overflowX) && el.scrollWidth > el.clientWidth) {
-      return { back: Math.abs(el.scrollLeft), ahead: el.scrollWidth - el.clientWidth - Math.abs(el.scrollLeft) };
+  for (let element = target instanceof Element ? target : null; element; element = element.parentElement) {
+    if (/auto|scroll/.test(getComputedStyle(element).overflowX) && element.scrollWidth > element.clientWidth) {
+      return { back: Math.abs(element.scrollLeft), ahead: element.scrollWidth - element.clientWidth - Math.abs(element.scrollLeft) };
     }
   }
   return null;
@@ -35,8 +35,8 @@ function sideRoomAt(target: EventTarget | null): SideRoom | null {
 export function useSwipe(ref: RefObject<HTMLElement | null>, onSwipe: (direction: "left" | "right") => void): void {
   const swiped = useEffectEvent(onSwipe);
   useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
+    const element = ref.current;
+    if (!element) return;
     let start: { x: number; y: number; room: SideRoom | null } | null = null;
     const down = (event: TouchEvent) => {
       const touch = event.touches[0];
@@ -54,13 +54,13 @@ export function useSwipe(ref: RefObject<HTMLElement | null>, onSwipe: (direction
     const cancel = () => {
       start = null;
     };
-    el.addEventListener("touchstart", down, { passive: true });
-    el.addEventListener("touchend", up, { passive: true });
-    el.addEventListener("touchcancel", cancel, { passive: true });
+    element.addEventListener("touchstart", down, { passive: true });
+    element.addEventListener("touchend", up, { passive: true });
+    element.addEventListener("touchcancel", cancel, { passive: true });
     return () => {
-      el.removeEventListener("touchstart", down);
-      el.removeEventListener("touchend", up);
-      el.removeEventListener("touchcancel", cancel);
+      element.removeEventListener("touchstart", down);
+      element.removeEventListener("touchend", up);
+      element.removeEventListener("touchcancel", cancel);
     };
   }, [ref]);
 }

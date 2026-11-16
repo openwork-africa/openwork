@@ -1,10 +1,9 @@
 use std::path::PathBuf;
 
-use ow_core::sync::valid_file_id;
-use ow_core::{CoreError, FileStore, StoredFile};
+use ow_core::{valid_file_id, CoreError, FileStore, StoredFile};
 use sqlx::SqlitePool;
 
-use crate::storage;
+use crate::{copy, storage};
 
 pub struct DiskFileStore {
     pool: SqlitePool,
@@ -20,7 +19,7 @@ impl DiskFileStore {
         if valid_file_id(id) {
             Ok(self.dir.join(id))
         } else {
-            Err(CoreError::Invalid("This file id is not valid.".into()))
+            Err(CoreError::Invalid(copy::INVALID_FILE_ID.into()))
         }
     }
 }

@@ -29,3 +29,11 @@ pub trait FileStore: Send + Sync + 'static {
     ) -> impl Future<Output = Result<(), CoreError>> + Send;
     fn get(&self, id: &str) -> impl Future<Output = Result<Option<StoredFile>, CoreError>> + Send;
 }
+
+pub fn valid_file_id(id: &str) -> bool {
+    !id.is_empty()
+        && id.len() <= 128
+        && id
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
+}

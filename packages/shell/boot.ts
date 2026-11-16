@@ -50,7 +50,7 @@ export function bootShell(options: ShellOptions): Shell {
   const connectivity = options.connectivity ?? browserConnectivity;
   const ports = buildPorts(options.ports ?? {}, connectivity, options.baseUrl);
   const product = compose(options.plugins, ports);
-  const sync = createSyncEngine({ store: ports.store, files: ports.files, transport: ports.transport, connectivity });
+  const sync = createSyncEngine({ store: ports.store, files: ports.files, transport: ports.transport, connectivity, notices: product.notices });
   sync.start();
   return {
     product,

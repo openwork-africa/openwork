@@ -1,17 +1,27 @@
 use std::net::SocketAddr;
 
+use axum::http::HeaderValue;
 use axum::Router;
 use ow_core::CoreError;
 
 use crate::config::Config;
+use crate::copy;
 use crate::router::{self, AppState};
 
 pub async fn build_app(config: &Config) -> Result<Router, CoreError> {
+    let dev_origins = config
+        .dev_origins
+        .iter()
+        .map(|origin| {
+            HeaderValue::from_str(origin).map_err(|_| CoreError::Invalid(copy::BAD_ORIGIN.into()))
+        })
+        .collect::<Result<Vec<_>, _>>()?;
     let store = ow_store::open(&config.data_dir).await?;
     Ok(router::build(AppState {
         changes: store.changes,
         files: store.files,
         static_dir: config.static_dir.clone(),
+        dev_origins,
     }))
 }
 

@@ -105,3 +105,15 @@ Deno.test("a package manifest without name, version or exports is caught", () =>
     ["manifest:packages/kit/deno.json", "manifest:packages/kit/deno.json"],
   );
 });
+
+Deno.test("Rust files are held to the length limit and the closed-reference rule", () => {
+  const closed = ["std", "openwork", "africa"].join(".");
+  assertEquals(
+    rulesFor({
+      "server/crates/a/src/long.rs": "const A: u8 = 1;\n".repeat(301),
+      "server/crates/a/src/closed.rs": `// see ${closed}\n`,
+      "server/crates/a/src/fine.rs": "const A: u8 = 1;\n",
+    }),
+    ["file-length:server/crates/a/src/long.rs", "no-closed-references:server/crates/a/src/closed.rs"],
+  );
+});

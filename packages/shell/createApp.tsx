@@ -4,7 +4,7 @@ import "@openwork/ui/css";
 import { createRoot } from "react-dom/client";
 import { bootShell, type Shell, type ShellOptions } from "./boot.ts";
 import { ShellApp } from "./ShellApp.tsx";
-import { startServiceWorker } from "./serviceWorker.ts";
+import { browserWorkerEnv, startServiceWorker } from "./serviceWorker.ts";
 
 export interface AppOptions extends ShellOptions {
   /** Where to mount; `#root` by default. */
@@ -27,7 +27,7 @@ export function createApp(options: AppOptions): App {
   const shell = bootShell(options);
   const root = createRoot(element);
   root.render(<ShellApp product={shell.product} router={shell.router} regions={shell.regions} />);
-  const stopWorker = options.serviceWorker ?? !isDev ? startServiceWorker() : () => {};
+  const stopWorker = options.serviceWorker ?? !isDev ? startServiceWorker(browserWorkerEnv(shell.product.notices)) : () => {};
   return {
     shell,
     stop() {

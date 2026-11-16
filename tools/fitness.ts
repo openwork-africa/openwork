@@ -4,14 +4,14 @@ export interface Violation {
   message: string;
 }
 
-const SCANNED_ROOTS = ["packages", "plugins", "libs", "app"];
+const SCANNED_ROOTS = ["packages", "plugins", "libs", "app", "server/crates"];
 const SKIPPED_DIRECTORIES = new Set(["node_modules", "dist", "target", ".git"]);
 const MAX_LINES = 300;
 const LIFTED_DATA = ["packages/ui/theme/"];
 const OWN_COLOURS = ["packages/ui/theme/", "packages/ui/identicon.ts"];
 
 const SOURCE = /\.(ts|tsx)$/;
-const CODE = /\.(ts|tsx|css)$/;
+const CODE = /\.(ts|tsx|css|rs)$/;
 const TEST = /\.test\.(ts|tsx)$/;
 const IMPORT = /(?:\bfrom\s*|\bimport\s*\(?\s*)["']([^"']+)["']/g;
 const HEX = /#[0-9a-fA-F]{3,8}\b/;
@@ -118,7 +118,7 @@ function manifestRules(root: string, files: string[]): Violation[] {
   return found;
 }
 
-const TEXT = /\.(ts|tsx|css|json|yml|yaml)$/;
+const TEXT = /\.(ts|tsx|css|rs|json|yml|yaml)$/;
 
 export function checkFitness(root: string): Violation[] {
   const files = SCANNED_ROOTS.flatMap((name) => walk(`${root}/${name}`)).map((path) => path.slice(root.length + 1));

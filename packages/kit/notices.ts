@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from "react";
+import { createCell } from "./cell.ts";
 
 export type NoticeStatus = "info" | "success" | "warning" | "error";
 
@@ -21,36 +22,41 @@ export interface NoticeOptions {
   action?: NoticeAction;
 }
 
+export type Notify = (text: string, options?: NoticeOptions) => string;
+
+export interface Notices {
+  notify: Notify;
+  dismiss(id: string): void;
+  list(): readonly Notice[];
+  subscribe(listener: () => void): () => void;
+}
+
 const DEFAULT_HOLD_MS = 2200;
 
-let notices: readonly Notice[] = [];
-let counter = 0;
-const listeners = new Set<() => void>();
+export function createNotices(): Notices {
+  const cell = createCell<readonly Notice[]>([]);
+  let counter = 0;
 
-const publish = (next: readonly Notice[]): void => {
-  notices = next;
-  listeners.forEach((listener) => listener());
-};
+  const dismiss = (id: string): void => cell.set(cell.get().filter((notice) => notice.id !== id));
 
-export const getNotices = (): readonly Notice[] => notices;
+  const notify: Notify = (text, options = {}) => {
+    const { status = "info", action } = options;
+    const id = String(counter++);
+    const wrapped = action && { label: action.label, run: () => (dismiss(id), action.run()) };
+    cell.set([...cell.get(), { id, text, status, action: wrapped }]);
+    const holdMs = options.holdMs ?? (status === "info" || status === "success" ? DEFAULT_HOLD_MS : 0);
+    if (holdMs > 0) setTimeout(() => dismiss(id), holdMs);
+    return id;
+  };
 
-export function dismiss(id: string): void {
-  publish(notices.filter((notice) => notice.id !== id));
+  return { notify, dismiss, list: cell.get, subscribe: cell.subscribe };
 }
 
-export function notify(text: string, options: NoticeOptions = {}): string {
-  const { status = "info", action } = options;
-  const id = String(counter++);
-  const wrapped = action && { label: action.label, run: () => (dismiss(id), action.run()) };
-  publish([...notices, { id, text, status, action: wrapped }]);
-  const holdMs = options.holdMs ?? (status === "info" || status === "success" ? DEFAULT_HOLD_MS : 0);
-  if (holdMs > 0) setTimeout(() => dismiss(id), holdMs);
-  return id;
-}
+export const defaultNotices: Notices = createNotices();
 
-const subscribe = (listener: () => void): () => void => {
-  listeners.add(listener);
-  return () => void listeners.delete(listener);
-};
+export const { notify, dismiss } = defaultNotices;
 
-export const useNotices = (): readonly Notice[] => useSyncExternalStore(subscribe, getNotices, getNotices);
+export const getNotices = (): readonly Notice[] => defaultNotices.list();
+
+export const useNotices = (notices: Notices = defaultNotices): readonly Notice[] =>
+  useSyncExternalStore(notices.subscribe, notices.list, notices.list);

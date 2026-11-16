@@ -1,15 +1,15 @@
-import { dismiss, notify as kitNotify } from "@openwork/kit";
+import { defaultNotices, type Notices } from "@openwork/kit";
 import { copy } from "./copy.ts";
 import { isRetryable, OfflineError } from "./errors.ts";
 import type { Connectivity, DeviceStore, FileStore, Transport } from "./ports.ts";
-import type { Change, OutboxRow, SyncStatus } from "./types.ts";
+import type { Change, OutboxRow } from "./types.ts";
 
 export interface SyncOptions {
   store: DeviceStore;
   transport: Transport;
   files: FileStore;
   connectivity: Connectivity;
-  notify?: typeof kitNotify;
+  notices?: Pick<Notices, "notify" | "dismiss">;
   intervalMs?: number;
 }
 
@@ -23,7 +23,7 @@ export interface SyncEngine {
 const DEFAULT_INTERVAL_MS = 5000;
 
 export function createSyncEngine(options: SyncOptions): SyncEngine {
-  const { store, transport, files, connectivity, notify = kitNotify, intervalMs = DEFAULT_INTERVAL_MS } = options;
+  const { store, transport, files, connectivity, notices = defaultNotices, intervalMs = DEFAULT_INTERVAL_MS } = options;
   const { journal } = store;
   let running: Promise<void> | undefined;
   let again = false;
@@ -32,20 +32,27 @@ export function createSyncEngine(options: SyncOptions): SyncEngine {
   let lastReported: string | undefined;
   let timer: ReturnType<typeof setInterval> | undefined;
 
-  const setOffline = (): void => {
-    journal.setStatus("offline");
-    offlineNotice ??= notify(copy.offline, { status: "warning", holdMs: 0 });
-  };
+  type Outcome = { kind: "offline" } | { kind: "failed"; message: string } | { kind: "done"; failedCount: number };
 
-  const reportOnce = (message: string): void => {
-    if (message !== lastReported) notify(message, { status: "error" });
-    lastReported = message;
-  };
-
-  const setBack = (): void => {
-    if (offlineNotice === undefined) return;
-    dismiss(offlineNotice);
-    offlineNotice = undefined;
+  /** The one place a round's outcome becomes the sync status and the notices. */
+  const settle = (outcome: Outcome): void => {
+    if (outcome.kind === "offline") {
+      journal.setStatus("offline");
+      offlineNotice ??= notices.notify(copy.offline, { status: "warning", holdMs: 0 });
+      return;
+    }
+    if (outcome.kind === "failed") {
+      journal.setStatus("attention");
+      if (outcome.message !== lastReported) notices.notify(outcome.message, { status: "error" });
+      lastReported = outcome.message;
+      return;
+    }
+    if (offlineNotice !== undefined) {
+      notices.dismiss(offlineNotice);
+      offlineNotice = undefined;
+    }
+    lastReported = undefined;
+    journal.setStatus(outcome.failedCount > 0 ? "attention" : "current");
   };
 
   async function uploadAccepted(change: Change): Promise<void> {
@@ -73,7 +80,7 @@ export function createSyncEngine(options: SyncOptions): SyncEngine {
         await journal.acknowledge(item.row);
       } else {
         await journal.fail(item.row, answer.message);
-        notify(answer.message, { status: "error" });
+        notices.notify(answer.message, { status: "error" });
       }
     }
   }
@@ -85,18 +92,14 @@ export function createSyncEngine(options: SyncOptions): SyncEngine {
   }
 
   async function round(): Promise<void> {
-    if (!connectivity.isOnline()) return setOffline();
+    if (!connectivity.isOnline()) return settle({ kind: "offline" });
     try {
       await push();
       await pull();
-      setBack();
-      lastReported = undefined;
-      const status: SyncStatus = (await journal.failedCount()) > 0 ? "attention" : "current";
-      journal.setStatus(status);
+      settle({ kind: "done", failedCount: await journal.failedCount() });
     } catch (error) {
-      if (error instanceof OfflineError || isRetryable(error)) return setOffline();
-      journal.setStatus("attention");
-      reportOnce(error instanceof Error ? error.message : String(error));
+      if (error instanceof OfflineError || isRetryable(error)) return settle({ kind: "offline" });
+      settle({ kind: "failed", message: error instanceof Error ? error.message : String(error) });
     }
   }
 

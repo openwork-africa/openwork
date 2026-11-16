@@ -18,7 +18,7 @@ impl ChangeRepository for SqliteChangeRepository {
         let mut tx = self.pool.begin().await.map_err(storage)?;
         let existing: Option<i64> =
             sqlx::query_scalar("SELECT updated_at FROM records WHERE kind = ? AND id = ?")
-                .bind(change.kind.as_str())
+                .bind(change.kind.to_string())
                 .bind(&change.id)
                 .fetch_optional(&mut *tx)
                 .await
@@ -38,7 +38,7 @@ impl ChangeRepository for SqliteChangeRepository {
              ON CONFLICT (kind, id) DO UPDATE SET \
              seq = excluded.seq, updated_at = excluded.updated_at, data = excluded.data",
         )
-        .bind(change.kind.as_str())
+        .bind(change.kind.to_string())
         .bind(&change.id)
         .bind(seq)
         .bind(change.updated_at)
@@ -62,8 +62,10 @@ impl ChangeRepository for SqliteChangeRepository {
         let mut cursor = since;
         let mut changes = Vec::with_capacity(rows.len());
         for row in rows {
-            let kind = Kind::parse(row.get::<&str, _>("kind"))
-                .ok_or_else(|| storage("unknown record kind"))?;
+            let kind = row
+                .get::<&str, _>("kind")
+                .parse::<Kind>()
+                .map_err(storage)?;
             let value = serde_json::from_str(row.get::<&str, _>("data")).map_err(storage)?;
             changes.push(Change {
                 kind,

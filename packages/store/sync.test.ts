@@ -1,4 +1,5 @@
 import { assert, assertEquals } from "@std/assert";
+import { createNotices } from "@openwork/kit";
 import { manualConnectivity } from "./connectivity.ts";
 import { ManualClock, MemoryTransport } from "./memoryTransport.ts";
 import type { SyncStatus } from "./types.ts";
@@ -19,13 +20,15 @@ function rig(device: Device, transport = new MemoryTransport()): Rig {
   const told: Rig["told"] = [];
   const statuses: SyncStatus[] = [];
   device.store.syncStatus().subscribe(() => statuses.push(device.store.syncStatus().get()!));
-  const notify = ((text: string, options?: { status?: string }) => (told.push({ text, status: options?.status }), String(told.length))) as never;
-  const engine = createSyncEngine({ store: device.store, files: device.files, transport, connectivity, notify, intervalMs: 20 });
+  const notices = createNotices();
+  const notify = notices.notify;
+  notices.notify = (text, options) => (told.push({ text, status: options?.status }), notify(text, options));
+  const engine = createSyncEngine({ store: device.store, files: device.files, transport, connectivity, notices, intervalMs: 20 });
   return { device, transport, connectivity, told, statuses, engine };
 }
 
 for (const make of [memoryDevice, dexieDevice]) {
-  const run = (name: string, body: () => Promise<void>) => Deno.test({ name: `${make().name}: ${name}`, sanitizeOps: false, sanitizeResources: false, fn: body });
+  const run = (name: string, body: () => Promise<void>) => Deno.test({ name: `${make().name}: ${name}`, fn: body });
 
   run("offline work is pushed on the next round and a second device pulls it", async () => {
     const a = rig(make());

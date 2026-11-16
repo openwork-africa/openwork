@@ -4,6 +4,8 @@ use axum::Json;
 use ow_core::CoreError;
 use serde_json::json;
 
+use crate::copy;
+
 pub struct ApiError {
     status: StatusCode,
     message: String,
@@ -18,7 +20,7 @@ impl ApiError {
     }
 
     pub fn not_found() -> Self {
-        Self::new(StatusCode::NOT_FOUND, "There is nothing at this address.")
+        Self::new(StatusCode::NOT_FOUND, copy::NOT_FOUND)
     }
 }
 
@@ -28,10 +30,7 @@ impl From<CoreError> for ApiError {
             CoreError::Invalid(message) => Self::new(StatusCode::BAD_REQUEST, message),
             CoreError::Storage(detail) => {
                 tracing::error!("storage failed: {detail}");
-                Self::new(
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    "The server could not read or save data. Try again.",
-                )
+                Self::new(StatusCode::INTERNAL_SERVER_ERROR, copy::STORAGE_FAILED)
             }
         }
     }

@@ -6,16 +6,14 @@ use axum::http::{header, HeaderMap, StatusCode};
 use axum::response::{IntoResponse, Response};
 use ow_core::{ChangeRepository, CoreError, FileStore};
 
+use crate::copy;
 use crate::error::ApiError;
 use crate::router::AppState;
 
 pub const FILE_LIMIT: usize = 25 * 1024 * 1024;
 
 fn too_large() -> ApiError {
-    ApiError::new(
-        StatusCode::PAYLOAD_TOO_LARGE,
-        "This file is larger than 25 MB, which is the most the server keeps.",
-    )
+    ApiError::new(StatusCode::PAYLOAD_TOO_LARGE, copy::FILE_TOO_LARGE)
 }
 
 pub async fn put<R: ChangeRepository, F: FileStore>(
@@ -56,10 +54,9 @@ pub async fn get<R: ChangeRepository, F: FileStore>(
             }
             Ok((headers, Body::from(file.bytes)).into_response())
         }
-        Ok(None) | Err(CoreError::Invalid(_)) => Err(ApiError::new(
-            StatusCode::NOT_FOUND,
-            "This file is not on the server.",
-        )),
+        Ok(None) | Err(CoreError::Invalid(_)) => {
+            Err(ApiError::new(StatusCode::NOT_FOUND, copy::FILE_MISSING))
+        }
         Err(error) => Err(error.into()),
     }
 }

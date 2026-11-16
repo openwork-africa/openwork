@@ -7,6 +7,7 @@ use ow_core::{sync, ChangeRepository, FileStore, PullAnswer, PushAnswers};
 use serde::Deserialize;
 use serde_json::Value;
 
+use crate::copy;
 use crate::error::ApiError;
 use crate::router::AppState;
 
@@ -28,20 +29,16 @@ pub async fn push<R: ChangeRepository, F: FileStore>(
 ) -> Result<Json<PushAnswers>, ApiError> {
     let bytes = axum::body::to_bytes(request.into_body(), PUSH_LIMIT)
         .await
-        .map_err(|_| {
-            ApiError::new(
-                StatusCode::PAYLOAD_TOO_LARGE,
-                "This push is too large. Send fewer changes at once.",
-            )
-        })?;
-    let body: RawPush = serde_json::from_slice(&bytes).map_err(|_| {
-        ApiError::new(
-            StatusCode::BAD_REQUEST,
-            "The push body must be JSON like {\"changes\": [...]}.",
-        )
-    })?;
-    let answers = sync::push(&state.changes, body.changes).await;
-    Ok(Json(PushAnswers { answers }))
+        .map_err(|_| ApiError::new(StatusCode::PAYLOAD_TOO_LARGE, copy::PUSH_TOO_LARGE))?;
+    let body: RawPush = serde_json::from_slice(&bytes)
+        .map_err(|_| ApiError::new(StatusCode::BAD_REQUEST, copy::PUSH_BODY))?;
+    let outcome = sync::push(&state.changes, body.changes).await;
+    for detail in &outcome.storage_failures {
+        tracing::error!("storage failed: {detail}");
+    }
+    Ok(Json(PushAnswers {
+        answers: outcome.answers,
+    }))
 }
 
 pub async fn pull<R: ChangeRepository, F: FileStore>(
@@ -50,12 +47,9 @@ pub async fn pull<R: ChangeRepository, F: FileStore>(
 ) -> Result<Json<PullAnswer>, ApiError> {
     let since = match query.since.as_deref() {
         None | Some("") => 0,
-        Some(text) => text.parse::<u64>().map_err(|_| {
-            ApiError::new(
-                StatusCode::BAD_REQUEST,
-                "The since value must be a whole number.",
-            )
-        })?,
+        Some(text) => text
+            .parse::<u64>()
+            .map_err(|_| ApiError::new(StatusCode::BAD_REQUEST, copy::SINCE_NOT_NUMBER))?,
     };
     Ok(Json(state.changes.pull(since).await?))
 }

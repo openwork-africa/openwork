@@ -15,6 +15,7 @@ pub struct AppState<R, F> {
     pub changes: R,
     pub files: F,
     pub static_dir: PathBuf,
+    pub dev_origins: Vec<HeaderValue>,
 }
 
 async fn healthz() -> &'static str {
@@ -27,10 +28,7 @@ async fn unknown_api() -> ApiError {
 
 pub fn build<R: ChangeRepository, F: FileStore>(state: AppState<R, F>) -> Router {
     let cors = CorsLayer::new()
-        .allow_origin([
-            HeaderValue::from_static("http://127.0.0.1:47411"),
-            HeaderValue::from_static("http://localhost:47411"),
-        ])
+        .allow_origin(state.dev_origins.clone())
         .allow_methods([Method::GET, Method::POST, Method::PUT, Method::OPTIONS])
         .allow_headers([header::CONTENT_TYPE]);
     Router::new()
