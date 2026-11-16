@@ -2,8 +2,8 @@ import type { ReactElement } from "react";
 import { Button } from "@astryxdesign/core/Button";
 import { Center } from "@astryxdesign/core/Center";
 import { Text } from "@astryxdesign/core/Text";
-import { HStack, VStack } from "@astryxdesign/core/Stack";
-import { BrandLockup, EmptyCard } from "@openwork/ui";
+import { VStack } from "@astryxdesign/core/Stack";
+import { BrandLockup, EmptyState } from "@openwork/ui";
 import { copy } from "./copy.ts";
 
 const MARK_WIDTH = "calc(var(--spacing-12) * 4)";
@@ -21,18 +21,12 @@ export function NoRoom({ isEmpty = false, onStart }: NoRoomProps): ReactElement 
       <Center width="100%" height="100%">
         {isEmpty
           ? (
-            <VStack gap={2} align="center" className="conversation-empty-content">
-              <HStack className="conversation-empty-scroller">
-                <VStack className="conversation-empty-card">
-                  <EmptyCard
-                    art="chat"
-                    title={copy.noRoomsTitle}
-                    description={copy.noRoomsDescription}
-                    action={onStart && <Button label={copy.startLabel} variant="primary" onClick={onStart} />}
-                  />
-                </VStack>
-              </HStack>
-            </VStack>
+            <EmptyState
+              art="chat"
+              title={copy.noRoomsTitle}
+              description={copy.noRoomsDescription}
+              action={onStart && <Button label={copy.startLabel} variant="primary" onClick={onStart} />}
+            />
           )
           : (
             <VStack gap={3} align="center" width={MARK_WIDTH}>

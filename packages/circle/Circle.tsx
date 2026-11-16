@@ -67,6 +67,7 @@ export function Circle({ roomId }: { roomId?: string }): ReactElement {
     row,
   ) => (tabs.length > 1 && tab ? tab.filter(row) : true));
   const create = ctx.commands[CREATE] as (() => unknown) | undefined;
+  const isEmptyDevice = !isLoading(sources, bySource) && mergeRows(sources, bySource).length === 0;
 
   useEffect(() => {
     listRef.current?.querySelector(".avatar-frame[data-selected]")
@@ -122,7 +123,7 @@ export function Circle({ roomId }: { roomId?: string }): ReactElement {
       >
         <VStack gap={3} padding={2}>{body}</VStack>
       </VStack>
-      {create && (
+      {create && !isEmptyDevice && (
         <HStack className="convo-new">
           <IconButton
             label={copy.newLabel}

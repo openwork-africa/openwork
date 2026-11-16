@@ -26,7 +26,7 @@ const removals: Record<string, (app: Booted) => Promise<void>> = {
     assert(app.container.querySelector(".contact-hero-body"), "profile draws the panel section");
   },
   text: async (app) => {
-    await click(labelled(app.container, "New"));
+    await click(app.container.querySelector(".convo-loading button"));
     assert(app.path().startsWith("/c/"), "rooms: New opens a room");
     await flush();
     assert(app.container.querySelector(".contact-hero-body"), "profile draws the panel section");
@@ -35,7 +35,7 @@ const removals: Record<string, (app: Booted) => Promise<void>> = {
     assertEquals(message(app)?.querySelector("strong"), null);
   },
   profile: async (app) => {
-    await click(labelled(app.container, "New"));
+    await click(app.container.querySelector(".convo-loading button"));
     assert(app.path().startsWith("/c/"), "rooms: New opens a room");
     await openSeededRoom(app);
     assertEquals(app.container.querySelector(".contact-hero-body"), null);

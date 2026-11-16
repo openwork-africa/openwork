@@ -1,9 +1,8 @@
 import { type ComponentType, lazy, Suspense, useEffect, useMemo, type ReactElement } from "react";
-import { Button } from "@astryxdesign/core/Button";
 import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { shellPage, type PageValue, useCtx, useSlot } from "@openwork/kit";
-import { devicePorts, useRooms } from "@openwork/store";
-import { EmptyCard, ErrorBoundary, Loading } from "@openwork/ui";
+import { devicePorts, useRoom, useRooms } from "@openwork/store";
+import { ErrorBoundary, Loading } from "@openwork/ui";
 import { copy } from "./copy.ts";
 import { Frame, type Regions } from "./Frame.tsx";
 import { type Drawer, listIsDrawer, shellUi, useDrawer } from "./drawer.ts";
@@ -30,11 +29,19 @@ function RoomRoutes({ regions, route }: { regions: Regions; route: Route }): Rea
   const rooms = useRooms(devicePorts(ctx.ports).store);
   const latest = rooms?.[0]?.id;
   const create = ctx.commands["rooms.create"] as (() => unknown) | undefined;
+  const room = useRoom(devicePorts(ctx.ports).store, roomId ?? "");
+  const isMissing = !!roomId && room === null;
   const noRooms = rooms?.length === 0;
   useEffect(() => shellUi.setDrawer(drawerFor(route, noRooms)), [route.name, roomId, noRooms]);
   useEffect(() => {
     if (route.name === "home" && latest && !listIsDrawer()) router.replace(roomPath(latest));
   }, [route.name, latest]);
+
+  useEffect(() => {
+    if (!isMissing) return;
+    const other = rooms?.find((each) => each.id !== roomId)?.id;
+    router.replace(other ? roomPath(other) : "/");
+  }, [isMissing, roomId, rooms]);
 
   const onDrawer = (next: Drawer): void => {
     shellUi.setDrawer(next);
@@ -43,19 +50,13 @@ function RoomRoutes({ regions, route }: { regions: Regions; route: Route }): Rea
     else if (route.name === "profile") navigate(roomPath(roomId));
   };
 
-  return <Frame {...regions} roomId={roomId} noRooms={noRooms} onStart={create && (() => void create())} drawer={drawer} onDrawer={onDrawer} />;
+  return <Frame {...regions} roomId={roomId} noRooms={noRooms} isMissing={isMissing} onStart={create && (() => void create())} drawer={drawer} onDrawer={onDrawer} />;
 }
 
-function NotFound(): ReactElement {
-  const { navigate } = useCtx();
-  return (
-    <EmptyCard
-      art="chat"
-      title={copy.notFoundTitle}
-      description={copy.notFoundDescription}
-      action={<Button label={copy.goHome} variant="secondary" onClick={() => navigate("/")} />}
-    />
-  );
+function NotFound(): null {
+  const router = useRouter();
+  useEffect(() => router.replace("/"), [router]);
+  return null;
 }
 
 function PluginPage({ path }: { path: string }): ReactElement {

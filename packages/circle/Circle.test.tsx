@@ -183,7 +183,7 @@ Deno.test("a row has a context menu from circle.rowMenu only when a plugin adds 
 
 Deno.test("New runs rooms.create and is hidden without it", async () => {
   const source = fakeSource();
-  source.set([]);
+  source.set([row("a", "Alpha", 1)]);
   const plugin = fakePlugin({
     sources: [{ id: "one", observable: source.observable }],
   });
@@ -199,6 +199,18 @@ Deno.test("New runs rooms.create and is hidden without it", async () => {
   await act(() => button(withIt.container, copy.newLabel)!.click());
   assertEquals(created, 1);
   await withIt.unmount();
+});
+
+Deno.test("New is hidden while there are no rooms and once the rows are known, and shows again with the first room", async () => {
+  const source = fakeSource();
+  const plugin = fakePlugin({ sources: [{ id: "one", observable: source.observable }] });
+  const { container, unmount } = await mount(host([plugin], ports, <Circle />, { commands: { "rooms.create": () => {} } }));
+  assert(button(container, copy.newLabel), "still loading: the button stays");
+  await act(() => source.set([]));
+  assertEquals(button(container, copy.newLabel), null);
+  await act(() => source.set([row("a", "Alpha", 1)]));
+  assert(button(container, copy.newLabel));
+  await unmount();
 });
 
 Deno.test("while the device is catching up, loading rows follow the rows and the empty card waits", async () => {

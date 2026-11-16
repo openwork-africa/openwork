@@ -103,6 +103,12 @@
     padding: 0 var(--spacing-1) var(--spacing-1);
   }
 
+  /* A lone card never needs the carousel's scroll container. */
+  .conversation-empty-scroller.is-single {
+    overflow: visible;
+    scroll-snap-type: none;
+  }
+
   .conversation-empty-scroller::-webkit-scrollbar {
     display: none;
   }
