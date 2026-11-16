@@ -16,32 +16,58 @@ Openwork isn't fancy or different. It works like the chat apps you already know.
 
 ## Getting started
 
-Openwork currently has a Rust server and a TypeScript/React client. Deno manages the client workspace, checks, and test commands; Vite produces the browser
-bundle. Rust builds and runs the server.
+Openwork is a Rust server and a TypeScript/React client. Deno manages the client; Rust builds and runs the server.
 
-Install [Deno](https://deno.com) 2.9 and [Rust](https://rustup.rs) 1.88, then build and run the server from the repository root:
+### Requirements
 
-```sh
-deno task build
-cd server
-cargo run -p ow-server -- --static ../app/dist
-```
+- [Deno](https://deno.com) 2.9
+- [Rust](https://rustup.rs) 1.88
 
-Open <http://127.0.0.1:47410>. The server keeps rooms, messages, and pictures in `server/data`; the page works offline and syncs when the server is available.
+### Run it
 
-For local development, run the Rust API and the Vite client in separate terminals. Vite serves the app on port 47411 and proxies API requests to port 47410:
+1. Clone the repository and go to its root:
 
-```sh
-# Terminal 1, from the repository root
-cd server && cargo run -p ow-server
+   ```sh
+   git clone https://github.com/openwork-africa/openwork.git
+   cd openwork
+   ```
 
-# Terminal 2, from the repository root
-cd app && deno task dev
-```
+2. Build the client:
 
-Open <http://127.0.0.1:47411> while developing. After changing client code, rebuild with `deno task build` from the repository root.
+   ```sh
+   deno task build
+   ```
 
-Run the client checks from the repository root:
+3. Start the server:
+
+   ```sh
+   cd server
+   cargo run -p ow-server -- --static ../app/dist
+   ```
+
+4. Open <http://127.0.0.1:47410>.
+
+Rooms, messages, and pictures are saved in `server/data`. The page works offline and syncs when the server is available.
+
+### Develop
+
+1. In one terminal, start the server from the repository root:
+
+   ```sh
+   cd server && cargo run -p ow-server
+   ```
+
+2. In a second terminal, start the client from the repository root:
+
+   ```sh
+   cd app && deno task dev
+   ```
+
+3. Open <http://127.0.0.1:47411>. Vite serves the app and proxies API requests to port 47410.
+
+### Check your changes
+
+From the repository root:
 
 ```sh
 deno task check
@@ -50,7 +76,7 @@ deno task test
 deno task fitness
 ```
 
-Run the Rust server tests from `server/` with `cargo test`.
+For the server, run `cargo test` from `server/`.
 
 ## How it is built
 
