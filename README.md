@@ -2,8 +2,6 @@
 
 # Openwork
 
-[openwork.africa](https://openwork.africa)
-
 ## Why Openwork
 
 The goal is to eradicate Google Workspace, Microsoft Office 365, Slack, Teams, and every other tool we depend on but don't own. This is mainly about South Africa and Africa, because almost all the technology we use is hosted outside them. Openwork is a way to own our intelligence, our compute, and our conversations, for those who care about privacy.
