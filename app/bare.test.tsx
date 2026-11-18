@@ -16,7 +16,7 @@ async function send(container: HTMLElement, words: string): Promise<void> {
 
 Deno.test("the bare product is the window, text and rooms: nothing else is in its list", () => {
   assertEquals(ids(barePlugins), ["rooms", "text"]);
-  assertEquals(ids(openPlugins), ["rooms", "text", "profile", "circle", "panel"]);
+  assertEquals(ids(openPlugins), ["rooms", "text", "profile", "circle", "panel", "ai"]);
 });
 
 Deno.test("bare: boots, starts a room from the window, sends a message and shows it; no list, no panel", async () => {
