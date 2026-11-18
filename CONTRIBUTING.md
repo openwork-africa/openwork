@@ -16,7 +16,7 @@ the frame draws it. The frame owns the design; a plugin only fills it in.
 
 ### Dependency direction
 
-- `kit` and `ui` depend on nothing in this repo. `store` depends on `kit`. `shell` and the islands depend on `kit`, `ui` and `store`. Plugins depend on the
+- `kit` and `ui` depend on nothing in this repo. `store` depends on `kit`. `shell` and the window depend on `kit`, `ui` and `store`. Plugins depend on the
   frame and on libraries.
 - `packages/*` never import `plugins/*` or `app/`.
 - A plugin never imports another plugin. It may import another plugin's `slots.ts` or `services.ts` only, and only when it declares that plugin in `requires`.

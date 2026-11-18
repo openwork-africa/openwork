@@ -27,33 +27,32 @@ export interface FrameProps extends Regions {
   onDrawer: (drawer: Drawer) => void;
 }
 
-const EmptyCircle = (): ReactElement => <VStack className="convo-circle" />;
-
 const ClosedWindow = (): ReactElement => <NoRoom />;
 
-const EmptyPanel = (): ReactElement => <VStack className="contact-panel" />;
-
-/** The three panes: list | window | panel. On a phone the list and the panel are drawers over the window. */
+/** The panes: list | window | panel. The list and the panel are there only when a plugin gives their region; without them the window stands alone. On a phone they are drawers over the window. */
 export function Frame(
-  { circle = EmptyCircle, window = ClosedWindow, panel = EmptyPanel, roomId, noRooms = false, isMissing = false, onStart, drawer, onDrawer }: FrameProps,
+  { circle, window = ClosedWindow, panel, roomId, noRooms = false, isMissing = false, onStart, drawer, onDrawer }: FrameProps,
 ): ReactElement {
   const shellRef = useRef<HTMLElement | null>(null);
   useSwipe(shellRef, (direction) => {
     if (!roomId) return;
     const next = nextDrawer(drawer, direction, listIsDrawer());
-    if (next === "list" && noRooms) return;
+    if (next === "list" && (noRooms || !circle)) return;
+    if (next === "panel" && !panel) return;
     onDrawer(next);
   });
   const open = (drawer === "list" ? " is-list-open" : "") + (drawer === "panel" ? " is-panel-open" : "");
   return (
     <HStack ref={shellRef} className={`convo-shell${open}`}>
       <Layout
-        start={
-          <LayoutPanel width="var(--shell-list-width)" padding={0} isScrollable={false} label={uiCopy.conversations}>
-            <Island name={copy.circleName} region={circle} roomId={roomId} />
-          </LayoutPanel>
-        }
-        end={roomId
+        start={circle
+          ? (
+            <LayoutPanel width="var(--shell-list-width)" padding={0} isScrollable={false} label={uiCopy.conversations}>
+              <Island name={copy.circleName} region={circle} roomId={roomId} />
+            </LayoutPanel>
+          )
+          : undefined}
+        end={roomId && panel
           ? (
             <LayoutPanel width="var(--shell-panel-width)" padding={0} isScrollable={false} label={uiCopy.contactDetails}>
               <Island name={copy.panelName} region={panel} roomId={roomId} resetKey={roomId} />

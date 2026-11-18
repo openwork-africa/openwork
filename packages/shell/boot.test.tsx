@@ -1,6 +1,6 @@
 import { assert, assertEquals } from "@std/assert";
 import { act } from "react";
-import { contribute, definePlugin, getNotices, type Plugin, shellPage } from "@openwork/kit";
+import { contribute, definePlugin, getNotices, type Plugin, shellPage, shellRegion } from "@openwork/kit";
 import { clearNotices } from "@openwork/kit/testing";
 import { manualConnectivity, type MemoryDeviceStore } from "@openwork/store";
 import { memoryPorts } from "@openwork/store/testing";
@@ -29,14 +29,21 @@ function boot(
   return { shell, env, store };
 }
 
+const regionPlugin = (id: "circle" | "panel", label: string): Plugin =>
+  definePlugin({
+    id,
+    version: "1.0.0",
+    contributes: [contribute(shellRegion, { id, order: 10, region: id, load: () => Promise.resolve({ default: () => <p data-region={id}>{label}</p> }) })],
+  });
+
 const view = (shell: Shell) => <ShellApp product={shell.product} router={shell.router} regions={shell.regions} drawer={shell.drawer} />;
 
 Deno.test("boot with zero plugins shows the frame and no error notices", async () => {
   const { shell } = boot("/");
   const { container, unmount } = await mount(view(shell));
   await flush();
-  assert(labelled(container, copy.listLabel));
-  assertEquals(labelled(container, copy.panelLabel), null, "no room is open: no panel column");
+  assertEquals(labelled(container, copy.listLabel), null, "no circle plugin: no list");
+  assertEquals(labelled(container, copy.panelLabel), null, "no panel plugin: no panel column");
   assert(container.querySelector(".convo-loading")?.textContent?.includes(copy.noRoomsTitle));
   assertEquals(shell.product.problems, []);
   assertEquals(getNotices().filter((notice) => notice.status === "error"), []);
@@ -44,8 +51,21 @@ Deno.test("boot with zero plugins shows the frame and no error notices", async (
   shell.stop();
 });
 
+Deno.test("a plugin that contributes shell.region draws its island in the frame; one that is not in the list leaves no trace", async () => {
+  const { shell, store } = boot("/", [regionPlugin("circle", "the list")]);
+  const room = await store.createRoom("One");
+  shell.router.navigate(`/c/${room.id}`);
+  const { container, unmount } = await mount(view(shell));
+  await flush();
+  assertEquals(labelled(container, copy.listLabel)?.textContent, "the list");
+  assertEquals(container.querySelector('[data-region="panel"]'), null, "the panel plugin is not in the list");
+  assertEquals(labelled(container, copy.panelLabel), null);
+  await unmount();
+  shell.stop();
+});
+
 Deno.test("a room path opens the room, and the profile path opens the panel drawer until it is closed", async () => {
-  const { shell, env, store } = boot("/");
+  const { shell, env, store } = boot("/", [regionPlugin("panel", "the panel")]);
   const room = await store.createRoom("One");
   env.replace(`/c/${room.id}/profile`);
   const { container, unmount } = await mount(view(shell));
@@ -85,7 +105,7 @@ Deno.test("a plugin page is a path of its own, and an unknown path says so", asy
   await act(() => shell.router.navigate("/nowhere"));
   await flush();
   assertEquals(shell.router.navigate === undefined, false);
-  assert(labelled(container, copy.listLabel), "an unknown path goes home");
+  assert(container.textContent?.includes(copy.noRoomsTitle), "an unknown path goes home");
   await unmount();
   shell.stop();
 });
@@ -95,7 +115,7 @@ Deno.test("a room that is not on the device is left for the latest room, or for 
   const { container, unmount } = await mount(view(shell));
   await flush();
   assertEquals(env.history.at(-1), "/");
-  assert(labelled(container, copy.listLabel));
+  assert(container.textContent?.includes(copy.noRoomsTitle));
   const kept = await store.createRoom("Kept");
   await act(() => shell.router.navigate("/c/stale"));
   await flush();

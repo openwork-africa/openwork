@@ -8,6 +8,7 @@ import { Frame, type Regions } from "./Frame.tsx";
 import { type Drawer, useDrawer, useDrawerState } from "./drawer.ts";
 import { matchPath, roomIdOf, roomPath, type Route } from "./route.ts";
 import { useRoute, useRouter } from "./router.ts";
+import { useRegions } from "./useRegions.ts";
 
 const lazies = new WeakMap<PageValue, ComponentType>();
 
@@ -17,11 +18,13 @@ const componentOf = (page: PageValue): ComponentType => {
   return component;
 };
 
-const drawerFor = (route: Route, noRooms: boolean): Drawer => (route.name === "profile" ? "panel" : route.name === "home" && !noRooms ? "list" : "none");
+const drawerFor = (route: Route, noRooms: boolean, regions: Regions): Drawer =>
+  route.name === "profile" && regions.panel ? "panel" : route.name === "home" && !noRooms && regions.circle ? "list" : "none";
 
 /** The conversation routes: `/`, `/c/:roomId` and `/c/:roomId/profile` (the panel open on a phone). */
-function RoomRoutes({ regions, route }: { regions: Regions; route: Route }): ReactElement {
+function RoomRoutes({ given, route }: { given: Regions; route: Route }): ReactElement {
   const ctx = useCtx();
+  const regions = useRegions(given);
   const router = useRouter();
   const drawer = useDrawer();
   const drawerState = useDrawerState();
@@ -32,7 +35,7 @@ function RoomRoutes({ regions, route }: { regions: Regions; route: Route }): Rea
   const room = useRoom(devicePorts(ctx.ports).store, roomId ?? "");
   const isMissing = !!roomId && room === null;
   const noRooms = rooms?.length === 0;
-  useEffect(() => drawerState?.setDrawer(drawerFor(route, noRooms)), [route.name, roomId, noRooms, drawerState]);
+  useEffect(() => drawerState?.setDrawer(drawerFor(route, noRooms, regions)), [route.name, roomId, noRooms, drawerState, regions]);
   useEffect(() => {
     if (route.name === "home" && latest) router.replace(roomPath(latest));
   }, [route.name, latest]);
@@ -44,7 +47,8 @@ function RoomRoutes({ regions, route }: { regions: Regions; route: Route }): Rea
   }, [isMissing, roomId, rooms]);
 
   const onDrawer = (next: Drawer): void => {
-    if (noRooms && next === "list") return;
+    if ((noRooms || !regions.circle) && next === "list") return;
+    if (!regions.panel && next === "panel") return;
     drawerState?.setDrawer(next);
     if (!roomId) return;
     // Opening the contact panel is local UI state; a direct /profile link is
@@ -92,7 +96,7 @@ export function ShellRoutes({ regions }: { regions: Regions }): ReactElement {
   return (
     <HStack className="app-shell">
       <VStack className={`app-page app-page-${page}`}>
-        {route.name === "other" ? <PluginPage path={route.path} /> : <RoomRoutes regions={regions} route={route} />}
+        {route.name === "other" ? <PluginPage path={route.path} /> : <RoomRoutes given={regions} route={route} />}
       </VStack>
     </HStack>
   );

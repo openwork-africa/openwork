@@ -2,12 +2,11 @@ import { assert, assertEquals } from "@std/assert";
 import { act } from "react";
 import { compose } from "@openwork/kit";
 import { clearNotices } from "@openwork/kit/testing";
-import { ContactPanel } from "@openwork/panel";
-import { flush, mount } from "@openwork/panel/testing";
 import { ManualClock, MemoryDeviceStore, MemoryFileStore, MemoryTransport, type Room } from "@openwork/store";
 import { typeInto } from "@openwork/ui/testing";
 import { copy } from "./copy.ts";
 import { profilePlugin } from "./plugin.tsx";
+import { flush, mount, PanelHost } from "./testing.tsx";
 
 async function setup() {
   document.body.innerHTML = "";
@@ -19,7 +18,7 @@ async function setup() {
   const product = compose([profilePlugin], { store, files, transport: new MemoryTransport(), clock });
   const mounted = await mount(
     <product.Root roomId={room.id} navigate={() => {}}>
-      <ContactPanel roomId={room.id} />
+      <PanelHost />
     </product.Root>,
   );
   await flush();

@@ -8,7 +8,8 @@ import { bootShell, createRouter, type Shell, ShellApp } from "@openwork/shell";
 import { memoryEnv } from "@openwork/shell/testing";
 import { ManualClock, manualConnectivity, MemoryDeviceStore } from "@openwork/store";
 import { memoryPorts } from "@openwork/store/testing";
-import { openPlugins, regions } from "./product.ts";
+import { openPlugins } from "./product.ts";
+import { regions } from "./regions.ts";
 
 /** Waits for lazy regions and the live queries to settle. */
 export const flush = (): Promise<void> =>

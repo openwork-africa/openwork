@@ -1,10 +1,7 @@
 {
-  "name": "@openwork/panel",
+  "name": "@openwork/plugin-circle",
   "version": "0.1.0",
-  "exports": {
-    ".": "./mod.ts",
-    "./testing": "./testing.tsx"
-  },
+  "exports": { ".": "./mod.ts", "./island": "./Circle.tsx" },
   "imports": {},
   "compilerOptions": {
     "jsx": "react-jsx",
