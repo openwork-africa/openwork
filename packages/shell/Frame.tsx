@@ -18,11 +18,10 @@ export interface Regions {
 
 export interface FrameProps extends Regions {
   roomId?: string;
-  /** With no room on the device, the window offers to start one; without `onStart` it only says so. */
+  /** There is no room on the device: the window says so. */
   noRooms?: boolean;
   /** The open room is not on this device: the window shows its loading frame while the shell leaves it. */
   isMissing?: boolean;
-  onStart?: () => void;
   drawer: Drawer;
   onDrawer: (drawer: Drawer) => void;
 }
@@ -31,7 +30,7 @@ const ClosedWindow = (): ReactElement => <NoRoom />;
 
 /** The panes: list | window | panel. The list and the panel are there only when a plugin gives their region; without them the window stands alone. On a phone they are drawers over the window. */
 export function Frame(
-  { circle, window = ClosedWindow, panel, roomId, noRooms = false, isMissing = false, onStart, drawer, onDrawer }: FrameProps,
+  { circle, window = ClosedWindow, panel, roomId, noRooms = false, isMissing = false, drawer, onDrawer }: FrameProps,
 ): ReactElement {
   const shellRef = useRef<HTMLElement | null>(null);
   useSwipe(shellRef, (direction) => {
@@ -64,7 +63,7 @@ export function Frame(
           ? isMissing
             ? <ConversationLoading />
             : <Island name={copy.windowName} region={window} roomId={roomId} resetKey={roomId} loading={<ConversationLoading />} />
-          : <NoRoom isEmpty={noRooms} onStart={onStart} />}
+          : <NoRoom isEmpty={noRooms} />}
       </Layout>
       <VStack className="convo-scrim" aria-hidden="true" onClick={() => onDrawer("none")} />
     </HStack>

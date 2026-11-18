@@ -1,5 +1,6 @@
 import { assert, assertEquals } from "@std/assert";
 import { act } from "react";
+import { until } from "@openwork/store/testing";
 import { labelled } from "@openwork/ui/testing";
 import { barePlugins } from "./bare.ts";
 import { bootProduct, click, errorNotices, flush } from "./harness.tsx";
@@ -15,8 +16,8 @@ async function send(container: HTMLElement, words: string): Promise<void> {
 }
 
 Deno.test("the bare product is the window, text and rooms: nothing else is in its list", () => {
-  assertEquals(ids(barePlugins), ["rooms", "text"]);
-  assertEquals(ids(openPlugins), ["rooms", "text", "profile", "circle", "panel"]);
+  assertEquals(ids(barePlugins), ["rooms", "text", "members", "ai"]);
+  assertEquals(ids(openPlugins), ["rooms", "text", "profile", "circle", "panel", "members", "ai"]);
 });
 
 Deno.test("bare: boots, starts a room from the window, sends a message and shows it; no list, no panel", async () => {
@@ -24,8 +25,8 @@ Deno.test("bare: boots, starts a room from the window, sends a message and shows
   const { container } = app;
   assertEquals(app.shell.product.problems, []);
   assert(container.querySelector(".convo-shell"), "the frame");
-  await click(container.querySelector(".convo-loading button"));
-  assert(app.path().startsWith("/c/"), "the window opened the new room");
+  assert(app.path().startsWith("/c/"), "the app opened straight into a new room");
+  assertEquals((await until(app.store.rooms())).length, 1);
   await send(container, "Hello **bare**");
   const message = container.querySelector('[id^="msg-"]');
   assert(message?.textContent?.includes("Hello bare"), "in the message list");

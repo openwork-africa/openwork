@@ -6,7 +6,7 @@ import { ManualClock, MemoryDeviceStore, MemoryFileStore, MemoryTransport, type 
 import { typeInto } from "@openwork/ui/testing";
 import { copy } from "./copy.ts";
 import { profilePlugin } from "./plugin.tsx";
-import { flush, mount, PanelHost } from "./testing.tsx";
+import { fakePanel, flush, mount, PanelHost } from "./testing.tsx";
 
 async function setup() {
   document.body.innerHTML = "";
@@ -15,7 +15,7 @@ async function setup() {
   const store = new MemoryDeviceStore(clock);
   const files = new MemoryFileStore();
   const room = await store.createRoom("Notes");
-  const product = compose([profilePlugin], { store, files, transport: new MemoryTransport(), clock });
+  const product = compose([fakePanel, profilePlugin], { store, files, transport: new MemoryTransport(), clock });
   const mounted = await mount(
     <product.Root roomId={room.id} navigate={() => {}}>
       <PanelHost />

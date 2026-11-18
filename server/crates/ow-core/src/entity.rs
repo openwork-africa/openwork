@@ -23,8 +23,23 @@ pub struct Room {
     pub created_at: i64,
     pub updated_at: i64,
     pub activity_at: i64,
+    /// The others in the room (never the person themselves), each with an open `type` string.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub members: Option<Vec<Member>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub deleted: Option<bool>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Member {
+    pub id: String,
+    pub name: String,
+    /// What the member is, as an open string a plugin defines ("person", "operator", ...); kept as given.
+    #[serde(rename = "type")]
+    pub kind: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -34,6 +49,9 @@ pub struct Message {
     pub room_id: String,
     pub author_id: String,
     pub content: String,
+    /// What kind of message this is, as an open string any plugin may define; the server keeps it as given.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kind: Option<String>,
     pub created_at: i64,
     pub updated_at: i64,
     #[serde(default, skip_serializing_if = "Option::is_none")]

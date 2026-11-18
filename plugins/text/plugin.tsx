@@ -5,12 +5,18 @@ import { copyText } from "./clipboard.ts";
 import { copy } from "./copy.ts";
 import { LongWords } from "./LongWords.tsx";
 
-/** A message is words: drawn as Markdown, with Copy in its menu. */
+/** The "text" kind: messages that are words, drawn as Markdown, with Copy in their menu. */
 export const text: Plugin = definePlugin({
   id: "text",
   version: "0.1.0",
   contributes: [
-    contribute(trailBody, { id: "markdown", order: 100, kind: "text", matches: () => true, render: (message) => <LongWords text={message.content} /> }),
+    contribute(trailBody, {
+      id: "markdown",
+      order: 100,
+      kind: "text",
+      matches: (message) => (message.kind ?? "text") === "text",
+      render: (message) => <LongWords text={message.content} />,
+    }),
     contribute(trailAction, {
       id: "copy",
       order: 10,

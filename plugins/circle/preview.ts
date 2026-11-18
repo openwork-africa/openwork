@@ -1,8 +1,9 @@
+import type { Message } from "@openwork/store";
 import { copy } from "./copy.ts";
 
-/** One line of what was said, with "You: " in front when it was you. */
-export const previewOf = (text: string | undefined): string => {
-  const line = (text ?? "").replace(/\s+/g, " ").trim();
+/** One line of what was said: the person's own words start with "You: ", anyone else's (the assistant's) are the words alone. */
+export const previewOf = (message: Pick<Message, "authorId" | "content">): string => {
+  const line = message.content.replace(/\s+/g, " ").trim();
   if (!line) return "";
-  return `${copy.youPrefix}${line}`;
+  return message.authorId === "you" ? `${copy.youPrefix}${line}` : line;
 };

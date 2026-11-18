@@ -10,6 +10,7 @@
     "./plugins/rooms",
     "./plugins/panel",
     "./plugins/profile",
+    "./plugins/members",
     "./app",
     "./docs/examples"
   ],

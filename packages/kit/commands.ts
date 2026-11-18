@@ -14,9 +14,6 @@ export const COMMAND_PREFIX = "command:";
 
 export const commandKey = <Args extends unknown[], Result>(name: string): CommandKey<Args, Result> => ({ name });
 
-export const createRoomCommand: CommandKey<[], Promise<void>> = commandKey("rooms.create");
-export const deleteRoomCommand: CommandKey<[id: string], Promise<void>> = commandKey("rooms.delete");
-
 export function provideCommand<Args extends unknown[], Result>(
   key: CommandKey<Args, Result>,
   handler: (ctx: SlotContext, ...args: Args) => Result,

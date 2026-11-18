@@ -23,7 +23,7 @@ Deno.test("the product: New, send, profile, rename and describe, end to end", as
   const { container, store } = app;
   assertEquals(app.shell.product.problems, []);
 
-  await click(container.querySelector(".convo-loading button"));
+  await flush();
   const [room] = await roomsOf(store);
   await flush();
   assertEquals(app.path(), `/c/${room.id}`);

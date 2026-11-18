@@ -1,4 +1,4 @@
-export { COMMAND_PREFIX, commandKey, createRoomCommand, deleteRoomCommand, provideCommand, runCommand } from "./commands.ts";
+export { COMMAND_PREFIX, commandKey, provideCommand, runCommand } from "./commands.ts";
 export type { CommandHandler, CommandKey } from "./commands.ts";
 export { createCell } from "./cell.ts";
 export type { Cell } from "./cell.ts";

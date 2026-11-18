@@ -5,7 +5,7 @@ import { useCtx, useSlot, windowBanner, windowEmpty } from "@openwork/kit";
 import { ChatLayout } from "@astryxdesign/core/Chat";
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
 import { AddressBar } from "./AddressBar.tsx";
-import { useWorking } from "./brain.ts";
+import { useAnswers, useWorking } from "./brain.ts";
 import { ConversationComposer } from "./ConversationComposer.tsx";
 import { MessagesLoading, useAfterAMoment } from "./MessagesLoading.tsx";
 import { ConversationTrail } from "./ConversationTrail.tsx";
@@ -19,7 +19,8 @@ function Conversation({ roomId }: { roomId: string }): ReactElement | null {
   const { store } = devicePorts(ctx.ports);
   const room = useRoom(store, roomId);
   const trail = useTrail(store, roomId);
-  const isWorking = useWorking(ctx.ports, roomId);
+  const isWorking = useWorking(ctx, roomId);
+  const answers = useAnswers(ctx, roomId);
   const banners = useSlot(windowBanner, ctx);
   const [empty] = useSlot(windowEmpty, ctx);
   const frame = useRef<HTMLElement | null>(null);
@@ -44,7 +45,9 @@ function Conversation({ roomId }: { roomId: string }): ReactElement | null {
           composer={<ConversationComposer roomId={roomId} />}
         >
           {!showLoading && !isEmpty && trail && (
-            <ConversationTrail items={trail} ctx={ctx} onRetry={retry} isCatchingUp={isCatchingUp}>{isWorking && <TypingIndicator />}</ConversationTrail>
+            <ConversationTrail items={trail} ctx={ctx} onRetry={retry} isCatchingUp={isCatchingUp} answers={answers}>
+              {isWorking && <TypingIndicator />}
+            </ConversationTrail>
           )}
         </ChatLayout>
       </IslandBody>

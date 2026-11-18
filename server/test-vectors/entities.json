@@ -8,13 +8,27 @@
     "accent": "#1397c1",
     "createdAt": 1731600000000,
     "updatedAt": 1731600005000,
-    "activityAt": 1731600009000
+    "activityAt": 1731600009000,
+    "members": [
+      {
+        "id": "op-1",
+        "name": "Helper",
+        "type": "operator",
+        "description": "Answers in this room"
+      },
+      {
+        "id": "x-1",
+        "name": "Ama",
+        "type": "x-unknown-type"
+      }
+    ]
   },
   "message": {
     "id": "a4d8f1c2-6e7b-4a90-b3c5-d1e2f3a4b5c6",
     "roomId": "7b1e0d2a-5c3f-4e8a-9d41-2f6a8c0b1e11",
     "authorId": "you",
     "content": "Lunch at one?",
+    "kind": "text",
     "createdAt": 1731600009000,
     "updatedAt": 1731600009000,
     "deleted": false
@@ -39,6 +53,7 @@
           "roomId": "7b1e0d2a-5c3f-4e8a-9d41-2f6a8c0b1e11",
           "authorId": "you",
           "content": "Lunch at one?",
+          "kind": "x-unknown-kind",
           "createdAt": 1731600009000,
           "updatedAt": 1731600009000
         }

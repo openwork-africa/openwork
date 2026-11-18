@@ -19,8 +19,11 @@ Add it to the list in `app/product.ts` and it is part of the app. Remove it from
 
 ## Slots and `contribute`
 
-A slot is a typed key. The frame declares its slots in `@openwork/kit` (`circleSource`, `circleRowMenu`, `trailBody`, `trailAction`, `trailExtra`,
-`composerAction`, `windowEmpty`, `panelSection`, `panelTab`, `shellPage`, `shellRegion` and more). To fill one, call `contribute(slot, value)`. Every value carries three
+A slot is a typed key. The frame declares its slots in `@openwork/kit` (`trailBody`, `trailAction`, `trailExtra`, `composerAction`, `windowEmpty`, `shellPage`,
+`shellRegion` and more). The conversation list and the contact panel open their own: `circleSource`, `circleTab`, `circleRowMenu` and `circleEmpty` come from
+`@openwork/plugin-circle/slots`, and `panelCover`, `panelSection` and `panelTab` from `@openwork/plugin-panel/slots`. A plugin that fills them lists that plugin in
+`requires` (the profile requires the panel; without it the profile is skipped with a notice and the rest boots). The room commands `createRoomCommand` and
+`deleteRoomCommand` come from `@openwork/plugin-rooms/services`. To fill one, call `contribute(slot, value)`. Every value carries three
 fields of its own beside what the slot asks for:
 
 - `id`: unique inside the slot. A duplicate is a boot error that names both plugins.

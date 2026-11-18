@@ -27,18 +27,13 @@ Deno.test("with no room open the window is drawn inside the window's frame, cent
   await unmount();
 });
 
-Deno.test("with no rooms at all the frame offers to start one, and only when it can", async () => {
-  let started = 0;
-  const { container, unmount } = await mount(<Frame noRooms onStart={() => void started++} drawer="none" onDrawer={noop} />);
+Deno.test("with no rooms at all and nothing to open one the frame only says so, with no button", async () => {
+  const { container, unmount } = await mount(<Frame noRooms drawer="none" onDrawer={noop} />);
   const frame = container.querySelector(".convo-loading") as HTMLElement;
   assert(frame.textContent?.includes(copy.noRoomsTitle));
-  await act(() => (frame.querySelector("button") as HTMLElement).click());
-  assertEquals(started, 1);
+  assertEquals(frame.querySelector("button"), null);
+  assert(frame.classList.contains("is-empty"), "the zero-rooms frame carries is-empty");
   await unmount();
-  const bare = await mount(<Frame noRooms drawer="none" onDrawer={noop} />);
-  assertEquals(bare.container.querySelector(".convo-loading button"), null);
-  assert(bare.container.querySelector(".convo-loading.is-empty"), "the zero-rooms frame carries is-empty");
-  await bare.unmount();
 });
 
 Deno.test("regions the product passes in are rendered in their panes and told the room", async () => {
@@ -108,7 +103,7 @@ Deno.test("with a room open and no panel there is no panel column; with one ther
 });
 
 Deno.test("with no room the empty card is one EmptyState card", async () => {
-  const { container, unmount } = await mount(<Frame noRooms onStart={noop} drawer="none" onDrawer={noop} />);
+  const { container, unmount } = await mount(<Frame noRooms drawer="none" onDrawer={noop} />);
   assertEquals(container.querySelectorAll(".empty-card").length, 1);
   assertEquals(container.querySelectorAll(".conversation-empty-scroller.is-single .empty-card").length, 1);
   await unmount();

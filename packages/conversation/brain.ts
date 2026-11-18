@@ -1,11 +1,17 @@
-import type { Ports } from "@openwork/kit";
-import { brainOf, type Live, useLive } from "@openwork/store";
+import type { SlotContext } from "@openwork/kit";
+import { brainService, type MessageAnswer, noteToSelfBrain, useLive } from "@openwork/store";
 import { useMemo } from "react";
 
-const idle: Live<boolean> = { get: () => false, subscribe: () => () => {} };
+/** Whether a reply is on its way in the room, from the brain the product provides (a note to self when none does). */
+export function useWorking(ctx: SlotContext, roomId: string): boolean {
+  const brain = ctx.service(brainService) ?? noteToSelfBrain;
+  return useLive(useMemo(() => brain.isWorking(roomId), [brain, roomId])) ?? false;
+}
 
-export function useWorking(ports: Ports, roomId: string): boolean {
-  const brain = brainOf(ports);
-  const live = useMemo(() => brain?.isWorking(roomId) ?? idle, [brain, roomId]);
-  return useLive(live) ?? false;
+const noAnswers: ReadonlyMap<string, MessageAnswer> = new Map();
+
+/** What the assistant did with the person's messages in the room, by message id; nothing for a note to self. */
+export function useAnswers(ctx: SlotContext, roomId: string): ReadonlyMap<string, MessageAnswer> {
+  const brain = ctx.service(brainService) ?? noteToSelfBrain;
+  return useLive(useMemo(() => brain.answers?.(roomId) ?? { get: () => noAnswers, subscribe: () => () => {} }, [brain, roomId])) ?? noAnswers;
 }

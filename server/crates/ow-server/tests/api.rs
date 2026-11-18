@@ -260,3 +260,37 @@ async fn cors_allows_the_vite_dev_origin_only() {
     let (_, headers, _) = send(&h.app, other).await;
     assert!(!headers.contains_key(header::ACCESS_CONTROL_ALLOW_ORIGIN));
 }
+
+#[tokio::test]
+async fn a_room_keeps_its_members_and_their_unknown_types() {
+    let h = harness().await;
+    let mut with_members = room("r9", "Mixed", 10, false);
+    with_members["data"]["members"] = json!([
+        { "id": "o1", "name": "Helper", "type": "operator", "description": "Answers" },
+        { "id": "p1", "name": "Ama", "type": "x-unknown-type" }
+    ]);
+    push(&h.app, json!([with_members.clone()])).await;
+    let pulled = pull(&h.app, 0).await;
+    assert_eq!(
+        pulled["changes"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|c| c["id"] == "r9")
+            .unwrap(),
+        &with_members
+    );
+}
+
+#[tokio::test]
+async fn an_unknown_message_kind_and_a_missing_kind_come_back_unchanged() {
+    let h = harness().await;
+    let mut tagged = message("m1", "four options", 10);
+    tagged["data"]["kind"] = json!("x-unknown-kind");
+    let plain = message("m2", "hello", 11);
+    push(&h.app, json!([tagged.clone(), plain.clone()])).await;
+    let pulled = pull(&h.app, 0).await;
+    let changes = pulled["changes"].as_array().unwrap();
+    assert_eq!(changes.iter().find(|c| c["id"] == "m1").unwrap(), &tagged);
+    assert_eq!(changes.iter().find(|c| c["id"] == "m2").unwrap(), &plain);
+}

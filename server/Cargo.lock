@@ -980,6 +980,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "384b8ab6d37215f3c5301a95a4accb5d64aa607f1fcb26a11b5303878451b4fe"
 
 [[package]]
+name = "ow-ai"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "futures-util",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tower",
+ "tracing",
+]
+
+[[package]]
 name = "ow-core"
 version = "0.1.0"
 dependencies = [
@@ -994,6 +1007,8 @@ version = "0.1.0"
 dependencies = [
  "axum",
  "clap",
+ "futures-util",
+ "ow-ai",
  "ow-core",
  "ow-store",
  "serde",

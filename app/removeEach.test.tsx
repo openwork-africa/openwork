@@ -1,7 +1,7 @@
 import { assert, assertEquals } from "@std/assert";
 import type { Plugin } from "@openwork/kit";
 import { labelled } from "@openwork/ui/testing";
-import { type Booted, bootProduct, click, errorNotices, flush } from "./harness.tsx";
+import { type Booted, bootProduct, errorNotices, flush } from "./harness.tsx";
 import { openPlugins } from "./product.ts";
 
 const without = (id: string): Plugin[] => openPlugins.filter((plugin) => plugin.id !== id);
@@ -20,8 +20,8 @@ const only = Deno.args[0];
 
 const removals: Record<string, (app: Booted) => Promise<void>> = {
   circle: async (app) => {
-    await click(app.container.querySelector(".convo-loading button"));
-    assert(app.path().startsWith("/c/"), "rooms: the window's card starts a room");
+    await flush();
+    assert(app.path().startsWith("/c/"), "rooms: the app opens into a room");
     await openSeededRoom(app);
     assertEquals(app.container.querySelector(".convo-circle"), null, "no list");
     assert(message(app)?.querySelector("strong"), "text draws Markdown");
@@ -40,8 +40,8 @@ const removals: Record<string, (app: Booted) => Promise<void>> = {
     assert(app.container.querySelector(".contact-hero-body"), "profile draws the panel section");
   },
   text: async (app) => {
-    await click(app.container.querySelector(".convo-loading button"));
-    assert(app.path().startsWith("/c/"), "rooms: New opens a room");
+    await flush();
+    assert(app.path().startsWith("/c/"), "rooms: the app opens into a room");
     await flush();
     assert(app.container.querySelector(".contact-hero-body"), "profile draws the panel section");
     await openSeededRoom(app);
@@ -49,8 +49,8 @@ const removals: Record<string, (app: Booted) => Promise<void>> = {
     assertEquals(message(app)?.querySelector("strong"), null);
   },
   profile: async (app) => {
-    await click(app.container.querySelector(".convo-loading button"));
-    assert(app.path().startsWith("/c/"), "rooms: New opens a room");
+    await flush();
+    assert(app.path().startsWith("/c/"), "rooms: the app opens into a room");
     await openSeededRoom(app);
     assertEquals(app.container.querySelector(".contact-hero-body"), null);
     assert(message(app)?.querySelector("strong"), "text draws Markdown");
@@ -59,11 +59,13 @@ const removals: Record<string, (app: Booted) => Promise<void>> = {
 
 for (const [id, check] of Object.entries(removals)) {
   if (only && only !== id) continue;
-  Deno.test(`remove ${id}: it boots without it, raises no error notice, and the other two still work`, async () => {
+  Deno.test(`remove ${id}: it boots without it, and the others still work (a notice only for the panel's profile)`, async () => {
     const app = await bootProduct(without(id));
-    assertEquals(app.shell.product.problems, []);
+    // The profile builds on the panel: without it the profile is skipped with a notice, and everything else boots.
+    const notices = id === "panel" ? 1 : 0;
+    assertEquals(app.shell.product.problems.length, notices);
     await check(app);
-    assertEquals(errorNotices(), []);
+    assertEquals(errorNotices().length, notices);
     await app.stop();
   });
 }

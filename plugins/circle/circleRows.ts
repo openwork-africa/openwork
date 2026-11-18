@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import type { Placed, RowModel, SlotContext, SourceValue } from "@openwork/kit";
+import type { Placed, SlotContext } from "@openwork/kit";
+import type { RowModel, SourceValue } from "./slots.ts";
 
 type Source = SourceValue & Placed;
 

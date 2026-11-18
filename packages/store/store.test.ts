@@ -1,5 +1,6 @@
 import { assert, assertEquals, assertRejects } from "@std/assert";
 import { devices, until } from "./testing.ts";
+import { messageWire } from "./wire.ts";
 
 for (const make of devices) {
   const run = (name: string, body: (device: ReturnType<typeof make>) => Promise<void>) =>
@@ -54,6 +55,31 @@ for (const make of devices) {
     assertEquals([back?.name, back?.deleted], ["Family", undefined]);
     assertEquals((await until(store.trail(room.id), (trail) => trail.length === 1))[0].content, "Lunch?");
     await assertRejects(() => store.restoreRoom("nope"));
+  });
+
+  run("a room made with members, and a member added later, each get a member row and one status line, in one step", async ({ store, clock }) => {
+    const helper = { id: "op", name: "Helper", type: "operator", description: "Answers" };
+    const mixed = { id: "x", name: "", type: "x-unknown-type" };
+    const room = await store.createRoom("Team", { members: [helper] });
+    clock.tick(1);
+    assertEquals(await store.addMember(room.id, mixed), true);
+    assertEquals(await store.addMember(room.id, mixed), false, "the same member is not added twice");
+    assertEquals((await until(store.room(room.id)))?.members, [helper, mixed]);
+    const lines = await until(store.trail(room.id), (list) => list.length === 2);
+    assertEquals(lines.map((line) => [line.kind, line.content]), [["member.added", "Helper joined"], ["member.added", "Unnamed joined"]]);
+    assertEquals((await store.journal.pending()).filter((row) => row.kind === "message").length, 2);
+  });
+
+  run("a message keeps the kind it was sent with, whatever it is, and is text when none is given", async ({ store, clock }) => {
+    const room = await store.createRoom("Kinds");
+    await store.send(room.id, "plain");
+    clock.tick(1);
+    await store.send(room.id, "{}", "you", "x-unknown-kind");
+    const trail = await until(store.trail(room.id), (list) => list.length === 2);
+    assertEquals(trail.map((message) => message.kind), ["text", "x-unknown-kind"]);
+    const queued = await store.journal.pending();
+    const changes = await Promise.all(queued.filter((row) => row.kind === "message").map((row) => store.journal.changeOf(row)));
+    assertEquals(changes.map((change) => change?.kind === "message" && messageWire(change.data).kind), ["text", "x-unknown-kind"]);
   });
 
   run("a sent message is sending, moves its room to the top and queues room then message", async ({ store, clock }) => {
@@ -127,3 +153,14 @@ for (const make of devices) {
     assertEquals(await store.journal.cursor(), 4);
   });
 }
+
+Deno.test("a room is titled by its operator only when that operator is the one other in it", async () => {
+  const { roomTitle } = await import("./members.ts");
+  const op = { id: "o", name: "Helper", type: "operator" };
+  const person = { id: "p", name: "Ama", type: "person" };
+  assertEquals(roomTitle({ name: "Family" }), "Family");
+  assertEquals(roomTitle({ name: "Family", members: [op] }), "Helper");
+  assertEquals(roomTitle({ name: "Family", members: [{ ...op, name: " " }] }), "Unnamed operator");
+  assertEquals(roomTitle({ name: "Family", members: [person] }), "Family");
+  assertEquals(roomTitle({ name: "Family", members: [op, person] }), "Family");
+});

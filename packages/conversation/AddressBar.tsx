@@ -1,6 +1,6 @@
 import { type ReactElement, useMemo, useState } from "react";
 import { addressAction, addressAddressee, type Addressee, type AddresseeValue, type Placed, type SlotContext, useCtx, useSlot } from "@openwork/kit";
-import type { Room } from "@openwork/store";
+import { type Room, roomTitle } from "@openwork/store";
 import { Avatar } from "@openwork/ui";
 import { Button } from "@astryxdesign/core/Button";
 import { Card } from "@astryxdesign/core/Card";
@@ -67,6 +67,7 @@ export function AddressBar({ room }: { room: Room }): ReactElement {
   const addressees = useSlot(addressAddressee, ctx);
   const canAdd = addressees.length > 0;
   const mode = isEditing && canAdd ? "edit" : "preview";
+  const title = roomTitle(room);
 
   return (
     <VStack width="100%" className="address-field">
@@ -92,10 +93,10 @@ export function AddressBar({ room }: { room: Room }): ReactElement {
               <>
                 <StackItem size="fill">
                   {canAdd
-                    ? <Button label={room.name} variant="ghost" tooltip={copy.editAddress} onClick={() => setEditing(true)} />
+                    ? <Button label={title} variant="ghost" tooltip={copy.editAddress} onClick={() => setEditing(true)} />
                     : (
                       <HStack paddingInline={3} paddingBlock={1.5}>
-                        <Text type="label" weight="semibold" maxLines={1}>{room.name}</Text>
+                        <Text type="label" weight="semibold" maxLines={1}>{title}</Text>
                       </HStack>
                     )}
                 </StackItem>

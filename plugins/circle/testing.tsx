@@ -1,10 +1,11 @@
 import type { ReactElement } from "react";
 import { installDom } from "@openwork/ui/testing";
-import { contribute, definePlugin, type Observable, type Plugin, type Ports, type RowModel } from "@openwork/kit";
+import { contribute, definePlugin, type Plugin, type Ports } from "@openwork/kit";
+import { type Observable, type RowModel } from "./slots.ts";
 import { memoryPorts, rig } from "@openwork/store/testing";
 installDom();
 
-import { circleEmpty, circleRowMenu, circleSource, circleTab } from "@openwork/kit";
+import { circleEmpty, circleRowMenu, circleSource, circleTab } from "./slots.ts";
 export { flush, mount } from "@openwork/ui/testing";
 
 /** A source whose rows the test sets by hand; until `set` is called it has said nothing, which is loading. */
@@ -84,6 +85,9 @@ export function fakePlugin(
   });
 }
 
+/** Opens the list's slots, as the circle plugin does, so a test can fill them without that plugin. */
+const circleSlots = definePlugin({ id: "circle-slots", version: "1.0.0", slots: [circleSource, circleTab, circleRowMenu, circleEmpty], contributes: [] });
+
 export function host(
   plugins: readonly Plugin[],
   ports: Ports,
@@ -94,5 +98,5 @@ export function host(
     navigate?: (path: string) => void;
   } = {},
 ): ReactElement {
-  return rig(plugins, { ...memoryPorts(), ...ports }, extra).view(element);
+  return rig([circleSlots, ...plugins], { ...memoryPorts(), ...ports }, extra).view(element);
 }

@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "exports": {
     ".": "./mod.ts",
-    "./island": "./ContactPanel.tsx"
+    "./island": "./ContactPanel.tsx",
+    "./slots": "./slots.ts"
   },
   "imports": {},
   "compilerOptions": {

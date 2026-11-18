@@ -1,6 +1,8 @@
 import { assert, assertEquals } from "@std/assert";
 import { act } from "react";
-import { compose, contribute, definePlugin, getNotices, panelCover, panelSection, panelTab, type Plugin } from "@openwork/kit";
+import { compose, contribute, definePlugin, getNotices, type Plugin } from "@openwork/kit";
+import { panelCover, panelSection, panelTab } from "./slots.ts";
+import { panelPlugin } from "./plugin.tsx";
 import { ContactPanel } from "./ContactPanel.tsx";
 import { copy } from "./copy.ts";
 import { flush, mount } from "./testing.tsx";
@@ -16,7 +18,7 @@ const tab = (id: string, order: number) =>
   });
 
 const view = (plugins: Plugin[], roomId?: string, paths: string[] = []) => {
-  const product = compose(plugins, {});
+  const product = compose([panelPlugin, ...plugins], {});
   return (
     <product.Root roomId={roomId} navigate={(path) => void paths.push(path)}>
       <ContactPanel roomId={roomId} />

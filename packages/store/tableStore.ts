@@ -4,7 +4,19 @@ import { type Live, makeCell } from "./live.ts";
 import type { Clock, DeviceStore, FileDraft, RoomDetails, SyncJournal } from "./ports.ts";
 import { systemClock } from "./ports.ts";
 import { changeOf, editedRoom, liveRooms, newFile, newMessage, newRoom, outboxKey, trailOf } from "./records.ts";
-import type { Change, FileItem, Message, Room, SyncStatus, TrailMessage } from "./types.ts";
+import { joinedLine } from "./members.ts";
+import {
+  type Author,
+  type Change,
+  type FileItem,
+  JOINED_KIND,
+  type Member,
+  type Message,
+  type Room,
+  type SyncStatus,
+  type TrailMessage,
+  YOU,
+} from "./types.ts";
 
 const CURSOR = "cursor";
 
@@ -39,7 +51,17 @@ export class TableDeviceStore implements DeviceStore {
     this.#write(async (tx, now) => {
       const room = newRoom(name, details, now);
       await this.#save(tx, changeOf("room", room), now);
+      for (const member of room.members ?? []) await this.#joined(tx, room.id, member, now);
       return room;
+    });
+
+  addMember = (roomId: string, member: Member): Promise<boolean> =>
+    this.#write(async (tx, now) => {
+      const room = await this.#existing(tx, roomId);
+      if (room.members?.some((each) => each.id === member.id)) return false;
+      await this.#save(tx, changeOf("room", editedRoom(room, { members: [...(room.members ?? []), member], activityAt: now }, now)), now);
+      await this.#joined(tx, roomId, member, now);
+      return true;
     });
 
   renameRoom = (id: string, name: string): Promise<void> => this.#edit(id, { name });
@@ -56,10 +78,10 @@ export class TableDeviceStore implements DeviceStore {
       await this.#save(tx, changeOf("room", restored), now);
     });
 
-  send = (roomId: string, content: string): Promise<Message> =>
+  send = (roomId: string, content: string, authorId?: Author, kind?: string): Promise<Message> =>
     this.#write(async (tx, now) => {
       const room = await this.#existing(tx, roomId);
-      const message = newMessage(roomId, content, now);
+      const message = newMessage(roomId, content, now, authorId, kind);
       const touched = editedRoom(room, { activityAt: message.createdAt }, now);
       await this.#save(tx, changeOf("room", touched), now);
       await this.#save(tx, changeOf("message", message), now);
@@ -85,6 +107,11 @@ export class TableDeviceStore implements DeviceStore {
       if (!room || room.deleted) throw new Error(copy.noRoom(id));
       return room;
     });
+  }
+
+  /** The status line of someone joining: a message of its own kind, written by the person, so it syncs like any message. */
+  #joined(tx: Tx, roomId: string, member: Member, now: number): Promise<void> {
+    return this.#save(tx, changeOf("message", newMessage(roomId, joinedLine(member), now, YOU, JOINED_KIND)), now);
   }
 
   #edit(id: string, patch: Partial<Room>): Promise<void> {

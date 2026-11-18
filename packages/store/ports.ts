@@ -1,7 +1,7 @@
 import type { Ports } from "@openwork/kit";
 import { copy } from "./copy.ts";
 import type { Live } from "./live.ts";
-import type { Answer, Change, FileItem, Message, OutboxRow, PullAnswer, Room, SyncStatus, TrailMessage } from "./types.ts";
+import type { Answer, Author, Change, FileItem, Member, Message, OutboxRow, PullAnswer, Room, SyncStatus, TrailMessage } from "./types.ts";
 
 export interface Clock {
   now(): number;
@@ -10,6 +10,8 @@ export interface Clock {
 export const systemClock: Clock = { now: () => Date.now() };
 
 export interface RoomDetails {
+  /** Who is in the room from the start; each gets a member row and a status line, like `addMember`. */
+  members?: Member[];
   description?: string;
   picture?: string;
   background?: string;
@@ -38,11 +40,14 @@ export interface DeviceStore {
   setRoomDescription(id: string, description: string | undefined): Promise<void>;
   setRoomPicture(id: string, picture: string | undefined): Promise<void>;
   setRoomBackground(id: string, background: string | undefined, accent?: string): Promise<void>;
+  /** Adds someone to the room and writes the status line ("<name> joined") in one step. False when they are already in it. */
+  addMember(roomId: string, member: Member): Promise<boolean>;
   deleteRoom(id: string): Promise<void>;
   /** Brings back a deleted room, with its messages. Rejects if the device never had it. */
   restoreRoom(id: string): Promise<void>;
   trail(roomId: string): Live<TrailMessage[]>;
-  send(roomId: string, content: string): Promise<Message>;
+  /** Saves a message in the room, as the person by default; the assistant's replies go through here too, so they sync like any other message. */
+  send(roomId: string, content: string, authorId?: Author, kind?: string): Promise<Message>;
   retry(messageId: string): Promise<void>;
   putFile(file: FileDraft): Promise<FileItem>;
   syncStatus(): Live<SyncStatus>;
@@ -68,10 +73,19 @@ export interface Connectivity {
   subscribe(listener: () => void): () => void;
 }
 
-/** Optional answer-generation capability; conversation UI only needs its working state. */
+/** What answers in a room; the conversation window only needs to know whether a reply is on its way. */
 export interface Brain {
   isWorking(roomId: string): Live<boolean>;
+  /** What the assistant did with the person's messages in the room, by message id: taken, or not (with the reason). */
+  answers?(roomId: string): Live<ReadonlyMap<string, MessageAnswer>>;
 }
+
+export type MessageAnswer = "taken" | { failed: string };
+
+const never: Live<boolean> = { get: () => false, subscribe: () => () => {} };
+
+/** The brain of a room with nothing answering: it is never working. */
+export const noteToSelfBrain: Brain = { isWorking: () => never };
 
 export interface DevicePorts {
   store: DeviceStore;
@@ -85,8 +99,4 @@ export function devicePorts(ports: Ports): DevicePorts {
   const { store, files, transport, clock } = ports as Partial<DevicePorts>;
   if (!store || !files || !transport || !clock) throw new Error(copy.missingPorts);
   return { store, files, transport, clock };
-}
-
-export function brainOf(ports: Ports): Brain | undefined {
-  return (ports as { brain?: Brain }).brain;
 }

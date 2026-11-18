@@ -1,6 +1,7 @@
 import { assert, assertEquals } from "@std/assert";
 import { act, type ReactElement } from "react";
-import { circleRowMenu, compose, createRoomCommand, definePlugin, deleteRoomCommand, type Plugin, provideCommand, type SlotContext } from "@openwork/kit";
+import { commandKey, compose, definePlugin, type Plugin, provideCommand, type SlotContext } from "@openwork/kit";
+import { circleRowMenu } from "./slots.ts";
 import { devicePorts } from "@openwork/store";
 import { memoryPorts } from "@openwork/store/testing";
 import { createDrawer, DrawerContext } from "@openwork/shell";
@@ -9,6 +10,9 @@ import { copy } from "./copy.ts";
 import { circlePlugin } from "./plugin.tsx";
 import type { ReadMarks } from "./readMarks.ts";
 import { flush, host, mount } from "./testing.tsx";
+
+const createRoomCommand = commandKey<[], Promise<void>>("rooms.create");
+const deleteRoomCommand = commandKey<[id: string], Promise<void>>("rooms.delete");
 
 const NEW_ROOM = "New conversation";
 
@@ -101,6 +105,22 @@ Deno.test("sending sets the preview and moves the room to the top", async () => 
   await flush();
   assertEquals(titles(container).slice(0, 2), ["Older", "Newer"]);
   assert((container.textContent ?? "").includes("You: hello world"));
+  await unmount();
+});
+
+Deno.test("the preview says You: for the person's words and nothing for an assistant reply", async () => {
+  const { store, clock, view } = setup();
+  const room = await store.createRoom("Notes");
+  clock.tick(10);
+  await store.send(room.id, "hello");
+  const { container, unmount } = await mount(view());
+  await flush();
+  assert((container.textContent ?? "").includes("You: hello"));
+  clock.tick(10);
+  await act(async () => void (await store.send(room.id, "Hi there", "assistant")));
+  await flush();
+  const text = container.textContent ?? "";
+  assert(text.includes("Hi there") && !text.includes("You: Hi there") && !text.includes("You: hello"), text);
   await unmount();
 });
 

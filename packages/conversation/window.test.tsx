@@ -1,7 +1,7 @@
 import { assert, assertEquals } from "@std/assert";
 import { act } from "react";
-import { addressAction, addressAddressee, contribute, definePlugin, windowBanner, windowEmpty } from "@openwork/kit";
-import { makeCell } from "@openwork/store";
+import { addressAction, addressAddressee, contribute, definePlugin, provide, trailBody, windowBanner, windowEmpty } from "@openwork/kit";
+import { type AiClient, aiPlugin, type AiReply, brainService, HttpError, makeCell } from "@openwork/store";
 import { until } from "@openwork/store/testing";
 import { ConversationWindow } from "./ConversationWindow.tsx";
 import { copy } from "./copy.ts";
@@ -146,7 +146,8 @@ Deno.test("window.empty replaces the Notes to self card, the first match by orde
 
 Deno.test("only a Brain that says it is working shows the typing indicator, never any words", async () => {
   const working = makeCell(false);
-  const { store, view } = rig([], { brain: { isWorking: () => working } });
+  const fakeBrain = definePlugin({ id: "fake-brain", version: "1.0.0", contributes: [], provides: [provide(brainService, { isWorking: () => working })] });
+  const { store, view } = rig([fakeBrain]);
   const room = await store.createRoom("Notes");
   await store.send(room.id, "hi");
   const { container, unmount } = await mount(view(<ConversationWindow roomId={room.id} />, room.id));
@@ -196,4 +197,87 @@ Deno.test("address.action buttons sit in the bar, and an address.addressee turns
   assert(labelled(container, copy.back), "the editing bar opens");
   assert(container.querySelector(`[aria-label="${copy.searchAddressee}"], input`), "with its picker");
   await unmount();
+});
+
+Deno.test("with no brain provided the window is a note to self: no typing indicator", async () => {
+  const { store, view } = rig();
+  const room = await store.createRoom("Notes");
+  await store.send(room.id, "hi");
+  const { container, unmount } = await mount(view(<ConversationWindow roomId={room.id} />, room.id));
+  await settle();
+  assertEquals(labelled(container, copy.typing), null);
+  await unmount();
+});
+
+function aiWindow(reply: AiClient["reply"]) {
+  const client: AiClient = { reply, status: () => Promise.resolve({ configured: true, pending: [] }) };
+  return rig([aiPlugin()], { ai: client });
+}
+
+Deno.test("while a reply streams the window shows only the typing indicator, the message has blue ticks once started, and the reply appears whole at done", async () => {
+  let started!: () => void;
+  let finish!: (reply: AiReply) => void;
+  const { store, view, syncNow } = aiWindow((_room, _messages, handlers) => (started = handlers!.onStarted!, new Promise((done) => (finish = done))));
+  const room = await store.createRoom("Notes", { members: [{ id: "op", name: "Helper", type: "operator" }] });
+  const { container, unmount } = await mount(view(<ConversationWindow roomId={room.id} />, room.id));
+  await settle();
+  await write(container, "hello");
+  await press(sendButton(container));
+  await settle();
+  assert(labelled(container, copy.typing), "typing while the reply is on its way");
+  assert(labelled(container, copy.saved), "grey: saved on this device");
+  await syncNow();
+  await settle();
+  assert(labelled(container, copy.received) && !labelled(container, copy.accepted), "grey: the server has it");
+  await act(() => started());
+  await settle();
+  assert(labelled(container, copy.accepted), "blue: taken");
+  assert(!textOf(container).includes("Hi there"));
+  await act(() => finish({ status: "reply", text: "Hi there" }));
+  await settle();
+  assertEquals(labelled(container, copy.typing), null);
+  assert(textOf(container).includes("Hi there"), "the whole reply, as one message");
+  await unmount();
+});
+
+Deno.test("a failure before started shows red ticks with the reason and saves no reply", async () => {
+  const { store, view } = aiWindow(() => Promise.reject(new HttpError(502, "The assistant could not answer. Try again.")));
+  const room = await store.createRoom("Notes", { members: [{ id: "op", name: "Helper", type: "operator" }] });
+  const { container, unmount } = await mount(view(<ConversationWindow roomId={room.id} />, room.id));
+  await settle();
+  await write(container, "hello");
+  await press(sendButton(container));
+  await settle();
+  assert(labelled(container, copy.notDeliveredTryAgain), "red ticks with the reason");
+  assertEquals(labelled(container, copy.accepted), null);
+  assertEquals(labelled(container, copy.typing), null);
+  assertEquals((await trailOf(store, room.id)).length, 2, "the join line and the message; no reply");
+  await unmount();
+});
+
+const pollPlugin = definePlugin({
+  id: "poll",
+  version: "1.0.0",
+  contributes: [
+    contribute(trailBody, {
+      id: "poll",
+      order: 50,
+      kind: "x-poll",
+      matches: (message) => message.kind === "x-poll",
+      render: (message) => <p>poll: {message.content}</p>,
+    }),
+  ],
+});
+
+Deno.test("a second kind a plugin contributes is drawn through trail.body; without that plugin the same message shows the not-supported notice", async () => {
+  for (const [plugins, expected] of [[[pollPlugin], "poll: four options"], [[], copy.unsupportedKind]] as const) {
+    const { store, view } = rig([...plugins]);
+    const room = await store.createRoom("Notes", { members: [{ id: "op", name: "Helper", type: "operator" }] });
+    await store.send(room.id, "four options", "you", "x-poll");
+    const { container, unmount } = await mount(view(<ConversationWindow roomId={room.id} />, room.id));
+    await settle();
+    assert(textOf(container).includes(expected), textOf(container));
+    if (plugins.length === 0) assert(!textOf(container).includes("four options"), "the words of a kind nobody draws are not shown as text");
+    await unmount();
+  }
 });
