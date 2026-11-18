@@ -1,6 +1,6 @@
 import { Fragment, memo, type ReactElement } from "react";
 import type { Placed, SlotContext, TrailActionValue, TrailBodyValue, TrailExtraValue } from "@openwork/kit";
-import type { MessageAnswer, TrailMessage } from "@openwork/store";
+import { DEFAULT_KIND, type MessageAnswer, type TrailMessage } from "@openwork/store";
 import { ChatMessage as AxMessage, ChatMessageBubble } from "@astryxdesign/core/Chat";
 import { ContextMenu } from "@astryxdesign/core/ContextMenu";
 import { Icon } from "@astryxdesign/core/Icon";
@@ -41,7 +41,9 @@ function Stamp({ message, answer }: { message: TrailMessage; answer?: MessageAns
 function Bubble({ message, group, ctx, bodies, extras, actions, onRetry, answer }: BubbleProps): ReactElement {
   const isFailed = message.state === "failed";
   const body = bodies.find((candidate) => candidate.matches(message));
-  const words = body ? body.render(message, ctx) : <Text as="p">{message.content}</Text>;
+  const words = body
+    ? body.render(message, ctx)
+    : <Text as="p">{(message.kind ?? DEFAULT_KIND) === DEFAULT_KIND ? message.content : copy.unsupportedKind}</Text>;
   const sendAgain = () => onRetry(message.id);
   const menuItems = [
     ...actions.filter((action) => action.appliesTo?.(message) ?? true).map((action) => ({

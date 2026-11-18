@@ -260,3 +260,16 @@ async fn cors_allows_the_vite_dev_origin_only() {
     let (_, headers, _) = send(&h.app, other).await;
     assert!(!headers.contains_key(header::ACCESS_CONTROL_ALLOW_ORIGIN));
 }
+
+#[tokio::test]
+async fn an_unknown_message_kind_and_a_missing_kind_come_back_unchanged() {
+    let h = harness().await;
+    let mut tagged = message("m1", "four options", 10);
+    tagged["data"]["kind"] = json!("x-unknown-kind");
+    let plain = message("m2", "hello", 11);
+    push(&h.app, json!([tagged.clone(), plain.clone()])).await;
+    let pulled = pull(&h.app, 0).await;
+    let changes = pulled["changes"].as_array().unwrap();
+    assert_eq!(changes.iter().find(|c| c["id"] == "m1").unwrap(), &tagged);
+    assert_eq!(changes.iter().find(|c| c["id"] == "m2").unwrap(), &plain);
+}

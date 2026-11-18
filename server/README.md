@@ -31,6 +31,7 @@ Data: `<data>/openwork.db` (SQLite, migrations in `crates/ow-store/migrations`) 
 - `GET /healthz` returns `ok`.
 - `POST /api/push` with `{ "changes": Change[] }` returns `{ "answers": Answer[] }`. Last writer wins by `updatedAt`; an older change is answered `ok: true` and
   ignored.
+- A message may carry `kind`, an open string a plugin defines (the app sends `text`); the server keeps it as given and never checks it.
 - `GET /api/pull?since=<cursor>` returns `{ "changes": Change[], "cursor": number }`. `since=0` returns everything.
 - `PUT /api/files/:id` (raw bytes, `Content-Type`) returns 204; larger than 25 MB returns 413. `GET /api/files/:id` returns the bytes or 404.
 - `POST /api/ai/reply` with `{ "roomId", "messages": [{ "id", "authorId", "content", "createdAt" }] }`. With no AI plugin it returns 404. Limits: body 1 MB, room id

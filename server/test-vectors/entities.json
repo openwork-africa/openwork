@@ -15,6 +15,7 @@
     "roomId": "7b1e0d2a-5c3f-4e8a-9d41-2f6a8c0b1e11",
     "authorId": "you",
     "content": "Lunch at one?",
+    "kind": "text",
     "createdAt": 1731600009000,
     "updatedAt": 1731600009000,
     "deleted": false
@@ -39,6 +40,7 @@
           "roomId": "7b1e0d2a-5c3f-4e8a-9d41-2f6a8c0b1e11",
           "authorId": "you",
           "content": "Lunch at one?",
+          "kind": "x-unknown-kind",
           "createdAt": 1731600009000,
           "updatedAt": 1731600009000
         }

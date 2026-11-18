@@ -18,6 +18,7 @@ export type { Live } from "./live.ts";
 export { MemoryTransport } from "./memoryTransport.ts";
 export { ManualClock } from "./memory.ts";
 export { MemoryDatabase, MemoryDeviceStore, MemoryFileStore } from "./memory.ts";
+export { DEFAULT_KIND } from "./types.ts";
 export { devicePorts, noteToSelfBrain, systemClock } from "./ports.ts";
 export type {
   Brain,

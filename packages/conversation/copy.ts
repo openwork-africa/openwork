@@ -4,6 +4,7 @@ export const RECEIVED_LABEL = "Received";
 export const ACCEPTED_LABEL = "Taken";
 
 export const copy = {
+  unsupportedKind: "This message type is not supported yet",
   messageActions: "Message actions",
   sendAgain: "Send again",
   notDelivered: "Not delivered",

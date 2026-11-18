@@ -1,6 +1,6 @@
 import { assert, assertEquals } from "@std/assert";
 import { act } from "react";
-import { addressAction, addressAddressee, contribute, definePlugin, provide, windowBanner, windowEmpty } from "@openwork/kit";
+import { addressAction, addressAddressee, contribute, definePlugin, provide, trailBody, windowBanner, windowEmpty } from "@openwork/kit";
 import { type AiClient, aiPlugin, type AiReply, brainService, HttpError, makeCell } from "@openwork/store";
 import { until } from "@openwork/store/testing";
 import { ConversationWindow } from "./ConversationWindow.tsx";
@@ -253,4 +253,31 @@ Deno.test("a failure before started shows red ticks with the reason and saves no
   assertEquals(labelled(container, copy.typing), null);
   assertEquals((await trailOf(store, room.id)).length, 1);
   await unmount();
+});
+
+const pollPlugin = definePlugin({
+  id: "poll",
+  version: "1.0.0",
+  contributes: [
+    contribute(trailBody, {
+      id: "poll",
+      order: 50,
+      kind: "x-poll",
+      matches: (message) => message.kind === "x-poll",
+      render: (message) => <p>poll: {message.content}</p>,
+    }),
+  ],
+});
+
+Deno.test("a second kind a plugin contributes is drawn through trail.body; without that plugin the same message shows the not-supported notice", async () => {
+  for (const [plugins, expected] of [[[pollPlugin], "poll: four options"], [[], copy.unsupportedKind]] as const) {
+    const { store, view } = rig([...plugins]);
+    const room = await store.createRoom("Notes");
+    await store.send(room.id, "four options", "you", "x-poll");
+    const { container, unmount } = await mount(view(<ConversationWindow roomId={room.id} />, room.id));
+    await settle();
+    assert(textOf(container).includes(expected), textOf(container));
+    if (plugins.length === 0) assert(!textOf(container).includes("four options"), "the words of a kind nobody draws are not shown as text");
+    await unmount();
+  }
 });

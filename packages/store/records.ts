@@ -3,6 +3,7 @@ import {
   type Author,
   type Change,
   type ChangeKind,
+  DEFAULT_KIND,
   type FileItem,
   type Message,
   type MessageState,
@@ -22,8 +23,8 @@ export function newRoom(name: string, details: RoomDetails, now: number): Room {
   return { id: crypto.randomUUID(), name, ...definedOnly(details), createdAt: now, updatedAt: now, activityAt: now };
 }
 
-export function newMessage(roomId: string, content: string, now: number, authorId: Author = YOU): Message {
-  return { id: crypto.randomUUID(), roomId, authorId, content, createdAt: now, updatedAt: now };
+export function newMessage(roomId: string, content: string, now: number, authorId: Author = YOU, kind: string = DEFAULT_KIND): Message {
+  return { id: crypto.randomUUID(), roomId, authorId, content, kind, createdAt: now, updatedAt: now };
 }
 
 export const newFile = (file: FileDraft, now: number): FileItem => ({ ...file, createdAt: file.createdAt ?? now, updatedAt: file.updatedAt ?? now });

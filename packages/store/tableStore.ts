@@ -56,10 +56,10 @@ export class TableDeviceStore implements DeviceStore {
       await this.#save(tx, changeOf("room", restored), now);
     });
 
-  send = (roomId: string, content: string, authorId?: Author): Promise<Message> =>
+  send = (roomId: string, content: string, authorId?: Author, kind?: string): Promise<Message> =>
     this.#write(async (tx, now) => {
       const room = await this.#existing(tx, roomId);
-      const message = newMessage(roomId, content, now, authorId);
+      const message = newMessage(roomId, content, now, authorId, kind);
       const touched = editedRoom(room, { activityAt: message.createdAt }, now);
       await this.#save(tx, changeOf("room", touched), now);
       await this.#save(tx, changeOf("message", message), now);

@@ -19,6 +19,8 @@ export interface Message {
   roomId: string;
   authorId: Author;
   content: string;
+  /** What kind of message this is: an open string that plugins define, "text" when absent. The store keeps it as given. */
+  kind?: string;
   createdAt: number;
   updatedAt: number;
   deleted?: boolean;
@@ -62,6 +64,8 @@ export interface MessageView extends Message {
 export type MessageState = NonNullable<MessageView["state"]>;
 
 export const YOU = "you" as const;
+/** The kind of a message nobody gave a kind to. */
+export const DEFAULT_KIND = "text";
 export const ASSISTANT = "assistant" as const;
 
 export interface TrailMessage extends MessageView {
