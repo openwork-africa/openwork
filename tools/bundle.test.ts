@@ -8,7 +8,7 @@ const WINDOW = ["conversation-empty-scroller"];
 async function build(product: "bare" | "full"): Promise<{ js: string; files: string[] }> {
   const out = await Deno.makeTempDir({ prefix: `openwork-${product}-` });
   const result = await new Deno.Command("deno", {
-    args: ["run", "-A", "npm:vite@^7", "build", "--logLevel", "error"],
+    args: ["run", "-A", "npm:vite@8.3.8", "build", "--logLevel", "error"],
     cwd: new URL("../app", import.meta.url).pathname,
     env: { OPENWORK_PRODUCT: product, OPENWORK_OUT: out },
     stdout: "piped",
