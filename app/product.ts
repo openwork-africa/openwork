@@ -10,4 +10,4 @@ import { aiPlugin } from "@openwork/store";
 export { regions } from "./regions.ts";
 
 /** The full product's composition file: the plugins it is made of, in any order. Adding or removing one is the whole change. */
-export const openPlugins: readonly Plugin[] = [rooms(), text, profilePlugin, circlePlugin(), panelPlugin, members, aiPlugin()];
+export const openPlugins: readonly Plugin[] = [rooms(), text, profilePlugin, circlePlugin(), panelPlugin, members(), aiPlugin()];

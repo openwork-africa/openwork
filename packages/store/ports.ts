@@ -1,7 +1,7 @@
 import type { Ports } from "@openwork/kit";
 import { copy } from "./copy.ts";
 import type { Live } from "./live.ts";
-import type { Answer, Author, Change, FileItem, Message, OutboxRow, PullAnswer, Room, SyncStatus, TrailMessage } from "./types.ts";
+import type { Answer, Author, Change, FileItem, Member, Message, OutboxRow, PullAnswer, Room, SyncStatus, TrailMessage } from "./types.ts";
 
 export interface Clock {
   now(): number;
@@ -10,6 +10,8 @@ export interface Clock {
 export const systemClock: Clock = { now: () => Date.now() };
 
 export interface RoomDetails {
+  /** Who is in the room from the start; each gets a member row and a status line, like `addMember`. */
+  members?: Member[];
   description?: string;
   picture?: string;
   background?: string;
@@ -38,6 +40,8 @@ export interface DeviceStore {
   setRoomDescription(id: string, description: string | undefined): Promise<void>;
   setRoomPicture(id: string, picture: string | undefined): Promise<void>;
   setRoomBackground(id: string, background: string | undefined, accent?: string): Promise<void>;
+  /** Adds someone to the room and writes the status line ("<name> joined") in one step. False when they are already in it. */
+  addMember(roomId: string, member: Member): Promise<boolean>;
   deleteRoom(id: string): Promise<void>;
   /** Brings back a deleted room, with its messages. Rejects if the device never had it. */
   restoreRoom(id: string): Promise<void>;

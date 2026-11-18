@@ -1,1 +1,2 @@
-export { MEMBER_ADDED, members } from "./plugin.tsx";
+export { members } from "./plugin.tsx";
+export type { MembersOptions } from "./plugin.tsx";

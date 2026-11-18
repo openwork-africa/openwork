@@ -1,11 +1,14 @@
 import { addressAddressee, type Addressee, contribute, definePlugin, type SlotContext, trailBody } from "@openwork/kit";
-import { devicePorts, type Live, type TrailMessage } from "@openwork/store";
+import { devicePorts, isOperator, JOINED_KIND, type Live, type Member, memberName, OPERATOR, type Room } from "@openwork/store";
 import { Text } from "@astryxdesign/core/Text";
 import { copy } from "./copy.ts";
 
-/** The kind of the message that says someone joined the room; its words are the status line itself. */
-export const MEMBER_ADDED = "member.added";
-const ASSISTANT_ID = "assistant";
+const CREATE_PREFIX = "create-operator:";
+
+export interface MembersOptions {
+  /** The people and operators the address bar can offer. They come from the product; OSS has none of its own. */
+  directory?: readonly Member[];
+}
 
 const firstOf = <T,>(live: Live<T>): Promise<T> =>
   new Promise((resolve) => {
@@ -17,38 +20,49 @@ const firstOf = <T,>(live: Live<T>): Promise<T> =>
     });
   });
 
-/** What the person can add: the assistant (while it matches what they typed), and the name they typed as a person. */
-export function suggestions(typed: string): Addressee[] {
-  const name = typed.trim();
-  const isAssistant = copy.assistantName.toLowerCase().includes(name.toLowerCase());
-  const assistant: Addressee[] = isAssistant ? [{ id: ASSISTANT_ID, label: copy.assistantName, description: copy.assistantDescription }] : [];
-  const person: Addressee[] = name && !isAssistant ? [{ id: `person:${name.toLowerCase()}`, label: name, description: copy.personDescription }] : [];
-  return [...assistant, ...person];
-}
+const roomOf = (ctx: SlotContext): Promise<Room | null> => (ctx.roomId ? firstOf(devicePorts(ctx.ports).store.room(ctx.roomId)) : Promise.resolve(null));
 
-const alreadyIn = (trail: readonly TrailMessage[], line: string): boolean => trail.some((message) => message.kind === MEMBER_ADDED && message.content === line);
+const matches = (member: Member, typed: string): boolean => `${memberName(member)} ${member.description ?? ""}`.toLowerCase().includes(typed.toLowerCase());
 
-/** Adds the pick to the room as a member, once: a status line ("Assistant joined") in the room, written like any message. */
-async function add(pick: Addressee, ctx: SlotContext): Promise<void> {
-  if (!ctx.roomId) return;
-  const { store } = devicePorts(ctx.ports);
-  const line = copy.joined(pick.label);
-  if (alreadyIn(await firstOf(store.trail(ctx.roomId)), line)) return;
-  await store.send(ctx.roomId, line, "you", MEMBER_ADDED);
-}
-
-/** Inviting into a room from the address bar: the assistant and people by name. One room, add by pick; no removal and no permissions yet. */
-export const members = definePlugin({
-  id: "members",
-  version: "0.1.0",
-  contributes: [
-    contribute(addressAddressee, { id: "members", order: 10, suggest: suggestions, add }),
-    contribute(trailBody, {
-      id: "members.added",
-      order: 50,
-      kind: MEMBER_ADDED,
-      matches: (message) => message.kind === MEMBER_ADDED,
-      render: (message) => <Text type="supporting" as="p">{message.content}</Text>,
-    }),
-  ],
+const addresseeOf = (member: Member): Addressee => ({
+  id: member.id,
+  label: memberName(member),
+  description: member.description || (isOperator(member) ? copy.operatorDescription : undefined),
 });
+
+/** The address bar's own invite: who the room does not have yet, from the product's directory, and "Create operator" for a name that matches no one. */
+export function members({ directory = [] }: MembersOptions = {}) {
+  const suggest = async (typed: string, ctx: SlotContext): Promise<Addressee[]> => {
+    const inRoom = new Set(((await roomOf(ctx))?.members ?? []).map((member) => member.id));
+    const found = directory.filter((member) => !inRoom.has(member.id) && matches(member, typed.trim()));
+    const name = typed.trim();
+    const create: Addressee[] = name && !directory.some((member) => matches(member, name))
+      ? [{ id: `${CREATE_PREFIX}${name}`, label: copy.createOperator(name), description: copy.createOperatorDescription }]
+      : [];
+    return [...found.map(addresseeOf), ...create];
+  };
+
+  /** The one way into a room: the pick becomes a member row and one status line, through the store. Picking someone already in does nothing. */
+  const add = async (pick: Addressee, ctx: SlotContext): Promise<void> => {
+    if (!ctx.roomId) return;
+    const member = pick.id.startsWith(CREATE_PREFIX)
+      ? { id: `operator:${crypto.randomUUID()}`, name: pick.id.slice(CREATE_PREFIX.length), type: OPERATOR }
+      : directory.find((each) => each.id === pick.id);
+    if (member) await devicePorts(ctx.ports).store.addMember(ctx.roomId, member);
+  };
+
+  return definePlugin({
+    id: "members",
+    version: "0.1.0",
+    contributes: [
+      contribute(addressAddressee, { id: "members", order: 10, suggest, add }),
+      contribute(trailBody, {
+        id: "members.joined",
+        order: 50,
+        kind: JOINED_KIND,
+        matches: (message) => message.kind === JOINED_KIND,
+        render: (message) => <Text type="supporting" as="p">{message.content}</Text>,
+      }),
+    ],
+  });
+}

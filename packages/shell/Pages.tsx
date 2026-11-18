@@ -11,7 +11,7 @@ import { useRoute, useRouter } from "./router.ts";
 import { useRegions } from "./useRegions.ts";
 
 /** Provided by the rooms plugin when the product has it; the frame only runs it by name, to open into a first room. */
-const createRoom = commandKey<[], Promise<void>>("rooms.create");
+const createRoom = commandKey<[options?: { first?: boolean }], Promise<void>>("rooms.create");
 
 const lazies = new WeakMap<PageValue, ComponentType>();
 
@@ -34,7 +34,7 @@ function RoomRoutes({ given, route }: { given: Regions; route: Route }): ReactEl
   const roomId = roomIdOf(route);
   const rooms = useRooms(devicePorts(ctx.ports).store);
   const latest = rooms?.[0]?.id;
-  const create = ctx.commands[createRoom.name] ? () => runCommand(ctx, createRoom) : undefined;
+  const create = ctx.commands[createRoom.name] ? (options: { first: boolean }) => runCommand(ctx, createRoom, options) : undefined;
   const room = useRoom(devicePorts(ctx.ports).store, roomId ?? "");
   const isMissing = !!roomId && room === null;
   const noRooms = rooms?.length === 0;
@@ -45,7 +45,7 @@ function RoomRoutes({ given, route }: { given: Regions; route: Route }): ReactEl
     if (!noRooms) isCreating.current = false;
     else if (create && isSettled && !isCreating.current) {
       isCreating.current = true;
-      void create();
+      void create({ first: true });
     }
   }, [noRooms, isSettled]);
   useEffect(() => {

@@ -2,6 +2,7 @@ import type { AiClient, AiMessage } from "./aiClient.ts";
 import type { AiBrain } from "./aiBrain.ts";
 import { copy } from "./copy.ts";
 import { HttpError } from "./errors.ts";
+import { operatorsOf } from "./members.ts";
 import type { DeviceStore } from "./ports.ts";
 import { ASSISTANT, DEFAULT_KIND, type TrailMessage, YOU } from "./types.ts";
 
@@ -24,16 +25,14 @@ const asked = (trail: TrailMessage[]): AiMessage[] =>
   }));
 
 /**
- * Answers the person: when the newest message of the room most recently written in is theirs, the room's messages go to
- * the server's AI as a stream. The room works (the typing indicator) until the stream ends, the person's message is taken once
- * the stream says `started`, and the whole reply is saved as one message from the assistant, only at `done`.
- * Stops asking for good when the server has no AI.
+ * Answers the person in every room that has an operator member (an AI): when the newest message of such a room is theirs, the
+ * room's messages go to the server's AI as a stream. The room works (the typing indicator) until the stream ends, the person's
+ * message is taken once the stream says `started`, and the whole reply is saved as one message from the assistant, only at `done`.
+ * A room with no operator is never asked about. Stops asking for good when the server has no AI.
  */
 export function answerMessages({ store, client, brain, since, onFailure }: RepliesOptions): () => void {
   const answered = new Set<string>();
   let isAvailable = true;
-  let followed: string | undefined;
-  let stopTrail = (): void => {};
 
   const answer = async (roomId: string, messageId: string, messages: AiMessage[]): Promise<void> => {
     const handle = brain.begin(roomId, messageId);
@@ -60,20 +59,24 @@ export function answerMessages({ store, client, brain, since, onFailure }: Repli
     void answer(roomId, last.id, asked(trail));
   };
 
-  const follow = (roomId: string): void => {
-    stopTrail();
-    followed = roomId;
+  const watching = new Map<string, () => void>();
+  const unwatch = (roomId: string): void => {
+    watching.get(roomId)?.();
+    watching.delete(roomId);
+  };
+  const watch = (roomId: string): void => {
     const trail = store.trail(roomId);
-    stopTrail = trail.subscribe(() => look(roomId, trail.get()));
+    watching.set(roomId, trail.subscribe(() => look(roomId, trail.get())));
   };
 
   const rooms = store.rooms();
   const stopRooms = rooms.subscribe(() => {
-    const newest = rooms.get()?.[0]?.id;
-    if (newest && newest !== followed) follow(newest);
+    const withOperator = new Set((rooms.get() ?? []).filter((room) => operatorsOf(room).length > 0).map((room) => room.id));
+    for (const roomId of [...watching.keys()]) if (!withOperator.has(roomId)) unwatch(roomId);
+    for (const roomId of withOperator) if (!watching.has(roomId)) watch(roomId);
   });
   return () => {
     stopRooms();
-    stopTrail();
+    for (const roomId of [...watching.keys()]) unwatch(roomId);
   };
 }

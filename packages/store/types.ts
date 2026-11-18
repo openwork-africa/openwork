@@ -1,3 +1,11 @@
+/** Someone else in a room (never the person themselves). `type` is an open string any plugin may define; the store keeps it as given. */
+export interface Member {
+  id: string;
+  name: string;
+  type: string;
+  description?: string;
+}
+
 export interface Room {
   id: string;
   name: string;
@@ -8,6 +16,7 @@ export interface Room {
   createdAt: number;
   updatedAt: number;
   activityAt: number;
+  members?: Member[];
   deleted?: boolean;
 }
 
@@ -66,6 +75,8 @@ export type MessageState = NonNullable<MessageView["state"]>;
 export const YOU = "you" as const;
 /** The kind of a message nobody gave a kind to. */
 export const DEFAULT_KIND = "text";
+/** The kind of the status line a room gets when someone joins it; its words are the line itself. */
+export const JOINED_KIND = "member.added";
 export const ASSISTANT = "assistant" as const;
 
 export interface TrailMessage extends MessageView {

@@ -18,7 +18,8 @@ export type { Live } from "./live.ts";
 export { MemoryTransport } from "./memoryTransport.ts";
 export { ManualClock } from "./memory.ts";
 export { MemoryDatabase, MemoryDeviceStore, MemoryFileStore } from "./memory.ts";
-export { DEFAULT_KIND } from "./types.ts";
+export { DEFAULT_KIND, JOINED_KIND } from "./types.ts";
+export { isOperator, joinedLine, memberName, OPERATOR, operatorsOf, roomTitle } from "./members.ts";
 export { devicePorts, noteToSelfBrain, systemClock } from "./ports.ts";
 export type {
   Brain,
@@ -42,6 +43,7 @@ export type {
   Change,
   ChangeKind,
   FileItem,
+  Member,
   Message,
   MessageState,
   OutboxRow,

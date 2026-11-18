@@ -218,7 +218,7 @@ Deno.test("while a reply streams the window shows only the typing indicator, the
   let started!: () => void;
   let finish!: (reply: AiReply) => void;
   const { store, view, syncNow } = aiWindow((_room, _messages, handlers) => (started = handlers!.onStarted!, new Promise((done) => (finish = done))));
-  const room = await store.createRoom("Notes");
+  const room = await store.createRoom("Notes", { members: [{ id: "op", name: "Helper", type: "operator" }] });
   const { container, unmount } = await mount(view(<ConversationWindow roomId={room.id} />, room.id));
   await settle();
   await write(container, "hello");
@@ -242,7 +242,7 @@ Deno.test("while a reply streams the window shows only the typing indicator, the
 
 Deno.test("a failure before started shows red ticks with the reason and saves no reply", async () => {
   const { store, view } = aiWindow(() => Promise.reject(new HttpError(502, "The assistant could not answer. Try again.")));
-  const room = await store.createRoom("Notes");
+  const room = await store.createRoom("Notes", { members: [{ id: "op", name: "Helper", type: "operator" }] });
   const { container, unmount } = await mount(view(<ConversationWindow roomId={room.id} />, room.id));
   await settle();
   await write(container, "hello");
@@ -251,7 +251,7 @@ Deno.test("a failure before started shows red ticks with the reason and saves no
   assert(labelled(container, copy.notDeliveredTryAgain), "red ticks with the reason");
   assertEquals(labelled(container, copy.accepted), null);
   assertEquals(labelled(container, copy.typing), null);
-  assertEquals((await trailOf(store, room.id)).length, 1);
+  assertEquals((await trailOf(store, room.id)).length, 2, "the join line and the message; no reply");
   await unmount();
 });
 
@@ -272,7 +272,7 @@ const pollPlugin = definePlugin({
 Deno.test("a second kind a plugin contributes is drawn through trail.body; without that plugin the same message shows the not-supported notice", async () => {
   for (const [plugins, expected] of [[[pollPlugin], "poll: four options"], [[], copy.unsupportedKind]] as const) {
     const { store, view } = rig([...plugins]);
-    const room = await store.createRoom("Notes");
+    const room = await store.createRoom("Notes", { members: [{ id: "op", name: "Helper", type: "operator" }] });
     await store.send(room.id, "four options", "you", "x-poll");
     const { container, unmount } = await mount(view(<ConversationWindow roomId={room.id} />, room.id));
     await settle();

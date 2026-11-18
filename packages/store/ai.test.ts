@@ -6,6 +6,8 @@ import { AiBrain } from "./aiBrain.ts";
 import { aiPlugin, brainService } from "./aiPlugin.ts";
 import { HttpError } from "./errors.ts";
 import { type Live } from "./live.ts";
+import type { TrailMessage } from "./types.ts";
+import { OPERATOR } from "./members.ts";
 import { devices, memoryPorts, rig, until } from "./testing.ts";
 
 const valueOf = <T>(live: Live<T>) => live.get();
@@ -51,6 +53,10 @@ function aiRig(client: AiClient, plugins: Plugin[] = [aiPlugin()]) {
   return rig(plugins, ports);
 }
 
+const withOperator = { members: [{ id: "op", name: "Helper", type: OPERATOR }] };
+/** The room's messages without the status line of the operator joining. */
+const said = (live: Live<TrailMessage[]>, enough = 1) =>
+  until(live, (list) => list.filter((m) => m.kind !== "member.added").length >= enough).then((list) => list.filter((m) => m.kind !== "member.added"));
 const settle = (ms = 30) => new Promise((done) => setTimeout(done, ms));
 
 Deno.test("a message from the person is answered: the room's messages go out, the brain works meanwhile, and the reply is saved as the assistant's", async () => {
@@ -62,7 +68,7 @@ Deno.test("a message from the person is answered: the room's messages go out, th
   };
   const { store, product } = aiRig(client);
   const brain = product.registry.service(brainService)!;
-  const room = await store.createRoom("Notes");
+  const room = await store.createRoom("Notes", withOperator);
   const working = brain.isWorking(room.id);
   const stop = working.subscribe(() => {});
   await store.send(room.id, "hello");
@@ -75,7 +81,7 @@ Deno.test("a message from the person is answered: the room's messages go out, th
   release({ status: "reply", text: "Hi there" });
   await settle();
   assertEquals(working.get(), false);
-  const trail = await until(store.trail(room.id), (messages) => messages.length === 2);
+  const trail = await said(store.trail(room.id), 2);
   assertEquals(trail.map((m) => [m.authorId, m.content]), [["you", "hello"], ["assistant", "Hi there"]]);
   assertEquals(calls.length, 1, "the assistant's own message is not answered");
   stop();
@@ -87,14 +93,14 @@ Deno.test("with no AI on the server one status check is made, no reply is ever a
   let statuses = 0;
   const client: AiClient = { reply: () => (replies++, Promise.resolve({ status: "unavailable" })), status: () => (statuses++, noAiClient.status()) };
   const { store, product } = aiRig(client);
-  const room = await store.createRoom("Notes");
+  const room = await store.createRoom("Notes", withOperator);
   await settle();
   await store.send(room.id, "one");
   await settle();
   await store.send(room.id, "two");
   await settle();
   assertEquals([replies, statuses], [0, 1]);
-  assertEquals((await until(store.trail(room.id))).map((m) => m.content), ["one", "two"]);
+  assertEquals((await said(store.trail(room.id), 2)).map((m) => m.content), ["one", "two"]);
   const working = product.registry.service(brainService)!.isWorking(room.id);
   const stop = working.subscribe(() => {});
   await settle();
@@ -110,7 +116,7 @@ Deno.test("a server that says it has AI but answers 404 to the reply is asked on
     status: () => Promise.resolve({ configured: true, pending: [] }),
   };
   const { store, product } = aiRig(client);
-  const room = await store.createRoom("Notes");
+  const room = await store.createRoom("Notes", withOperator);
   await settle();
   await store.send(room.id, "one");
   await settle();
@@ -140,11 +146,11 @@ Deno.test("a failed reply tells the person in plain words and saves nothing", as
     status: () => Promise.resolve({ configured: true, pending: [] }),
   };
   const { store, product } = aiRig(client);
-  const room = await store.createRoom("Notes");
+  const room = await store.createRoom("Notes", withOperator);
   await store.send(room.id, "hi");
   await settle();
   assertEquals(product.notices.list().map((notice) => notice.text), ["The assistant could not answer. Try again."]);
-  assertEquals((await until(store.trail(room.id))).length, 1);
+  assertEquals((await said(store.trail(room.id))).length, 1);
   product.teardown();
 });
 
@@ -157,7 +163,7 @@ Deno.test("the room works from the first request until the stream ends, the repl
   };
   const { store, product } = aiRig(client);
   const brain = product.registry.service(brainService)!;
-  const room = await store.createRoom("Notes");
+  const room = await store.createRoom("Notes", withOperator);
   const working = brain.isWorking(room.id);
   const answers = brain.answers!(room.id);
   const stopWorking = working.subscribe(() => {});
@@ -168,11 +174,11 @@ Deno.test("the room works from the first request until the stream ends, the repl
   assertEquals([working.get(), answers.get()!.get(sent.id)], [true, undefined]);
   handlers.onStarted!();
   assertEquals(answers.get()!.get(sent.id), "taken");
-  assertEquals((await until(store.trail(room.id))).map((m) => m.authorId), ["you"], "nothing saved before done");
+  assertEquals((await said(store.trail(room.id))).map((m) => m.authorId), ["you"], "nothing saved before done");
   finish({ status: "reply", text: "Hi there" });
   await settle();
   assertEquals(working.get(), false);
-  assertEquals((await until(store.trail(room.id))).map((m) => [m.authorId, m.content]), [["you", "hello"], ["assistant", "Hi there"]]);
+  assertEquals((await said(store.trail(room.id), 2)).map((m) => [m.authorId, m.content]), [["you", "hello"], ["assistant", "Hi there"]]);
   stopWorking();
   stopAnswers();
   product.teardown();
@@ -189,14 +195,14 @@ Deno.test("a failure before started marks the message failed with the reason; af
     };
     const { store, product } = aiRig(client);
     const brain = product.registry.service(brainService)!;
-    const room = await store.createRoom("Notes");
+    const room = await store.createRoom("Notes", withOperator);
     const answers = brain.answers!(room.id);
     const stop = answers.subscribe(() => {});
     await settle();
     const sent = await store.send(room.id, "hi");
     await settle();
     assertEquals(answers.get()!.get(sent.id), isStarted ? "taken" : { failed: "The assistant could not answer. Try again." });
-    assertEquals((await until(store.trail(room.id))).length, 1, "nothing is saved on an error");
+    assertEquals((await said(store.trail(room.id))).length, 1, "nothing is saved on an error");
     stop();
     product.teardown();
   }
@@ -213,9 +219,10 @@ for (const make of devices) {
     const ports = { ...memoryPorts(device.clock), store: device.store, files: device.files, ai: client };
     const { product } = rig([aiPlugin()], ports as unknown as ReturnType<typeof memoryPorts>);
     await settle(50);
-    const room = await device.store.createRoom("Fresh");
+    const room = await device.store.createRoom("Fresh", withOperator);
+    device.clock.tick(1);
     await device.store.send(room.id, "first");
-    await settle(150);
+    for (let waited = 0; calls.length === 0 && waited < 2000; waited += 20) await settle(20);
     assertEquals(calls, [room.id]);
     product.teardown();
     device.close();
@@ -229,9 +236,9 @@ Deno.test("an older room opened after startup answers its first message, and so 
     status: () => Promise.resolve({ configured: true, pending: [] }),
   };
   const ports = { ...memoryPorts(), ai: client };
-  const older = await ports.store.createRoom("Older");
+  const older = await ports.store.createRoom("Older", withOperator);
   ports.clock.tick(10);
-  const newest = await ports.store.createRoom("Newest");
+  const newest = await ports.store.createRoom("Newest", withOperator);
   const { product } = rig([aiPlugin()], ports);
   await settle(50);
   ports.clock.tick(10);
@@ -251,7 +258,7 @@ Deno.test("a status line the person's side wrote is not a message to answer and 
     status: () => Promise.resolve({ configured: true, pending: [] }),
   };
   const { store, product, clock } = aiRig(client);
-  const room = await store.createRoom("Notes");
+  const room = await store.createRoom("Notes", withOperator);
   await settle();
   clock.tick(1);
   await store.send(room.id, "Assistant joined", "you", "member.added");
@@ -261,5 +268,28 @@ Deno.test("a status line the person's side wrote is not a message to answer and 
   await store.send(room.id, "hello");
   await settle();
   assertEquals(calls.map((messages) => messages.map((message) => message.content)), [["hello"]]);
+  product.teardown();
+});
+
+Deno.test("a message in a room with an operator gets a reply request, and a room without one does not", async () => {
+  const asked: string[] = [];
+  const client: AiClient = {
+    reply: (roomId) => (asked.push(roomId), Promise.resolve({ status: "none" })),
+    status: () => Promise.resolve({ configured: true, pending: [] }),
+  };
+  const { store, product, clock } = aiRig(client);
+  const alone = await store.createRoom("Alone");
+  const withHelper = await store.createRoom("With helper", withOperator);
+  await settle();
+  clock.tick(1);
+  await store.send(alone.id, "anyone?");
+  await store.send(withHelper.id, "hello");
+  await settle();
+  assertEquals(asked, [withHelper.id]);
+  clock.tick(1);
+  await store.addMember(alone.id, { id: "op", name: "Helper", type: OPERATOR });
+  await store.send(alone.id, "now?");
+  await settle();
+  assertEquals(asked, [withHelper.id, alone.id], "a room that gains an operator is answered from then on");
   product.teardown();
 });

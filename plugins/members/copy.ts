@@ -1,6 +1,5 @@
 export const copy = {
-  assistantName: "Assistant",
-  assistantDescription: "Your AI in this room",
-  personDescription: "Add to this room",
-  joined: (name: string): string => `${name} joined`,
+  operatorDescription: "Operator",
+  createOperator: (typed: string): string => `Create operator “${typed}”`,
+  createOperatorDescription: "A new AI for this room",
 } as const;
