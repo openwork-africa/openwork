@@ -97,7 +97,7 @@ export function Circle({ roomId }: { roomId?: string }): ReactElement {
               drawerState?.setDrawer("none");
               (ctx.replace ?? ctx.navigate)(roomPath(row.id));
             }}
-            onMarkRead={() => void ctx.commands["rooms.markRead"]?.(row.id as never)}
+            onMarkRead={() => void ctx.commands["circle.markRead"]?.(row.id as never)}
             menuItems={itemsOf(row)}
           />
         </ErrorBoundary>

@@ -6,9 +6,9 @@
     "./packages/shell",
     "./packages/conversation",
     "./plugins/text",
-    "./packages/circle",
+    "./plugins/circle",
     "./plugins/rooms",
-    "./packages/panel",
+    "./plugins/panel",
     "./plugins/profile",
     "./app",
     "./docs/examples"
@@ -20,6 +20,7 @@
     "check": "deno check packages plugins tools docs/examples app/main.tsx app/product.ts app/pwa/stamp-sw.ts",
     "fitness": "deno test -A tools/fitness.test.ts",
     "build": "deno task --cwd app build && test -f app/dist/index.html",
+    "test:bundle": "deno test -A tools/bundle.test.ts",
     "test:e2e": "deno test -A tools/e2e.test.ts",
     "test:base-only": "deno test -A app/baseOnly.test.tsx",
     "test:remove-each": "deno test -A app/removeEach.test.tsx --"

@@ -1,7 +1,10 @@
 {
-  "name": "@openwork/circle",
+  "name": "@openwork/plugin-panel",
   "version": "0.1.0",
-  "exports": "./mod.ts",
+  "exports": {
+    ".": "./mod.ts",
+    "./island": "./ContactPanel.tsx"
+  },
   "imports": {},
   "compilerOptions": {
     "jsx": "react-jsx",

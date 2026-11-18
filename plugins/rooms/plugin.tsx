@@ -1,25 +1,13 @@
-import {
-  circleRowMenu,
-  circleSource,
-  contribute,
-  createRoomCommand,
-  definePlugin,
-  deleteRoomCommand,
-  type Plugin,
-  provideCommand,
-  type SlotContext,
-} from "@openwork/kit";
+import { createRoomCommand, definePlugin, deleteRoomCommand, type Plugin, provideCommand, type SlotContext } from "@openwork/kit";
 import { devicePorts } from "@openwork/store";
 import { roomPath } from "@openwork/kit";
 import { copy } from "./copy.ts";
-import { deviceReadMarks, type ReadMarks } from "./readMarks.ts";
-import { roomRows } from "./roomRows.ts";
 
 const ROOT = "/";
 const UNDO_HOLD_MS = 8_000;
 
-/** The rooms of this device: the circle's source, delete, and the `rooms.create` and `rooms.delete` commands. */
-export function rooms(marks: ReadMarks = deviceReadMarks()): Plugin {
+/** The rooms of this device: the `rooms.create` and `rooms.delete` commands. The list that shows them is the circle plugin's. */
+export function rooms(): Plugin {
   const create = async (ctx: SlotContext): Promise<void> => {
     const room = await devicePorts(ctx.ports).store.createRoom(
       copy.newRoomName,
@@ -47,29 +35,10 @@ export function rooms(marks: ReadMarks = deviceReadMarks()): Plugin {
   return definePlugin({
     id: "rooms",
     version: "0.1.0",
-    contributes: [
-      contribute(circleSource, {
-        id: "rooms",
-        order: 10,
-        rows: (ctx) => roomRows(ctx, marks),
-      }),
-      contribute(circleRowMenu, {
-        id: "rooms.delete",
-        order: 90,
-        label: copy.deleteLabel,
-        icon: null,
-        danger: true,
-        run: (row, ctx) => void remove(ctx, row.id),
-      }),
-    ],
+    contributes: [],
     provides: [
       provideCommand(createRoomCommand, create),
       provideCommand(deleteRoomCommand, remove),
-      provideCommand("rooms.markRead", (ctx, id: string) => {
-        const { store } = devicePorts(ctx.ports);
-        const messages = store.trail(id).get();
-        marks.set(id, messages?.at(-1)?.createdAt ?? Date.now());
-      }),
     ],
   });
 }

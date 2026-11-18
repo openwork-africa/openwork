@@ -60,11 +60,20 @@ jobs:
           deno-version: 2.9.x
       - run: deno task test:base-only
 
+  bundle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: 2.9.x
+      - run: deno task test:bundle
+
   remove-each:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        plugin: [rooms, text, profile]
+        plugin: [rooms, text, profile, circle, panel]
     steps:
       - uses: actions/checkout@v4
       - uses: denoland/setup-deno@v2

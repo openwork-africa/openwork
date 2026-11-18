@@ -11,4 +11,6 @@ export const copy = {
   confirmBody: (name: string) => `“${name}” will be deleted.`,
   cancel: "Cancel",
   dialogLabel: "Dialog",
+  deleteLabel: "Delete",
+  youPrefix: "You: ",
 } as const;

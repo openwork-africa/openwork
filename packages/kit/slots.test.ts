@@ -4,6 +4,7 @@ import { frameSlotIds, frameSlots } from "./mod.ts";
 Deno.test("every frame-owned slot of the catalogue has a unique key", () => {
   const expected = [
     "shell.page",
+    "shell.region",
     "circle.source",
     "circle.tab",
     "circle.rowMenu",

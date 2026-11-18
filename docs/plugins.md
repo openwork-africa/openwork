@@ -20,7 +20,7 @@ Add it to the list in `app/product.ts` and it is part of the app. Remove it from
 ## Slots and `contribute`
 
 A slot is a typed key. The frame declares its slots in `@openwork/kit` (`circleSource`, `circleRowMenu`, `trailBody`, `trailAction`, `trailExtra`,
-`composerAction`, `windowEmpty`, `panelSection`, `panelTab`, `shellPage` and more). To fill one, call `contribute(slot, value)`. Every value carries three
+`composerAction`, `windowEmpty`, `panelSection`, `panelTab`, `shellPage`, `shellRegion` and more). To fill one, call `contribute(slot, value)`. Every value carries three
 fields of its own beside what the slot asks for:
 
 - `id`: unique inside the slot. A duplicate is a boot error that names both plugins.
@@ -34,6 +34,13 @@ Values may use `ctx`, the slot context: `roomId`, `navigate`, `notify`, `ports`,
 A `windowEmpty` contribution draws the card shown in a conversation with nothing said in it. Draw it with `EmptyState` from `@openwork/ui` (`art`, `title`,
 `description`, optional `action` and `label`): it is the one empty-state card the app uses everywhere, centred in the window and never scrolling, so a
 contribution extends that card instead of laying out its own.
+
+### The conversation list and the contact panel are plugins
+
+The base of the product is the conversation window. The list (`circle`) and the contact panel (`panel`) are plugins that put their island into `shellRegion`
+(`shell.region`): `{ region: "circle" | "panel", load }`, where `load` is a dynamic `import()` so the island is its own chunk. The frame draws a pane only when
+a plugin fills its region, so with neither the window stands alone. `app/product.ts` lists all five (`rooms`, `text`, `profile`, `circle`, `panel`);
+`app/bare.ts` lists `rooms` and `text` only. `deno task test:bundle` builds both and checks the bare bundle holds no circle or panel code.
 
 ## Commands and services
 
