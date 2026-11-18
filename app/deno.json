@@ -3,12 +3,12 @@
   "version": "0.1.0",
   "exports": "./product.ts",
   "imports": {
-    "@vitejs/plugin-react": "npm:@vitejs/plugin-react@^5",
-    "vite": "npm:vite@^7"
+    "@vitejs/plugin-react": "npm:@vitejs/plugin-react@6.3.0",
+    "vite": "npm:vite@8.3.8"
   },
   "tasks": {
-    "dev": "deno run -A npm:vite@^7",
-    "build": "deno run -A npm:vite@^7 build && deno run -A ./pwa/stamp-sw.ts"
+    "dev": "deno run -A npm:vite@8.3.8",
+    "build": "deno run -A npm:vite@8.3.8 build && deno run -A ./pwa/stamp-sw.ts"
   },
   "compilerOptions": {
     "jsx": "react-jsx",
