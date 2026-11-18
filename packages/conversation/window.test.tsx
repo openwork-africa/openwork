@@ -1,7 +1,7 @@
 import { assert, assertEquals } from "@std/assert";
 import { act } from "react";
 import { addressAction, addressAddressee, contribute, definePlugin, provide, windowBanner, windowEmpty } from "@openwork/kit";
-import { brainService, makeCell } from "@openwork/store";
+import { type AiClient, aiPlugin, type AiReply, brainService, HttpError, makeCell } from "@openwork/store";
 import { until } from "@openwork/store/testing";
 import { ConversationWindow } from "./ConversationWindow.tsx";
 import { copy } from "./copy.ts";
@@ -206,5 +206,51 @@ Deno.test("with no brain provided the window is a note to self: no typing indica
   const { container, unmount } = await mount(view(<ConversationWindow roomId={room.id} />, room.id));
   await settle();
   assertEquals(labelled(container, copy.typing), null);
+  await unmount();
+});
+
+function aiWindow(reply: AiClient["reply"]) {
+  const client: AiClient = { reply, status: () => Promise.resolve({ configured: true, pending: [] }) };
+  return rig([aiPlugin()], { ai: client });
+}
+
+Deno.test("while a reply streams the window shows only the typing indicator, the message has blue ticks once started, and the reply appears whole at done", async () => {
+  let started!: () => void;
+  let finish!: (reply: AiReply) => void;
+  const { store, view, syncNow } = aiWindow((_room, _messages, handlers) => (started = handlers!.onStarted!, new Promise((done) => (finish = done))));
+  const room = await store.createRoom("Notes");
+  const { container, unmount } = await mount(view(<ConversationWindow roomId={room.id} />, room.id));
+  await settle();
+  await write(container, "hello");
+  await press(sendButton(container));
+  await settle();
+  assert(labelled(container, copy.typing), "typing while the reply is on its way");
+  assert(labelled(container, copy.saved), "grey: saved on this device");
+  await syncNow();
+  await settle();
+  assert(labelled(container, copy.received) && !labelled(container, copy.accepted), "grey: the server has it");
+  await act(() => started());
+  await settle();
+  assert(labelled(container, copy.accepted), "blue: taken");
+  assert(!textOf(container).includes("Hi there"));
+  await act(() => finish({ status: "reply", text: "Hi there" }));
+  await settle();
+  assertEquals(labelled(container, copy.typing), null);
+  assert(textOf(container).includes("Hi there"), "the whole reply, as one message");
+  await unmount();
+});
+
+Deno.test("a failure before started shows red ticks with the reason and saves no reply", async () => {
+  const { store, view } = aiWindow(() => Promise.reject(new HttpError(502, "The assistant could not answer. Try again.")));
+  const room = await store.createRoom("Notes");
+  const { container, unmount } = await mount(view(<ConversationWindow roomId={room.id} />, room.id));
+  await settle();
+  await write(container, "hello");
+  await press(sendButton(container));
+  await settle();
+  assert(labelled(container, copy.notDeliveredTryAgain), "red ticks with the reason");
+  assertEquals(labelled(container, copy.accepted), null);
+  assertEquals(labelled(container, copy.typing), null);
+  assertEquals((await trailOf(store, room.id)).length, 1);
   await unmount();
 });

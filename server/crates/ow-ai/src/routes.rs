@@ -1,16 +1,23 @@
 use std::collections::BTreeSet;
+use std::convert::Infallible;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use axum::extract::{rejection::JsonRejection, DefaultBodyLimit, State};
-use axum::http::StatusCode;
+use axum::http::{header, HeaderMap, StatusCode};
+use axum::response::sse::{Event, KeepAlive, Sse};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{get, post};
 use axum::{Json, Router};
 use serde::Deserialize;
 use serde_json::{json, Value};
 
-use crate::assistant::{AiError, AiMessage, Assistant, Reply};
+use futures_util::stream;
+use futures_util::StreamExt;
+use tokio::sync::mpsc;
+use tokio::time::Instant;
+
+use crate::assistant::{AiError, AiEvent, AiMessage, Assistant, Reply};
 use crate::copy;
 
 pub const MAX_BODY_BYTES: usize = 1024 * 1024;
@@ -113,8 +120,113 @@ async fn status(State(state): State<Arc<AiState>>) -> Json<Value> {
     Json(json!({ "configured": state.assistant.is_some(), "pending": pending }))
 }
 
+fn wants_stream(headers: &HeaderMap) -> bool {
+    headers
+        .get(header::ACCEPT)
+        .and_then(|value| value.to_str().ok())
+        .is_some_and(|value| value.contains("text/event-stream"))
+}
+
+fn sse(name: &str, data: Value) -> Result<Event, Infallible> {
+    Ok(Event::default()
+        .event(name)
+        .json_data(data)
+        .unwrap_or_else(|_| Event::default().event(name)))
+}
+
+fn failure_copy(error: &AiError) -> &'static str {
+    match error {
+        AiError::Unavailable(detail) => {
+            tracing::warn!("assistant unavailable: {detail}");
+            copy::UNAVAILABLE
+        }
+        AiError::Failed(detail) => {
+            tracing::error!("assistant failed: {detail}");
+            copy::FAILED
+        }
+    }
+}
+
+type Events = mpsc::Sender<Result<Event, Infallible>>;
+
+async fn emit(events: &Events, name: &str, data: Value) -> bool {
+    events.send(sse(name, data)).await.is_ok()
+}
+
+/// Feeds the assistant's events to the open stream until it ends, fails, times out or the browser leaves. The room's
+/// claim is held by this task, so it clears however the stream ends.
+async fn pump(
+    assistant: Arc<dyn Assistant>,
+    body: ReplyBody,
+    timeout: Duration,
+    events: Events,
+    _held: PendingRoom,
+) {
+    let deadline = Instant::now() + timeout;
+    let mut incoming = assistant.stream(&body.room_id, &body.messages);
+    let mut text = String::new();
+    let mut started = false;
+    loop {
+        let next = tokio::select! {
+            _ = events.closed() => return,
+            next = tokio::time::timeout_at(deadline, incoming.next()) => next,
+        };
+        let sent = match next {
+            Err(_) => {
+                tracing::warn!("assistant timed out");
+                emit(&events, "error", json!({ "message": copy::TIMED_OUT })).await;
+                return;
+            }
+            Ok(Some(Err(error))) => {
+                emit(&events, "error", json!({ "message": failure_copy(&error) })).await;
+                return;
+            }
+            Ok(Some(Ok(AiEvent::Started))) if started => true,
+            Ok(Some(Ok(AiEvent::Started))) => {
+                started = true;
+                emit(&events, "started", json!({})).await
+            }
+            Ok(Some(Ok(AiEvent::Delta(piece)))) => {
+                let opened = started || emit(&events, "started", json!({})).await;
+                started = true;
+                text.push_str(&piece);
+                opened && emit(&events, "delta", json!({ "text": piece })).await
+            }
+            Ok(Some(Ok(AiEvent::Done))) | Ok(None) => {
+                if !started {
+                    emit(&events, "started", json!({})).await;
+                }
+                emit(&events, "done", json!({ "text": text })).await;
+                return;
+            }
+        };
+        if !sent {
+            return;
+        }
+    }
+}
+
+/// The reply as server-sent events: `started` first, `delta` ({text}) as the text comes, then `done` ({text}, all of it)
+/// or `error` ({message}). The room is pending only while the stream is open; when the browser leaves, the work stops.
+fn streamed(
+    state: &AiState,
+    assistant: Arc<dyn Assistant>,
+    body: ReplyBody,
+    held: PendingRoom,
+) -> Response {
+    let (events, receiving) = mpsc::channel(16);
+    tokio::spawn(pump(assistant, body, state.timeout, events, held));
+    let events = stream::unfold(receiving, |mut receiving| async {
+        receiving.recv().await.map(|event| (event, receiving))
+    });
+    Sse::new(events)
+        .keep_alive(KeepAlive::default())
+        .into_response()
+}
+
 async fn reply(
     State(state): State<Arc<AiState>>,
+    headers: HeaderMap,
     body: Result<Json<ReplyBody>, JsonRejection>,
 ) -> Response {
     let Some(assistant) = state.assistant.clone() else {
@@ -138,10 +250,13 @@ async fn reply(
     if !inserted {
         return refusal(StatusCode::CONFLICT, copy::BUSY);
     }
-    let _pending = PendingRoom {
+    let pending = PendingRoom {
         state: state.clone(),
         room_id: body.room_id.clone(),
     };
+    if wants_stream(&headers) {
+        return streamed(&state, assistant, body, pending);
+    }
     let answer = tokio::time::timeout(
         state.timeout,
         assistant.reply(&body.room_id, &body.messages),

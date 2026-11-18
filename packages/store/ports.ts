@@ -72,7 +72,11 @@ export interface Connectivity {
 /** What answers in a room; the conversation window only needs to know whether a reply is on its way. */
 export interface Brain {
   isWorking(roomId: string): Live<boolean>;
+  /** What the assistant did with the person's messages in the room, by message id: taken, or not (with the reason). */
+  answers?(roomId: string): Live<ReadonlyMap<string, MessageAnswer>>;
 }
+
+export type MessageAnswer = "taken" | { failed: string };
 
 const never: Live<boolean> = { get: () => false, subscribe: () => () => {} };
 

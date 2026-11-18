@@ -984,6 +984,7 @@ name = "ow-ai"
 version = "0.1.0"
 dependencies = [
  "axum",
+ "futures-util",
  "serde",
  "serde_json",
  "tokio",
@@ -1006,6 +1007,7 @@ version = "0.1.0"
 dependencies = [
  "axum",
  "clap",
+ "futures-util",
  "ow-ai",
  "ow-core",
  "ow-store",

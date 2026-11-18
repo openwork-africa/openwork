@@ -7,5 +7,5 @@ mod assistant;
 mod copy;
 mod routes;
 
-pub use assistant::{AiError, AiMessage, Assistant, BoxFuture, Reply};
+pub use assistant::{collect, AiError, AiEvent, AiMessage, Assistant, BoxFuture, BoxStream, Reply};
 pub use routes::{router, router_with_timeout, REPLY_TIMEOUT};

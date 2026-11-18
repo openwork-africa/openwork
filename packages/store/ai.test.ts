@@ -64,9 +64,9 @@ Deno.test("the brain is working at once for a reply begun on this device, and an
   brain.connect({ reply: noAiClient.reply, status: () => (asked++, Promise.resolve({ configured: false, pending: [] })) });
   const live = brain.isWorking("r1");
   const stop = live.subscribe(() => {});
-  const end = brain.begin("r1");
+  const end = brain.begin("r1", "m1");
   assertEquals(live.get(), true);
-  end();
+  end.end();
   assertEquals(live.get(), false);
   await new Promise((done) => setTimeout(done, 40));
   stop();
@@ -173,4 +173,89 @@ Deno.test("a failed reply tells the person in plain words and saves nothing", as
   assertEquals(product.notices.list().map((notice) => notice.text), ["The assistant could not answer. Try again."]);
   assertEquals((await until(store.trail(room.id))).length, 1);
   product.teardown();
+});
+
+const sse = (...events: [string, unknown][]): Response =>
+  new Response(events.map(([name, data]) => `event: ${name}\ndata: ${JSON.stringify(data)}\n\n`).join(""), {
+    headers: { "Content-Type": "text/event-stream" },
+  });
+
+Deno.test("the client asks for a stream, says when the message is started, and settles with the whole reply at done", async () => {
+  let accept: string | null = null;
+  const client = new HttpAiClient("", (_input, init) => {
+    accept = new Headers(init?.headers).get("Accept");
+    return Promise.resolve(sse(["started", {}], ["delta", { text: "Hel" }], ["delta", { text: "lo" }], ["done", { text: "Hello" }]));
+  });
+  const order: string[] = [];
+  const reply = await client.reply("r1", [], { onStarted: () => order.push("started") });
+  assertEquals([accept, order, reply], ["text/event-stream", ["started"], { status: "reply", text: "Hello" }]);
+});
+
+Deno.test("an error event makes the client throw the server's words, after started if it was started", async () => {
+  const client = new HttpAiClient("", () => Promise.resolve(sse(["started", {}], ["error", { message: "The assistant could not answer. Try again." }])));
+  let started = 0;
+  const error = await client.reply("r1", [], { onStarted: () => started++ }).catch((e) => e);
+  assert(error instanceof Error && error.message === "The assistant could not answer. Try again.");
+  assertEquals(started, 1);
+});
+
+Deno.test("a stream that ends with no done is a failure, and a done with no text is none", async () => {
+  const cut = new HttpAiClient("", () => Promise.resolve(sse(["started", {}])));
+  assert(await cut.reply("r1", []).catch((e) => e) instanceof Error);
+  const empty = new HttpAiClient("", () => Promise.resolve(sse(["started", {}], ["done", { text: "" }])));
+  assertEquals(await empty.reply("r1", []), { status: "none" });
+});
+
+Deno.test("the room works from the first request until the stream ends, the reply is saved only at done, and the message is taken at started", async () => {
+  let handlers!: { onStarted?: () => void };
+  let finish!: (reply: AiReply) => void;
+  const client: AiClient = {
+    reply: (_roomId, _messages, given) => (handlers = given ?? {}, new Promise((done) => (finish = done))),
+    status: () => Promise.resolve({ configured: true, pending: [] }),
+  };
+  const { store, product } = aiRig(client);
+  const brain = product.registry.service(brainService)!;
+  const room = await store.createRoom("Notes");
+  const working = brain.isWorking(room.id);
+  const answers = brain.answers!(room.id);
+  const stopWorking = working.subscribe(() => {});
+  const stopAnswers = answers.subscribe(() => {});
+  await settle();
+  const sent = await store.send(room.id, "hello");
+  await settle();
+  assertEquals([working.get(), answers.get()!.get(sent.id)], [true, undefined]);
+  handlers.onStarted!();
+  assertEquals(answers.get()!.get(sent.id), "taken");
+  assertEquals((await until(store.trail(room.id))).map((m) => m.authorId), ["you"], "nothing saved before done");
+  finish({ status: "reply", text: "Hi there" });
+  await settle();
+  assertEquals(working.get(), false);
+  assertEquals((await until(store.trail(room.id))).map((m) => [m.authorId, m.content]), [["you", "hello"], ["assistant", "Hi there"]]);
+  stopWorking();
+  stopAnswers();
+  product.teardown();
+});
+
+Deno.test("a failure before started marks the message failed with the reason; after started the ticks stay taken", async () => {
+  for (const isStarted of [false, true]) {
+    const client: AiClient = {
+      reply: (_roomId, _messages, given) => {
+        if (isStarted) given?.onStarted?.();
+        return Promise.reject(new HttpError(502, "The assistant could not answer. Try again."));
+      },
+      status: () => Promise.resolve({ configured: true, pending: [] }),
+    };
+    const { store, product } = aiRig(client);
+    const brain = product.registry.service(brainService)!;
+    const room = await store.createRoom("Notes");
+    const answers = brain.answers!(room.id);
+    const stop = answers.subscribe(() => {});
+    await settle();
+    const sent = await store.send(room.id, "hi");
+    await settle();
+    assertEquals(answers.get()!.get(sent.id), isStarted ? "taken" : { failed: "The assistant could not answer. Try again." });
+    assertEquals((await until(store.trail(room.id))).length, 1, "nothing is saved on an error");
+    stop();
+    product.teardown();
+  }
 });

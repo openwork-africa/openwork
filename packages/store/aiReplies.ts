@@ -20,7 +20,8 @@ const asked = (trail: TrailMessage[]): AiMessage[] =>
 
 /**
  * Answers the person: when the newest message of the room most recently written in is theirs, the room's messages go to
- * the server's AI and what it says is saved as a message from the assistant, through the store like any message.
+ * the server's AI as a stream. The room works (the typing indicator) until the stream ends, the person's message is taken once
+ * the stream says `started`, and the whole reply is saved as one message from the assistant, only at `done`.
  * Stops asking for good when the server has no AI.
  */
 export function answerMessages({ store, client, brain, since, onFailure }: RepliesOptions): () => void {
@@ -29,16 +30,18 @@ export function answerMessages({ store, client, brain, since, onFailure }: Repli
   let followed: string | undefined;
   let stopTrail = (): void => {};
 
-  const answer = async (roomId: string, messages: AiMessage[]): Promise<void> => {
-    const done = brain.begin(roomId);
+  const answer = async (roomId: string, messageId: string, messages: AiMessage[]): Promise<void> => {
+    const handle = brain.begin(roomId, messageId);
     try {
-      const reply = await client.reply(roomId, messages);
+      const reply = await client.reply(roomId, messages, { onStarted: handle.taken });
       if (reply.status === "unavailable") isAvailable = false;
       if (reply.status === "reply") await store.send(roomId, reply.text, ASSISTANT);
     } catch (error) {
-      onFailure(error instanceof HttpError ? error.message : copy.noReply);
+      const why = error instanceof HttpError ? error.message : copy.noReply;
+      if (!handle.isTaken) handle.failed(why);
+      onFailure(why);
     } finally {
-      done();
+      handle.end();
     }
   };
 
@@ -46,7 +49,7 @@ export function answerMessages({ store, client, brain, since, onFailure }: Repli
     const last = trail?.at(-1);
     if (!isAvailable || !trail || !last || last.authorId !== YOU || last.state === "failed" || last.createdAt < since || answered.has(last.id)) return;
     answered.add(last.id);
-    void answer(roomId, asked(trail));
+    void answer(roomId, last.id, asked(trail));
   };
 
   const follow = (roomId: string): void => {

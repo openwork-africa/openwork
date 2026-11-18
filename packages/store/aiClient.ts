@@ -1,4 +1,6 @@
+import { copy } from "./copy.ts";
 import { HttpError, NetworkError } from "./errors.ts";
+import { readEvents } from "./sse.ts";
 import type { Author } from "./types.ts";
 
 /** A message of a room as the server's AI route takes it. Nothing about the person or the device. */
@@ -23,8 +25,14 @@ export interface AiStatus {
   pending: string[];
 }
 
+export interface AiReplyHandlers {
+  /** The assistant has taken the message; called once, before any reply. */
+  onStarted?: () => void;
+}
+
 export interface AiClient {
-  reply(roomId: string, messages: AiMessage[]): Promise<AiReply>;
+  /** Asks for a reply as a stream. It settles when the stream ends: with the whole reply at `done`, or by throwing at `error`. */
+  reply(roomId: string, messages: AiMessage[], handlers?: AiReplyHandlers): Promise<AiReply>;
   status(): Promise<AiStatus>;
 }
 
@@ -52,10 +60,10 @@ export class HttpAiClient implements AiClient {
     }
   }
 
-  async reply(roomId: string, messages: AiMessage[]): Promise<AiReply> {
+  async reply(roomId: string, messages: AiMessage[], handlers: AiReplyHandlers = {}): Promise<AiReply> {
     const response = await this.#request("/api/ai/reply", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
       body: JSON.stringify({ roomId, messages }),
     });
     if (response.status === 404) return { status: "unavailable" };
@@ -64,7 +72,19 @@ export class HttpAiClient implements AiClient {
       const body = await response.json().catch(() => undefined) as { message?: string } | undefined;
       throw new HttpError(response.status, body?.message);
     }
-    return await response.json() as AiReply;
+    if (!response.headers.get("Content-Type")?.includes("text/event-stream") || !response.body) return await response.json() as AiReply;
+    return await this.#streamed(response.body, handlers);
+  }
+
+  /** `delta` events carry the text as it comes; the reply is shown whole, so only `done` (all of it) is used. */
+  async #streamed(body: ReadableStream<Uint8Array>, handlers: AiReplyHandlers): Promise<AiReply> {
+    for await (const { event, data } of readEvents(body)) {
+      const fields = (data ? JSON.parse(data) : {}) as { text?: string; message?: string };
+      if (event === "started") handlers.onStarted?.();
+      if (event === "error") throw new Error(fields.message ?? copy.noReply);
+      if (event === "done") return fields.text ? { status: "reply", text: fields.text } : { status: "none" };
+    }
+    throw new Error(copy.noReply);
   }
 
   async status(): Promise<AiStatus> {

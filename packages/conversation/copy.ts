@@ -1,3 +1,8 @@
+export const SAVED_LABEL = "Saved";
+export const RECEIVED_LABEL = "Received";
+/** An AI request is taken once the assistant has started on it. */
+export const ACCEPTED_LABEL = "Taken";
+
 export const copy = {
   messageActions: "Message actions",
   sendAgain: "Send again",
@@ -7,8 +12,9 @@ export const copy = {
   unreachable: "Your workspace could not be reached. Check your connection and try again.",
   errorDetails: "Error details",
   retry: "Retry",
-  saved: "Saved",
-  received: "Received",
+  saved: SAVED_LABEL,
+  received: RECEIVED_LABEL,
+  accepted: ACCEPTED_LABEL,
   typing: "Typing…",
   today: "Today",
   yesterday: "Yesterday",

@@ -1,6 +1,15 @@
 import type { AiClient } from "./aiClient.ts";
 import { type Live, makeLive } from "./live.ts";
-import type { Brain } from "./ports.ts";
+import type { Brain, MessageAnswer } from "./ports.ts";
+
+const none: ReadonlyMap<string, MessageAnswer> = new Map();
+
+export interface ReplyHandle {
+  readonly isTaken: boolean;
+  taken(): void;
+  failed(reason: string): void;
+  end(): void;
+}
 
 const POLL_MS = 2_000;
 
@@ -13,6 +22,7 @@ export class AiBrain implements Brain {
   #client: AiClient | undefined;
   readonly #pollMs: number;
   readonly #local = new Map<string, number>();
+  readonly #answers = new Map<string, ReadonlyMap<string, MessageAnswer>>();
   #remote = new Set<string>();
   readonly #listeners = new Set<() => void>();
   #watchers = 0;
@@ -30,16 +40,40 @@ export class AiBrain implements Brain {
     if (this.#watchers > 0) void this.#loop();
   }
 
-  /** A reply started on this device; call the result when it is over. */
-  begin(roomId: string): () => void {
+  /** A reply to a message started on this device. It is working until `end`; the message is taken at `taken`, or not at `failed`. */
+  begin(roomId: string, messageId: string): ReplyHandle {
     this.#local.set(roomId, (this.#local.get(roomId) ?? 0) + 1);
     this.#changed();
-    return () => {
-      const left = (this.#local.get(roomId) ?? 1) - 1;
-      if (left > 0) this.#local.set(roomId, left);
-      else this.#local.delete(roomId);
+    let isTaken = false;
+    const answer = (value: MessageAnswer): void => {
+      this.#answers.set(roomId, new Map(this.#answers.get(roomId)).set(messageId, value));
       this.#changed();
     };
+    return {
+      get isTaken() {
+        return isTaken;
+      },
+      taken: () => {
+        isTaken = true;
+        answer("taken");
+      },
+      failed: (reason) => answer({ failed: reason }),
+      end: () => {
+        const left = (this.#local.get(roomId) ?? 1) - 1;
+        if (left > 0) this.#local.set(roomId, left);
+        else this.#local.delete(roomId);
+        this.#changed();
+      },
+    };
+  }
+
+  answers(roomId: string): Live<ReadonlyMap<string, MessageAnswer>> {
+    return makeLive((emit) => {
+      const publish = (): void => emit(this.#answers.get(roomId) ?? none);
+      this.#listeners.add(publish);
+      publish();
+      return () => void this.#listeners.delete(publish);
+    });
   }
 
   isWorking(roomId: string): Live<boolean> {

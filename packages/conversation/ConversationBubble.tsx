@@ -1,6 +1,6 @@
 import { Fragment, memo, type ReactElement } from "react";
 import type { Placed, SlotContext, TrailActionValue, TrailBodyValue, TrailExtraValue } from "@openwork/kit";
-import type { TrailMessage } from "@openwork/store";
+import type { MessageAnswer, TrailMessage } from "@openwork/store";
 import { ChatMessage as AxMessage, ChatMessageBubble } from "@astryxdesign/core/Chat";
 import { ContextMenu } from "@astryxdesign/core/ContextMenu";
 import { Icon } from "@astryxdesign/core/Icon";
@@ -24,20 +24,21 @@ export interface BubbleProps {
   extras: readonly (TrailExtraValue & Placed)[];
   actions: readonly (TrailActionValue & Placed)[];
   onRetry: (messageId: string) => void;
+  answer?: MessageAnswer;
 }
 
-function Stamp({ message }: { message: TrailMessage }): ReactElement {
+function Stamp({ message, answer }: { message: TrailMessage; answer?: MessageAnswer }): ReactElement {
   const isOwn = message.authorId === "you";
   return (
     <HStack className="chat-stamp" gap={1} hAlign="end" vAlign="center">
       {message.state === "failed" && <Text type="supporting" size="xsm" color="inherit">{copy.notDelivered}</Text>}
       <Timestamp value={message.createdAt} format={timeFormatOf(message.createdAt, Date.now())} size="xsm" color="inherit" hasTooltip={false} />
-      {isOwn && <DeliveryTicks state={message.state} reason={message.failureReason} />}
+      {isOwn && <DeliveryTicks state={message.state} reason={message.failureReason} answer={answer} />}
     </HStack>
   );
 }
 
-function Bubble({ message, group, ctx, bodies, extras, actions, onRetry }: BubbleProps): ReactElement {
+function Bubble({ message, group, ctx, bodies, extras, actions, onRetry, answer }: BubbleProps): ReactElement {
   const isFailed = message.state === "failed";
   const body = bodies.find((candidate) => candidate.matches(message));
   const words = body ? body.render(message, ctx) : <Text as="p">{message.content}</Text>;
@@ -56,7 +57,7 @@ function Bubble({ message, group, ctx, bodies, extras, actions, onRetry }: Bubbl
         <VStack gap={0.5}>
           <Selectable>{words}</Selectable>
           {extras.map((extra) => <Fragment key={extra.id}>{extra.render(message, ctx)}</Fragment>)}
-          <Stamp message={message} />
+          <Stamp message={message} answer={answer} />
         </VStack>
       </ChatMessageBubble>
       {isFailed && (
