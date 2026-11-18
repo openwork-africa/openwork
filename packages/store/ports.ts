@@ -1,7 +1,7 @@
 import type { Ports } from "@openwork/kit";
 import { copy } from "./copy.ts";
 import type { Live } from "./live.ts";
-import type { Answer, Change, FileItem, Message, OutboxRow, PullAnswer, Room, SyncStatus, TrailMessage } from "./types.ts";
+import type { Answer, Author, Change, FileItem, Message, OutboxRow, PullAnswer, Room, SyncStatus, TrailMessage } from "./types.ts";
 
 export interface Clock {
   now(): number;
@@ -42,7 +42,8 @@ export interface DeviceStore {
   /** Brings back a deleted room, with its messages. Rejects if the device never had it. */
   restoreRoom(id: string): Promise<void>;
   trail(roomId: string): Live<TrailMessage[]>;
-  send(roomId: string, content: string): Promise<Message>;
+  /** Saves a message in the room, as the person by default; the assistant's replies go through here too, so they sync like any other message. */
+  send(roomId: string, content: string, authorId?: Author): Promise<Message>;
   retry(messageId: string): Promise<void>;
   putFile(file: FileDraft): Promise<FileItem>;
   syncStatus(): Live<SyncStatus>;
@@ -68,10 +69,15 @@ export interface Connectivity {
   subscribe(listener: () => void): () => void;
 }
 
-/** Optional answer-generation capability; conversation UI only needs its working state. */
+/** What answers in a room; the conversation window only needs to know whether a reply is on its way. */
 export interface Brain {
   isWorking(roomId: string): Live<boolean>;
 }
+
+const never: Live<boolean> = { get: () => false, subscribe: () => () => {} };
+
+/** The brain of a room with nothing answering: it is never working. */
+export const noteToSelfBrain: Brain = { isWorking: () => never };
 
 export interface DevicePorts {
   store: DeviceStore;
@@ -85,8 +91,4 @@ export function devicePorts(ports: Ports): DevicePorts {
   const { store, files, transport, clock } = ports as Partial<DevicePorts>;
   if (!store || !files || !transport || !clock) throw new Error(copy.missingPorts);
   return { store, files, transport, clock };
-}
-
-export function brainOf(ports: Ports): Brain | undefined {
-  return (ports as { brain?: Brain }).brain;
 }

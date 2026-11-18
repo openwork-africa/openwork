@@ -10,6 +10,7 @@ import { MemoryTransport } from "./memoryTransport.ts";
 import type { Commands, Plugin, Ports } from "@openwork/kit";
 import { compose } from "@openwork/kit";
 import { createElement, type ReactElement } from "react";
+import { noAiClient } from "./aiClient.ts";
 import { manualConnectivity } from "./connectivity.ts";
 import { createSyncEngine } from "./syncEngine.ts";
 
@@ -39,7 +40,7 @@ export const devices = [memoryDevice, dexieDevice];
 export function memoryPorts(
   clock = new ManualClock(),
 ): Ports & { store: MemoryDeviceStore; files: MemoryFileStore; transport: MemoryTransport; clock: ManualClock } {
-  return { store: new MemoryDeviceStore(clock), files: new MemoryFileStore(), transport: new MemoryTransport(), clock };
+  return { store: new MemoryDeviceStore(clock), files: new MemoryFileStore(), transport: new MemoryTransport(), clock, ai: noAiClient };
 }
 
 export function rig(

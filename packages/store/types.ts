@@ -11,10 +11,13 @@ export interface Room {
   deleted?: boolean;
 }
 
+/** Who wrote a message: the person, or the assistant of a room. */
+export type Author = "you" | "assistant";
+
 export interface Message {
   id: string;
   roomId: string;
-  authorId: "you";
+  authorId: Author;
   content: string;
   createdAt: number;
   updatedAt: number;
@@ -59,6 +62,7 @@ export interface MessageView extends Message {
 export type MessageState = NonNullable<MessageView["state"]>;
 
 export const YOU = "you" as const;
+export const ASSISTANT = "assistant" as const;
 
 export interface TrailMessage extends MessageView {
   state: MessageState;

@@ -1,3 +1,7 @@
+export { AiBrain } from "./aiBrain.ts";
+export { HttpAiClient, noAiClient } from "./aiClient.ts";
+export type { AiClient, AiMessage, AiReply, AiStatus } from "./aiClient.ts";
+export { aiPlugin, brainService } from "./aiPlugin.ts";
 export { browserConnectivity, manualConnectivity } from "./connectivity.ts";
 export type { Database, Tx } from "./database.ts";
 export { stackTransport, withLogging, withOfflineQueue, withRetrying } from "./decorators.ts";
@@ -14,10 +18,24 @@ export type { Live } from "./live.ts";
 export { MemoryTransport } from "./memoryTransport.ts";
 export { ManualClock } from "./memory.ts";
 export { MemoryDatabase, MemoryDeviceStore, MemoryFileStore } from "./memory.ts";
-export { brainOf, devicePorts, systemClock } from "./ports.ts";
+export { devicePorts, noteToSelfBrain, systemClock } from "./ports.ts";
 export type { Brain, Clock, Connectivity, DevicePorts, DeviceStore, FileDraft, FileStore, RoomDetails, SyncJournal, Transport } from "./ports.ts";
 export { TableDeviceStore } from "./tableStore.ts";
 export { createSyncEngine } from "./syncEngine.ts";
 export type { SyncEngine, SyncOptions } from "./syncEngine.ts";
-export type { Answer, Change, ChangeKind, FileItem, Message, MessageState, OutboxRow, PullAnswer, PushBody, Room, SyncStatus, TrailMessage } from "./types.ts";
+export type {
+  Answer,
+  Author,
+  Change,
+  ChangeKind,
+  FileItem,
+  Message,
+  MessageState,
+  OutboxRow,
+  PullAnswer,
+  PushBody,
+  Room,
+  SyncStatus,
+  TrailMessage,
+} from "./types.ts";
 export { changeWire, fileWire, messageWire, pullAnswerWire, pushBodyWire, roomWire } from "./wire.ts";

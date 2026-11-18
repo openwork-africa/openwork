@@ -5,6 +5,7 @@ import {
   createSyncEngine,
   type DevicePorts,
   DexieDeviceStore,
+  HttpAiClient,
   HttpTransport,
   IndexedDbFileStore,
   stackTransport,
@@ -17,7 +18,7 @@ import { createDrawer, type DrawerState } from "./drawer.ts";
 
 export interface ShellOptions {
   plugins: readonly Plugin[];
-  /** Replaces the default ports by name (`store`, `files`, `transport`, `clock`) and adds the product's own. */
+  /** Replaces the default ports by name (`store`, `files`, `transport`, `clock`, `ai`) and adds the product's own. */
   ports?: Ports;
   regions?: Regions;
   router?: Router;
@@ -44,7 +45,8 @@ function buildPorts(given: Ports, connectivity: Connectivity, baseUrl: string | 
     files: given.files ?? (dexie && new IndexedDbFileStore(dexie.database)),
     transport: given.transport ?? stackTransport(new HttpTransport(baseUrl), { connectivity }),
     clock: given.clock ?? systemClock,
-  } as DevicePorts & Ports;
+    ai: given.ai ?? new HttpAiClient(baseUrl),
+  } as unknown as DevicePorts & Ports;
 }
 
 /** Builds the ports, composes the plugins and starts the sync loop. It touches no page: `createApp` mounts it. */

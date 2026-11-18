@@ -15,6 +15,7 @@ path = "src/main.rs"
 [dependencies]
 ow-core.workspace = true
 ow-store.workspace = true
+ow-ai.workspace = true
 axum.workspace = true
 clap.workspace = true
 serde.workspace = true

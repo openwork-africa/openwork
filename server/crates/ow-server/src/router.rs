@@ -5,6 +5,7 @@ use axum::http::{header, HeaderValue, Method};
 use axum::middleware;
 use axum::routing::{get, post, put};
 use axum::Router;
+use ow_ai::Assistant;
 use ow_core::{ChangeRepository, FileStore};
 use tower_http::cors::CorsLayer;
 
@@ -12,6 +13,7 @@ use crate::error::ApiError;
 use crate::{files, logging, static_files, sync};
 
 pub struct AppState<R, F> {
+    pub assistant: Option<Arc<dyn Assistant>>,
     pub changes: R,
     pub files: F,
     pub static_dir: PathBuf,
@@ -31,8 +33,10 @@ pub fn build<R: ChangeRepository, F: FileStore>(state: AppState<R, F>) -> Router
         .allow_origin(state.dev_origins.clone())
         .allow_methods([Method::GET, Method::POST, Method::PUT, Method::OPTIONS])
         .allow_headers([header::CONTENT_TYPE]);
+    let assistant = state.assistant.clone();
     Router::new()
         .route("/healthz", get(healthz))
+        .merge(ow_ai::router(assistant))
         .route("/api/push", post(sync::push::<R, F>))
         .route("/api/pull", get(sync::pull::<R, F>))
         .route(

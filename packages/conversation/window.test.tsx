@@ -1,7 +1,7 @@
 import { assert, assertEquals } from "@std/assert";
 import { act } from "react";
-import { addressAction, addressAddressee, contribute, definePlugin, windowBanner, windowEmpty } from "@openwork/kit";
-import { makeCell } from "@openwork/store";
+import { addressAction, addressAddressee, contribute, definePlugin, provide, windowBanner, windowEmpty } from "@openwork/kit";
+import { brainService, makeCell } from "@openwork/store";
 import { until } from "@openwork/store/testing";
 import { ConversationWindow } from "./ConversationWindow.tsx";
 import { copy } from "./copy.ts";
@@ -146,7 +146,8 @@ Deno.test("window.empty replaces the Notes to self card, the first match by orde
 
 Deno.test("only a Brain that says it is working shows the typing indicator, never any words", async () => {
   const working = makeCell(false);
-  const { store, view } = rig([], { brain: { isWorking: () => working } });
+  const fakeBrain = definePlugin({ id: "fake-brain", version: "1.0.0", contributes: [], provides: [provide(brainService, { isWorking: () => working })] });
+  const { store, view } = rig([fakeBrain]);
   const room = await store.createRoom("Notes");
   await store.send(room.id, "hi");
   const { container, unmount } = await mount(view(<ConversationWindow roomId={room.id} />, room.id));
@@ -195,5 +196,15 @@ Deno.test("address.action buttons sit in the bar, and an address.addressee turns
   await settle();
   assert(labelled(container, copy.back), "the editing bar opens");
   assert(container.querySelector(`[aria-label="${copy.searchAddressee}"], input`), "with its picker");
+  await unmount();
+});
+
+Deno.test("with no brain provided the window is a note to self: no typing indicator", async () => {
+  const { store, view } = rig();
+  const room = await store.createRoom("Notes");
+  await store.send(room.id, "hi");
+  const { container, unmount } = await mount(view(<ConversationWindow roomId={room.id} />, room.id));
+  await settle();
+  assertEquals(labelled(container, copy.typing), null);
   await unmount();
 });

@@ -4,7 +4,7 @@ import { type Live, makeCell } from "./live.ts";
 import type { Clock, DeviceStore, FileDraft, RoomDetails, SyncJournal } from "./ports.ts";
 import { systemClock } from "./ports.ts";
 import { changeOf, editedRoom, liveRooms, newFile, newMessage, newRoom, outboxKey, trailOf } from "./records.ts";
-import type { Change, FileItem, Message, Room, SyncStatus, TrailMessage } from "./types.ts";
+import type { Author, Change, FileItem, Message, Room, SyncStatus, TrailMessage } from "./types.ts";
 
 const CURSOR = "cursor";
 
@@ -56,10 +56,10 @@ export class TableDeviceStore implements DeviceStore {
       await this.#save(tx, changeOf("room", restored), now);
     });
 
-  send = (roomId: string, content: string): Promise<Message> =>
+  send = (roomId: string, content: string, authorId?: Author): Promise<Message> =>
     this.#write(async (tx, now) => {
       const room = await this.#existing(tx, roomId);
-      const message = newMessage(roomId, content, now);
+      const message = newMessage(roomId, content, now, authorId);
       const touched = editedRoom(room, { activityAt: message.createdAt }, now);
       await this.#save(tx, changeOf("room", touched), now);
       await this.#save(tx, changeOf("message", message), now);

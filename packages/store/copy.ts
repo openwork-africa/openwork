@@ -4,5 +4,6 @@ export const copy = {
   offlineNow: "No connection right now.",
   serverRefused: (status: number) => `The server answered ${status}.`,
   noRoom: (id: string) => `There is no room ${id} on this device.`,
+  noReply: "The assistant could not answer. Try again.",
   missingPorts: "The product was composed without the device ports.",
 } as const;

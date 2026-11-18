@@ -19,7 +19,7 @@ function Conversation({ roomId }: { roomId: string }): ReactElement | null {
   const { store } = devicePorts(ctx.ports);
   const room = useRoom(store, roomId);
   const trail = useTrail(store, roomId);
-  const isWorking = useWorking(ctx.ports, roomId);
+  const isWorking = useWorking(ctx, roomId);
   const banners = useSlot(windowBanner, ctx);
   const [empty] = useSlot(windowEmpty, ctx);
   const frame = useRef<HTMLElement | null>(null);

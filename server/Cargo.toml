@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/ow-core", "crates/ow-store", "crates/ow-server"]
+members = ["crates/ow-core", "crates/ow-store", "crates/ow-ai", "crates/ow-server"]
 
 [workspace.package]
 version = "0.1.0"
@@ -22,3 +22,4 @@ clap = { version = "4", features = ["derive", "env"] }
 tempfile = "3"
 ow-core = { path = "crates/ow-core" }
 ow-store = { path = "crates/ow-store" }
+ow-ai = { path = "crates/ow-ai" }

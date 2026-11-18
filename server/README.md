@@ -33,6 +33,9 @@ Data: `<data>/openwork.db` (SQLite, migrations in `crates/ow-store/migrations`) 
   ignored.
 - `GET /api/pull?since=<cursor>` returns `{ "changes": Change[], "cursor": number }`. `since=0` returns everything.
 - `PUT /api/files/:id` (raw bytes, `Content-Type`) returns 204; larger than 25 MB returns 413. `GET /api/files/:id` returns the bytes or 404.
+- `POST /api/ai/reply` with `{ "roomId", "messages": [{ "id", "authorId", "content", "createdAt" }] }` returns `{ "status": "reply", "text" }` or `{ "status": "none" }`. With no
+  AI plugin it returns 404. A reply already pending in the room returns 409; a plugin failure returns 502 or 503 with a plain message and no internals.
+- `GET /api/ai/status` returns `{ "configured": boolean, "pending": roomId[] }`.
 - Any other `/api/*` returns 404 JSON `{ "message": "..." }`.
 - Any other GET serves the static folder, falling back to `index.html`.
 - CORS allows `http://127.0.0.1:47411` and `http://localhost:47411`.
@@ -43,6 +46,7 @@ Shared sample payloads live in `test-vectors/entities.json`; a Rust test checks 
 
 - `ow-core`: entity types, repository and file-store traits, errors. No I/O, no Tokio.
 - `ow-store`: SQLite (sqlx) and disk implementations.
+- `ow-ai`: the `Assistant` trait and the two AI routes. A separate crate implements the trait and registers itself with `compose::run_with` (or `build_app_with`); the public server registers none.
 - `ow-server`: HTTP layer and composition root (`src/compose.rs`).
 
 ## Test

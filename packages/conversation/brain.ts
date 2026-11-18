@@ -1,11 +1,9 @@
-import type { Ports } from "@openwork/kit";
-import { brainOf, type Live, useLive } from "@openwork/store";
+import type { SlotContext } from "@openwork/kit";
+import { brainService, noteToSelfBrain, useLive } from "@openwork/store";
 import { useMemo } from "react";
 
-const idle: Live<boolean> = { get: () => false, subscribe: () => () => {} };
-
-export function useWorking(ports: Ports, roomId: string): boolean {
-  const brain = brainOf(ports);
-  const live = useMemo(() => brain?.isWorking(roomId) ?? idle, [brain, roomId]);
-  return useLive(live) ?? false;
+/** Whether a reply is on its way in the room, from the brain the product provides (a note to self when none does). */
+export function useWorking(ctx: SlotContext, roomId: string): boolean {
+  const brain = ctx.service(brainService) ?? noteToSelfBrain;
+  return useLive(useMemo(() => brain.isWorking(roomId), [brain, roomId])) ?? false;
 }
