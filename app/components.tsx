@@ -3,7 +3,7 @@ import "@astryxdesign/core/astryx.css";
 import "@openwork/ui/css";
 import { createElement, type ReactElement, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { Circle } from "@openwork/circle";
+import { Circle } from "@openwork/plugin-circle/island";
 import { AddressBar, ConversationComposer, ConversationTrail } from "@openwork/conversation";
 import { ContactCover, ContactHeroBody } from "@openwork/plugin-profile";
 import { BrandLockup, Feedback, type FeedbackNotice, ThemeProvider } from "@openwork/ui";

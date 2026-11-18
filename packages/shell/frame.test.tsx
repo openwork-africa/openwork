@@ -8,9 +8,9 @@ const noop = () => {};
 
 const Marker = (name: string) => ({ roomId }: { roomId?: string }): ReactElement => <p data-region={name}>{`${name}:${roomId ?? "none"}`}</p>;
 
-Deno.test("the frame has a list, a window and a panel, each with its empty state", async () => {
+Deno.test("the frame with no regions is the window alone: no list, no panel", async () => {
   const { container, unmount } = await mount(<Frame drawer="none" onDrawer={noop} />);
-  assert(labelled(container, copy.listLabel), "list panel");
+  assertEquals(labelled(container, copy.listLabel), null, "no list panel without a circle");
   assertEquals(labelled(container, copy.panelLabel), null, "no room: the window takes the panel's width");
   assertEquals(container.querySelectorAll(".convo-shell").length, 1);
   const text = container.textContent ?? "";
@@ -89,8 +89,13 @@ Deno.test("a region that fails is an island: the others stay, and Try again brin
   await unmount();
 });
 
-Deno.test("with a room open the panel column is there; while the room is missing the window shows its loading frame", async () => {
-  const open = await mount(<Frame roomId="r1" drawer="none" onDrawer={noop} />);
+Deno.test("with a room open and no panel there is no panel column; with one there is; while the room is missing the window shows its loading frame", async () => {
+  const bare = await mount(<Frame roomId="r1" window={Marker("window")} drawer="none" onDrawer={noop} />);
+  assertEquals(labelled(bare.container, copy.panelLabel), null);
+  assertEquals(labelled(bare.container, copy.listLabel), null);
+  assertEquals(bare.container.querySelector('[data-region="window"]')?.textContent, "window:r1");
+  await bare.unmount();
+  const open = await mount(<Frame roomId="r1" panel={Marker("panel")} drawer="none" onDrawer={noop} />);
   assert(labelled(open.container, copy.panelLabel));
   await open.unmount();
   const missing = await mount(<Frame roomId="r1" isMissing window={Marker("window")} drawer="none" onDrawer={noop} />);

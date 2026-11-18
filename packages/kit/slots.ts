@@ -43,6 +43,12 @@ export interface PageValue {
   load: () => Promise<{ default: ComponentType }>;
 }
 
+export interface RegionValue {
+  region: "circle" | "window" | "panel";
+  /** The island's component, loaded when the frame first draws it. */
+  load: () => Promise<{ default: ComponentType<{ roomId?: string }> }>;
+}
+
 export interface SourceValue {
   rows: (ctx: SlotContext) => Observable<RowModel[]>;
 }
@@ -119,6 +125,7 @@ export interface PanelTabValue {
 }
 
 export const shellPage: SlotKey<PageValue> = slot("shell.page");
+export const shellRegion: SlotKey<RegionValue> = slot("shell.region");
 export const circleSource: SlotKey<SourceValue> = slot("circle.source");
 export const circleTab: SlotKey<TabFilterValue> = slot("circle.tab");
 export const circleRowMenu: SlotKey<RowMenuValue> = slot("circle.rowMenu");
@@ -140,6 +147,7 @@ export const panelSection: SlotKey<RenderValue> = slot("panel.section");
 
 export const frameSlots: readonly SlotKey<unknown>[] = [
   shellPage,
+  shellRegion,
   circleSource,
   circleTab,
   circleRowMenu,

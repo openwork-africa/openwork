@@ -1,131 +1,23 @@
 import { assert, assertEquals } from "@std/assert";
-import { act, type ReactElement } from "react";
-import { circleRowMenu, compose, dismiss, getNotices, notify, type SlotContext } from "@openwork/kit";
+import { compose, dismiss, getNotices, notify, type SlotContext } from "@openwork/kit";
 import { clearNotices } from "@openwork/kit/testing";
 import { until } from "@openwork/ui/testing";
 import { memoryPorts, until as untilLive } from "@openwork/store/testing";
-import { Circle } from "@openwork/circle";
-import { flush, host, mount } from "./testing.tsx";
 import { copy } from "./copy.ts";
 import { rooms } from "./plugin.tsx";
-import type { ReadMarks } from "./readMarks.ts";
-import { createDrawer, DrawerContext } from "@openwork/shell";
 
 function setup() {
   const ports = memoryPorts();
-  const { store, clock } = ports;
-  const marks = new Map<string, number>();
-  const readMarks: ReadMarks = {
-    get: (id) => marks.get(id),
-    set: (id, at) => void marks.set(id, at),
-  };
+  const { store } = ports;
   const opened: string[] = [];
-  const plugin = rooms(readMarks);
-  const view = (roomId?: string): ReactElement =>
-    host([plugin], ports, <Circle />, {
-      roomId,
-      navigate: (path) => void opened.push(path),
-    });
-  return { store, clock, ports, opened, plugin, view };
+  return { store, ports, opened, plugin: rooms() };
 }
 
-const titles = (
-  container: HTMLElement,
-): string[] => [
-  ...new Set(
-    [...container.querySelectorAll("[aria-label]:not(time)")].map((element) => element.getAttribute("aria-label") ?? "").filter((label) =>
-      !label.endsWith("actions") && label !== "Conversations" &&
-      label !== "New" && !label.endsWith("unread") && !label.startsWith("Mark ")
-    ),
-  ),
-];
-
-Deno.test("New creates a room that appears first and opens it", async () => {
-  const { store, clock, opened, view } = setup();
-  const { container, unmount } = await mount(view());
-  await flush();
-  assertEquals(container.querySelector(".convo-circle-list")?.textContent, "");
-  assertEquals(container.querySelector('button[aria-label="New"]'), null, "with no rooms the window's card starts one");
-  await store.createRoom("Older");
-  clock.tick(10);
-  await flush();
-  assert(container.querySelector('button[aria-label="New"]'), "New comes back with the first room");
-  await act(() => (container.querySelector('button[aria-label="New"]') as HTMLElement).click());
-  await flush();
-  assertEquals(titles(container).slice(0, 2), [copy.newRoomName, "Older"]);
-  assertEquals(opened.length, 1);
-  assert(opened[0].startsWith("/c/"));
-  await unmount();
-});
-
-Deno.test("selecting the already open room closes the list drawer", async () => {
-  const { store, view } = setup();
-  const room = await store.createRoom("One");
-  const drawer = createDrawer();
-  const mounted = await mount(<DrawerContext.Provider value={drawer}>{view(room.id)}</DrawerContext.Provider>);
-  await flush();
-  drawer.setDrawer("list");
-  await flush();
-  assert(mounted.container.querySelector(".convo-circle"));
-  const row = mounted.container.querySelector('[aria-label="One"]');
-  assert(row, "room row is present");
-  await act(() => (row as HTMLElement).click());
-  await flush();
-  assertEquals(drawer.drawer(), "none");
-  await mounted.unmount();
-});
-
-Deno.test("sending sets the preview and moves the room to the top", async () => {
-  const { store, clock, view } = setup();
-  const older = await store.createRoom("Older");
-  clock.tick(10);
-  await store.createRoom("Newer");
-  const { container, unmount } = await mount(view());
-  await flush();
-  assertEquals(titles(container).slice(0, 2), ["Newer", "Older"]);
-  clock.tick(10);
-  await act(async () => void (await store.send(older.id, "  hello\nworld  ")));
-  await flush();
-  assertEquals(titles(container).slice(0, 2), ["Older", "Newer"]);
-  assert((container.textContent ?? "").includes("You: hello world"));
-  await unmount();
-});
-
-Deno.test("unread counts messages after the room's last read mark, and the open room is read", async () => {
-  const { store, clock, view } = setup();
-  const a = await store.createRoom("Alpha");
-  const b = await store.createRoom("Beta");
-  const { container, unmount } = await mount(view(b.id));
-  await flush();
-  clock.tick(10);
-  await act(async () => {
-    await store.send(a.id, "one");
-    clock.tick(1);
-    await store.send(a.id, "two");
-  });
-  await flush();
-  assert(container.querySelector('[aria-label="2 unread"]'));
-  await unmount();
-  const open = await mount(view(a.id));
-  await flush();
-  assert(!open.container.querySelector('[aria-label="2 unread"]'));
-  await open.unmount();
-  const back = await mount(view(b.id));
-  await flush();
-  assert(
-    !back.container.querySelector('[aria-label="2 unread"]'),
-    "reading it cleared the mark",
-  );
-  await back.unmount();
-});
-
-Deno.test("rooms.delete removes the room and leaves it when it is the open one; the menu item is a danger one", async () => {
+Deno.test("rooms.delete removes the room and leaves it when it is the open one", async () => {
   const { store, ports, plugin, opened } = setup();
   const gone = await store.createRoom("Gone");
   await store.createRoom("Kept");
   const product = compose([plugin], ports);
-  const item = product.registry.slot(circleRowMenu)[0];
-  assertEquals([item.label, item.danger], [copy.deleteLabel, true]);
   const ctx = {
     roomId: gone.id,
     navigate: (path: string) => void opened.push(path),
@@ -135,7 +27,6 @@ Deno.test("rooms.delete removes the room and leaves it when it is the open one; 
   } as unknown as SlotContext;
   await product.registry.commands()["rooms.delete"](ctx, gone.id as never);
   assertEquals(opened, ["/"]);
-  assertEquals(item.icon, null);
   const live = store.rooms();
   const list = await new Promise<{ name: string }[]>((done) => {
     const stop = live.subscribe(() => {

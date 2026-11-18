@@ -1,5 +1,6 @@
 import { cpSync, existsSync, readFileSync } from "node:fs";
 import { extname, join, normalize } from "node:path";
+import process from "node:process";
 import { fileURLToPath } from "node:url";
 import react from "@vitejs/plugin-react";
 import { defineConfig, type Plugin } from "vite";
@@ -21,6 +22,14 @@ const uiAssetsPlugin = (): Plugin => ({
   writeBundle: (options) => cpSync(uiAssets, join(options.dir ?? here("./dist"), "assets"), { recursive: true }),
 });
 
+/** `OPENWORK_PRODUCT=bare` builds the bare product (app/bare.tsx); `OPENWORK_OUT` names the folder it is written to. */
+const entry = process.env.OPENWORK_PRODUCT === "bare" ? "/bare.tsx" : "/main.tsx";
+
+const entryPlugin = (): Plugin => ({
+  name: "openwork-entry",
+  transformIndexHtml: { order: "pre", handler: (html) => html.replace("/main.tsx", entry) },
+});
+
 const SERVER = "http://127.0.0.1:47410";
 const workspace = JSON.parse(readFileSync(here("../deno.json"), "utf8")) as { workspace: string[] };
 const aliases = workspace.workspace.flatMap((member) => {
@@ -37,7 +46,7 @@ const aliases = workspace.workspace.flatMap((member) => {
 
 export default defineConfig({
   root: here("."),
-  plugins: [react(), uiAssetsPlugin()],
+  plugins: [react(), uiAssetsPlugin(), entryPlugin()],
   resolve: {
     alias: aliases,
   },
@@ -48,5 +57,5 @@ export default defineConfig({
     fs: { allow: [here("..")] },
     proxy: { "/api": SERVER, "/healthz": SERVER },
   },
-  build: { outDir: here("./dist"), emptyOutDir: true },
+  build: { outDir: process.env.OPENWORK_OUT ?? here("./dist"), emptyOutDir: true },
 });
