@@ -36,7 +36,7 @@ Deno.test("picking an operator adds one member and one status line, and picking 
   await provider.add(pick, ctx);
   await provider.add(pick, ctx);
   const trail = await until(store.trail(room.id), (list) => list.length >= 1);
-  assertEquals(trail.map((message) => [message.kind, message.content]), [["member.added", "Helper joined"]]);
+  assertEquals(trail.map((message) => [message.kind, message.content]), [["member.added", "Helper was added"]]);
   assertEquals((await until(store.room(room.id)))?.members, [helper]);
   assertEquals((await provider.suggest("", ctx)).map((each) => each.label), ["Unnamed operator", "Ama"], "someone already in is not offered again");
 });
@@ -47,7 +47,7 @@ Deno.test("picking a person adds them, and Create operator makes a new operator 
   await provider.add((await provider.suggest("zed", ctx))[0], ctx);
   const added = (await until(store.room(room.id), (each) => (each?.members?.length ?? 0) === 2))?.members ?? [];
   assertEquals(added.map((member) => [member.name, member.type]), [["Ama", "person"], ["zed", OPERATOR]]);
-  assertEquals((await until(store.trail(room.id), (list) => list.length === 2)).map((message) => message.content), ["Ama joined", "zed joined"]);
+  assertEquals((await until(store.trail(room.id), (list) => list.length === 2)).map((message) => message.content), ["Ama was added", "zed was added"]);
 });
 
 Deno.test("the window draws the status line and the address bar opens onto the picker", async () => {
@@ -55,7 +55,7 @@ Deno.test("the window draws the status line and the address bar opens onto the p
   await provider.add((await provider.suggest("", ctx))[0], ctx);
   const { container, unmount } = await mount(view(<ConversationWindow roomId={room.id} />, room.id));
   await flush(200);
-  assert((container.textContent ?? "").includes("Helper joined"));
+  assert((container.textContent ?? "").includes("Helper was added ·"), "the status line draws centered with its time, like the legacy one");
   const name = [...container.querySelectorAll("button")].find((button) => button.textContent === "Helper");
   assert(name, "a room of one operator is titled with its name");
   await press(name!);

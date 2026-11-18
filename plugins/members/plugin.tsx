@@ -1,6 +1,5 @@
 import { addressAddressee, type Addressee, contribute, definePlugin, type SlotContext, trailBody } from "@openwork/kit";
 import { devicePorts, isOperator, JOINED_KIND, type Live, type Member, memberName, OPERATOR, type Room } from "@openwork/store";
-import { Text } from "@astryxdesign/core/Text";
 import { copy } from "./copy.ts";
 
 const CREATE_PREFIX = "create-operator:";
@@ -61,7 +60,8 @@ export function members({ directory = [] }: MembersOptions = {}) {
         order: 50,
         kind: JOINED_KIND,
         matches: (message) => message.kind === JOINED_KIND,
-        render: (message) => <Text type="supporting" as="p">{message.content}</Text>,
+        systemLine: true,
+        render: (message) => message.content,
       }),
     ],
   });
