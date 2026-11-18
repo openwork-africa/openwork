@@ -7,7 +7,6 @@ export const copy = {
   pageName: "page",
   noRoomsTitle: "No conversations yet",
   noRoomsDescription: "Start one to begin writing.",
-  startLabel: "Start a conversation",
   noRoomTitle: "Pick a conversation to start.",
   updateReady: "New version ready.",
   update: "Update",

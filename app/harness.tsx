@@ -28,10 +28,15 @@ export interface Booted {
 }
 
 /** The real product (the given plugins and the product's regions) on in-memory ports, drawn at `start`. */
-export async function bootProduct(plugins: readonly Plugin[] = openPlugins, start = "/"): Promise<Booted> {
+export async function bootProduct(
+  plugins: readonly Plugin[] = openPlugins,
+  start = "/",
+  seed?: (store: MemoryDeviceStore) => Promise<void>,
+): Promise<Booted> {
   clearNotices();
   const ports = memoryPorts();
   const { clock, store } = ports;
+  await seed?.(store);
   const env = memoryEnv(start);
   const { history } = env;
   const router = createRouter(env);

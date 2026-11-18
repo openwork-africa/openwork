@@ -1,7 +1,7 @@
-import { type ComponentType, lazy, type ReactElement, Suspense, useEffect, useMemo } from "react";
+import { type ComponentType, lazy, type ReactElement, Suspense, useEffect, useMemo, useRef } from "react";
 import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { createRoomCommand, type PageValue, runCommand, shellPage, useCtx, useSlot } from "@openwork/kit";
-import { devicePorts, useRoom, useRooms } from "@openwork/store";
+import { devicePorts, useRoom, useRooms, useSyncStatus } from "@openwork/store";
 import { ErrorBoundary, Loading } from "@openwork/ui";
 import { copy } from "./copy.ts";
 import { Frame, type Regions } from "./Frame.tsx";
@@ -36,6 +36,15 @@ function RoomRoutes({ given, route }: { given: Regions; route: Route }): ReactEl
   const isMissing = !!roomId && room === null;
   const noRooms = rooms?.length === 0;
   useEffect(() => drawerState?.setDrawer(drawerFor(route, noRooms, regions)), [route.name, roomId, noRooms, drawerState, regions]);
+  const isSettled = useSyncStatus(devicePorts(ctx.ports).store) !== "catchingUp";
+  const isCreating = useRef(false);
+  useEffect(() => {
+    if (!noRooms) isCreating.current = false;
+    else if (create && isSettled && !isCreating.current) {
+      isCreating.current = true;
+      void create();
+    }
+  }, [noRooms, isSettled]);
   useEffect(() => {
     if (route.name === "home" && latest) router.replace(roomPath(latest));
   }, [route.name, latest]);
@@ -62,7 +71,6 @@ function RoomRoutes({ given, route }: { given: Regions; route: Route }): ReactEl
       roomId={roomId}
       noRooms={noRooms}
       isMissing={isMissing}
-      onStart={create && (() => void create())}
       drawer={drawer}
       onDrawer={onDrawer}
     />

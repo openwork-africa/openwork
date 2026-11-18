@@ -1,6 +1,6 @@
 import { act } from "react";
 import { assert, assertEquals } from "@std/assert";
-import { copy } from "@openwork/shell";
+import { until } from "@openwork/store/testing";
 import { bootProduct, click, flush } from "./harness.tsx";
 import { openPlugins } from "./product.ts";
 
@@ -32,14 +32,23 @@ Deno.test("desktop: / replaces itself with the most recently active room", () =>
     await app.stop();
   }));
 
-Deno.test("desktop: with no rooms / stays and the window offers to start one", () =>
+Deno.test("desktop: with no rooms the app opens into one new room, drawn in the list", () =>
   withScreen(DESKTOP, async () => {
     const app = await bootProduct(openPlugins, "/");
-    assertEquals(app.path(), "/");
-    const frame = app.container.querySelector(".convo-loading");
-    assert(frame?.textContent?.includes(copy.noRoomsTitle));
-    await click(frame!.querySelector("button"));
+    await flush();
     assert(app.path().startsWith("/c/"), app.path());
+    assertEquals(app.container.querySelector(".convo-loading.is-empty"), null);
+    assertEquals((await until(app.store.rooms())).length, 1, "exactly one room");
+    await app.stop();
+  }));
+
+Deno.test("desktop: an existing room is opened as before and no second room is made", () =>
+  withScreen(DESKTOP, async () => {
+    let room = "";
+    const app = await bootProduct(openPlugins, "/", async (store) => void (room = (await store.createRoom("Mine")).id));
+    await flush();
+    assertEquals(app.path(), `/c/${room}`);
+    assertEquals((await until(app.store.rooms())).length, 1);
     await app.stop();
   }));
 
@@ -53,26 +62,21 @@ Deno.test("phone: / opens the latest room with drawers closed", () =>
     await app.stop();
   }));
 
-Deno.test("zero rooms: exactly one empty card, in the window with the Start button; the circle has none and no New", () =>
+Deno.test("zero rooms: no empty card and no Start button, the first room is already open", () =>
   withScreen(DESKTOP, async () => {
     const app = await bootProduct(openPlugins, "/");
     await flush();
-    assertEquals(app.container.querySelectorAll(".empty-card").length, 1);
-    const card = app.container.querySelector(".convo-loading .conversation-empty-card > .empty-card");
-    assert(card?.textContent?.includes(copy.noRoomsTitle));
-    assert(card?.querySelector("button"), "the Start button");
-    assert(app.container.querySelector(".convo-loading.is-empty"), "the empty frame has no dividers");
-    const circle = app.container.querySelector(".convo-circle");
-    assertEquals(circle?.querySelector(".empty-card"), null);
-    assertEquals(circle?.querySelector('button[aria-label="New"]'), null, "New waits for the first room");
+    assertEquals(app.container.querySelectorAll(".empty-card .convo-loading button").length, 0);
+    assertEquals(app.container.querySelector(".convo-loading.is-empty"), null);
+    assert(app.path().startsWith("/c/"));
     await app.stop();
   }));
 
-Deno.test("phone: with zero rooms the window and its card show, not a blank list drawer", () =>
+Deno.test("phone: with zero rooms the window opens in a new room, not a blank list drawer", () =>
   withScreen(PHONE, async () => {
     const app = await bootProduct(openPlugins, "/");
     await flush();
     assert(!app.container.querySelector(".convo-shell")?.classList.contains("is-list-open"));
-    assert(app.container.querySelector(".convo-loading .empty-card"));
+    assert(app.path().startsWith("/c/"));
     await app.stop();
   }));

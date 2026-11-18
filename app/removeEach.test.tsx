@@ -20,8 +20,8 @@ const only = Deno.args[0];
 
 const removals: Record<string, (app: Booted) => Promise<void>> = {
   circle: async (app) => {
-    await click(app.container.querySelector(".convo-loading button"));
-    assert(app.path().startsWith("/c/"), "rooms: the window's card starts a room");
+    await flush();
+    assert(app.path().startsWith("/c/"), "rooms: the app opens into a room");
     await openSeededRoom(app);
     assertEquals(app.container.querySelector(".convo-circle"), null, "no list");
     assert(message(app)?.querySelector("strong"), "text draws Markdown");
@@ -40,8 +40,8 @@ const removals: Record<string, (app: Booted) => Promise<void>> = {
     assert(app.container.querySelector(".contact-hero-body"), "profile draws the panel section");
   },
   text: async (app) => {
-    await click(app.container.querySelector(".convo-loading button"));
-    assert(app.path().startsWith("/c/"), "rooms: New opens a room");
+    await flush();
+    assert(app.path().startsWith("/c/"), "rooms: the app opens into a room");
     await flush();
     assert(app.container.querySelector(".contact-hero-body"), "profile draws the panel section");
     await openSeededRoom(app);
@@ -49,8 +49,8 @@ const removals: Record<string, (app: Booted) => Promise<void>> = {
     assertEquals(message(app)?.querySelector("strong"), null);
   },
   profile: async (app) => {
-    await click(app.container.querySelector(".convo-loading button"));
-    assert(app.path().startsWith("/c/"), "rooms: New opens a room");
+    await flush();
+    assert(app.path().startsWith("/c/"), "rooms: the app opens into a room");
     await openSeededRoom(app);
     assertEquals(app.container.querySelector(".contact-hero-body"), null);
     assert(message(app)?.querySelector("strong"), "text draws Markdown");
