@@ -17,6 +17,14 @@ use tower::ServiceExt;
 struct Scripted(Mutex<Option<mpsc::UnboundedReceiver<Result<AiEvent, AiError>>>>);
 
 impl Assistant for Scripted {
+    fn reply<'a>(
+        &'a self,
+        room_id: &'a str,
+        messages: &'a [AiMessage],
+    ) -> ow_ai::BoxFuture<'a, Result<ow_ai::Reply, AiError>> {
+        Box::pin(ow_ai::collect(self.stream(room_id, messages)))
+    }
+
     fn stream<'a>(
         &'a self,
         _: &'a str,

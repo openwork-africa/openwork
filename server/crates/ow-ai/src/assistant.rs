@@ -45,16 +45,14 @@ pub enum AiEvent {
 
 /// Given a room and its messages (the newest last), returns the reply.
 ///
-/// Implement `stream` (the route asks for it when the browser wants a stream) or `reply`. Each has a default made
-/// from the other, so an assistant that implements one serves both kinds of request; implementing neither never answers.
+/// `reply` is required. `stream` has a default made from it (`Started`, one `Delta` with the whole text, `Done`); an
+/// assistant that really streams overrides `stream` and writes `reply` as `Box::pin(collect(self.stream(room_id, messages)))`.
 pub trait Assistant: Send + Sync {
     fn reply<'a>(
         &'a self,
         room_id: &'a str,
         messages: &'a [AiMessage],
-    ) -> BoxFuture<'a, Result<Reply, AiError>> {
-        Box::pin(collect(self.stream(room_id, messages)))
-    }
+    ) -> BoxFuture<'a, Result<Reply, AiError>>;
 
     fn stream<'a>(
         &'a self,

@@ -3,7 +3,7 @@ import type { AiBrain } from "./aiBrain.ts";
 import { copy } from "./copy.ts";
 import { HttpError } from "./errors.ts";
 import type { DeviceStore } from "./ports.ts";
-import { ASSISTANT, type TrailMessage, YOU } from "./types.ts";
+import { ASSISTANT, DEFAULT_KIND, type TrailMessage, YOU } from "./types.ts";
 
 export interface RepliesOptions {
   store: DeviceStore;
@@ -16,7 +16,12 @@ export interface RepliesOptions {
 }
 
 const asked = (trail: TrailMessage[]): AiMessage[] =>
-  trail.filter((message) => message.state !== "failed").map(({ id, authorId, content, createdAt }) => ({ id, authorId, content, createdAt }));
+  trail.filter((message) => message.state !== "failed" && (message.kind ?? DEFAULT_KIND) === DEFAULT_KIND).map(({ id, authorId, content, createdAt }) => ({
+    id,
+    authorId,
+    content,
+    createdAt,
+  }));
 
 /**
  * Answers the person: when the newest message of the room most recently written in is theirs, the room's messages go to
@@ -47,7 +52,10 @@ export function answerMessages({ store, client, brain, since, onFailure }: Repli
 
   const look = (roomId: string, trail: TrailMessage[] | undefined): void => {
     const last = trail?.at(-1);
-    if (!isAvailable || !trail || !last || last.authorId !== YOU || last.state === "failed" || last.createdAt < since || answered.has(last.id)) return;
+    if (
+      !isAvailable || !trail || !last || last.authorId !== YOU || (last.kind ?? DEFAULT_KIND) !== DEFAULT_KIND || last.state === "failed" ||
+      last.createdAt < since || answered.has(last.id)
+    ) return;
     answered.add(last.id);
     void answer(roomId, last.id, asked(trail));
   };

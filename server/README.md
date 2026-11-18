@@ -41,7 +41,8 @@ Data: `<data>/openwork.db` (SQLite, migrations in `crates/ow-store/migrations`) 
     stream also ends with `error` if the assistant takes more than 150 seconds. The room is pending only while the stream is open; if the browser leaves, the work stops
     and the room is freed. The app shows only a typing indicator while the stream is open and saves the reply as one message at `done`.
   - Without it the answer is JSON: `{ "status": "reply", "text" }` or `{ "status": "none" }`; a plugin failure is 502, and an unavailable or too slow plugin is 503, with a plain message.
-- `GET /api/ai/status` returns `{ "configured": boolean, "pending": roomId[] }`. The app makes this one check at boot; when it says not configured the app never calls
+- `GET /api/ai/status` returns `{ "configured": boolean, "pending": roomId[] }`. Like the rest of this server it has no auth: anyone who can reach the server can read
+  the ids of the rooms a reply is open in. The app makes this one check at boot; when it says not configured the app never calls
   `/api/ai/reply`. (If the server cannot be reached at boot the app tries a reply when the person sends a message, and stops after a 404.)
 - Any other `/api/*` returns 404 JSON `{ "message": "..." }`.
 - Any other GET serves the static folder, falling back to `index.html`.

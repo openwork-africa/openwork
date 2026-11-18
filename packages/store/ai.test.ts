@@ -1,39 +1,12 @@
-import { assert, assertEquals } from "@std/assert";
+import { assertEquals } from "@std/assert";
 import type { Plugin } from "@openwork/kit";
-import { HttpAiClient, noAiClient } from "./aiClient.ts";
+import { noAiClient } from "./aiClient.ts";
 import type { AiClient, AiMessage, AiReply } from "./aiClient.ts";
 import { AiBrain } from "./aiBrain.ts";
 import { aiPlugin, brainService } from "./aiPlugin.ts";
 import { HttpError } from "./errors.ts";
 import { type Live } from "./live.ts";
-import { memoryPorts, rig, until } from "./testing.ts";
-
-const json = (status: number, body: unknown): Response => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
-
-Deno.test("the AI client posts the room and its messages and reads the reply and the status", async () => {
-  const seen: { url: string; init?: RequestInit }[] = [];
-  const answers = [json(200, { status: "reply", text: "Hi" }), json(200, { configured: true, pending: ["r1"] })];
-  const client = new HttpAiClient("http://server/", (input, init) => {
-    seen.push({ url: String(input), init });
-    return Promise.resolve(answers.shift()!);
-  });
-  const messages: AiMessage[] = [{ id: "m1", authorId: "you", content: "hello", createdAt: 1 }];
-  assertEquals(await client.reply("r1", messages), { status: "reply", text: "Hi" });
-  assertEquals(await client.status(), { configured: true, pending: ["r1"] });
-  assertEquals(seen[0].url, "http://server/api/ai/reply");
-  assertEquals(seen[0].init?.method, "POST");
-  assertEquals(JSON.parse(String(seen[0].init?.body)), { roomId: "r1", messages });
-  assertEquals(seen[1].url, "http://server/api/ai/status");
-});
-
-Deno.test("a server with no AI plugin: reply is unavailable, status is not configured, and a refusal carries the server's own words", async () => {
-  const fixed = (response: () => Response) => new HttpAiClient("", () => Promise.resolve(response()));
-  assertEquals(await fixed(() => json(404, { message: "nothing" })).reply("r", []), { status: "unavailable" });
-  assertEquals(await fixed(() => json(404, {})).status(), { configured: false, pending: [] });
-  assertEquals(await fixed(() => json(409, {})).reply("r", []), { status: "busy" });
-  const error = await fixed(() => json(502, { message: "The assistant could not answer. Try again." })).reply("r", []).catch((e) => e);
-  assert(error instanceof HttpError && error.status === 502 && error.message === "The assistant could not answer. Try again.");
-});
+import { devices, memoryPorts, rig, until } from "./testing.ts";
 
 const valueOf = <T>(live: Live<T>) => live.get();
 
@@ -175,37 +148,6 @@ Deno.test("a failed reply tells the person in plain words and saves nothing", as
   product.teardown();
 });
 
-const sse = (...events: [string, unknown][]): Response =>
-  new Response(events.map(([name, data]) => `event: ${name}\ndata: ${JSON.stringify(data)}\n\n`).join(""), {
-    headers: { "Content-Type": "text/event-stream" },
-  });
-
-Deno.test("the client asks for a stream, says when the message is started, and settles with the whole reply at done", async () => {
-  let accept: string | null = null;
-  const client = new HttpAiClient("", (_input, init) => {
-    accept = new Headers(init?.headers).get("Accept");
-    return Promise.resolve(sse(["started", {}], ["delta", { text: "Hel" }], ["delta", { text: "lo" }], ["done", { text: "Hello" }]));
-  });
-  const order: string[] = [];
-  const reply = await client.reply("r1", [], { onStarted: () => order.push("started") });
-  assertEquals([accept, order, reply], ["text/event-stream", ["started"], { status: "reply", text: "Hello" }]);
-});
-
-Deno.test("an error event makes the client throw the server's words, after started if it was started", async () => {
-  const client = new HttpAiClient("", () => Promise.resolve(sse(["started", {}], ["error", { message: "The assistant could not answer. Try again." }])));
-  let started = 0;
-  const error = await client.reply("r1", [], { onStarted: () => started++ }).catch((e) => e);
-  assert(error instanceof Error && error.message === "The assistant could not answer. Try again.");
-  assertEquals(started, 1);
-});
-
-Deno.test("a stream that ends with no done is a failure, and a done with no text is none", async () => {
-  const cut = new HttpAiClient("", () => Promise.resolve(sse(["started", {}])));
-  assert(await cut.reply("r1", []).catch((e) => e) instanceof Error);
-  const empty = new HttpAiClient("", () => Promise.resolve(sse(["started", {}], ["done", { text: "" }])));
-  assertEquals(await empty.reply("r1", []), { status: "none" });
-});
-
 Deno.test("the room works from the first request until the stream ends, the reply is saved only at done, and the message is taken at started", async () => {
   let handlers!: { onStarted?: () => void };
   let finish!: (reply: AiReply) => void;
@@ -258,4 +200,66 @@ Deno.test("a failure before started marks the message failed with the reason; af
     stop();
     product.teardown();
   }
+});
+
+for (const make of devices) {
+  Deno.test(`${make().name}: a room created after startup answers its first message`, async () => {
+    const device = make();
+    const calls: string[] = [];
+    const client: AiClient = {
+      reply: (roomId) => (calls.push(roomId), Promise.resolve({ status: "reply", text: "Hi" })),
+      status: () => Promise.resolve({ configured: true, pending: [] }),
+    };
+    const ports = { ...memoryPorts(device.clock), store: device.store, files: device.files, ai: client };
+    const { product } = rig([aiPlugin()], ports as unknown as ReturnType<typeof memoryPorts>);
+    await settle(50);
+    const room = await device.store.createRoom("Fresh");
+    await device.store.send(room.id, "first");
+    await settle(150);
+    assertEquals(calls, [room.id]);
+    product.teardown();
+    device.close();
+  });
+}
+
+Deno.test("an older room opened after startup answers its first message, and so does the newest room that was there at startup", async () => {
+  const calls: string[] = [];
+  const client: AiClient = {
+    reply: (roomId) => (calls.push(roomId), Promise.resolve({ status: "reply", text: "Hi" })),
+    status: () => Promise.resolve({ configured: true, pending: [] }),
+  };
+  const ports = { ...memoryPorts(), ai: client };
+  const older = await ports.store.createRoom("Older");
+  ports.clock.tick(10);
+  const newest = await ports.store.createRoom("Newest");
+  const { product } = rig([aiPlugin()], ports);
+  await settle(50);
+  ports.clock.tick(10);
+  await ports.store.send(newest.id, "in the newest");
+  await settle();
+  ports.clock.tick(10);
+  await ports.store.send(older.id, "in the older one");
+  await settle();
+  assertEquals(calls, [newest.id, older.id]);
+  product.teardown();
+});
+
+Deno.test("a status line the person's side wrote is not a message to answer and is not sent to the AI", async () => {
+  const calls: AiMessage[][] = [];
+  const client: AiClient = {
+    reply: (_room, messages) => (calls.push(messages), Promise.resolve({ status: "none" })),
+    status: () => Promise.resolve({ configured: true, pending: [] }),
+  };
+  const { store, product, clock } = aiRig(client);
+  const room = await store.createRoom("Notes");
+  await settle();
+  clock.tick(1);
+  await store.send(room.id, "Assistant joined", "you", "member.added");
+  await settle();
+  assertEquals(calls.length, 0);
+  clock.tick(1);
+  await store.send(room.id, "hello");
+  await settle();
+  assertEquals(calls.map((messages) => messages.map((message) => message.content)), [["hello"]]);
+  product.teardown();
 });

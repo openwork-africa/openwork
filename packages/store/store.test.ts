@@ -57,9 +57,10 @@ for (const make of devices) {
     await assertRejects(() => store.restoreRoom("nope"));
   });
 
-  run("a message keeps the kind it was sent with, whatever it is, and is text when none is given", async ({ store }) => {
+  run("a message keeps the kind it was sent with, whatever it is, and is text when none is given", async ({ store, clock }) => {
     const room = await store.createRoom("Kinds");
     await store.send(room.id, "plain");
+    clock.tick(1);
     await store.send(room.id, "{}", "you", "x-unknown-kind");
     const trail = await until(store.trail(room.id), (list) => list.length === 2);
     assertEquals(trail.map((message) => message.kind), ["text", "x-unknown-kind"]);
