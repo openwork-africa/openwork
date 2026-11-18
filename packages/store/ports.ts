@@ -40,7 +40,7 @@ export interface DeviceStore {
   setRoomDescription(id: string, description: string | undefined): Promise<void>;
   setRoomPicture(id: string, picture: string | undefined): Promise<void>;
   setRoomBackground(id: string, background: string | undefined, accent?: string): Promise<void>;
-  /** Adds someone to the room and writes the status line ("<name> joined") in one step. False when they are already in it. */
+  /** Adds someone to the room and writes the status line ("<name> was added") in one step. False when they are already in it. */
   addMember(roomId: string, member: Member): Promise<boolean>;
   deleteRoom(id: string): Promise<void>;
   /** Brings back a deleted room, with its messages. Rejects if the device never had it. */

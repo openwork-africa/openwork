@@ -66,7 +66,7 @@ for (const make of devices) {
     assertEquals(await store.addMember(room.id, mixed), false, "the same member is not added twice");
     assertEquals((await until(store.room(room.id)))?.members, [helper, mixed]);
     const lines = await until(store.trail(room.id), (list) => list.length === 2);
-    assertEquals(lines.map((line) => [line.kind, line.content]), [["member.added", "Helper joined"], ["member.added", "Unnamed joined"]]);
+    assertEquals(lines.map((line) => [line.kind, line.content]), [["member.added", "Helper was added"], ["member.added", "Unnamed was added"]]);
     assertEquals((await store.journal.pending()).filter((row) => row.kind === "message").length, 2);
   });
 
