@@ -1,7 +1,8 @@
-import { createRoomCommand, definePlugin, deleteRoomCommand, type Plugin, provideCommand, type SlotContext } from "@openwork/kit";
+import { definePlugin, type Plugin, provideCommand, type SlotContext } from "@openwork/kit";
 import { devicePorts } from "@openwork/store";
 import { roomPath } from "@openwork/kit";
 import { copy } from "./copy.ts";
+import { createRoomCommand, deleteRoomCommand } from "./services.ts";
 
 const ROOT = "/";
 const UNDO_HOLD_MS = 8_000;

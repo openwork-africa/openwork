@@ -2,19 +2,6 @@ import type { ComponentType, ReactNode } from "react";
 import type { SlotContext } from "./context.ts";
 import { slot, type SlotKey } from "./keys.ts";
 
-export interface Observable<T> {
-  subscribe(listener: (value: T) => void): () => void;
-}
-
-export interface RowModel {
-  id: string;
-  title: string;
-  preview?: string;
-  activityAt: number;
-  unread?: number;
-  picture?: string;
-}
-
 export interface MessageView {
   id: string;
   roomId: string;
@@ -47,22 +34,6 @@ export interface RegionValue {
   region: "circle" | "window" | "panel";
   /** The island's component, loaded when the frame first draws it. */
   load: () => Promise<{ default: ComponentType<{ roomId?: string }> }>;
-}
-
-export interface SourceValue {
-  rows: (ctx: SlotContext) => Observable<RowModel[]>;
-}
-
-export interface TabFilterValue {
-  label: string;
-  filter: (row: RowModel) => boolean;
-}
-
-export interface RowMenuValue {
-  label: string;
-  icon: ReactNode;
-  run: (row: RowModel, ctx: SlotContext) => void;
-  danger?: boolean;
 }
 
 export interface AddresseeValue {
@@ -117,19 +88,8 @@ export interface RenderValue {
   render: Render;
 }
 
-export interface PanelTabValue {
-  value: string;
-  label: string;
-  icon: ReactNode;
-  render: Render;
-}
-
 export const shellPage: SlotKey<PageValue> = slot("shell.page");
 export const shellRegion: SlotKey<RegionValue> = slot("shell.region");
-export const circleSource: SlotKey<SourceValue> = slot("circle.source");
-export const circleTab: SlotKey<TabFilterValue> = slot("circle.tab");
-export const circleRowMenu: SlotKey<RowMenuValue> = slot("circle.rowMenu");
-export const circleEmpty: SlotKey<RenderValue> = slot("circle.empty");
 export const addressAddressee: SlotKey<AddresseeValue> = slot("address.addressee");
 export const addressAction: SlotKey<ActionValue> = slot("address.action");
 export const composerAddMenu: SlotKey<AddMenuValue> = slot("composer.addMenu");
@@ -141,17 +101,10 @@ export const trailExtra: SlotKey<TrailExtraValue> = slot("trail.extra");
 export const trailAction: SlotKey<TrailActionValue> = slot("trail.action");
 export const windowEmpty: SlotKey<RenderValue> = slot("window.empty");
 export const windowBanner: SlotKey<RenderValue> = slot("window.banner");
-export const panelTab: SlotKey<PanelTabValue> = slot("panel.tab");
-export const panelCover: SlotKey<RenderValue> = slot("panel.cover");
-export const panelSection: SlotKey<RenderValue> = slot("panel.section");
 
 export const frameSlots: readonly SlotKey<unknown>[] = [
   shellPage,
   shellRegion,
-  circleSource,
-  circleTab,
-  circleRowMenu,
-  circleEmpty,
   addressAddressee,
   addressAction,
   composerAddMenu,
@@ -163,9 +116,6 @@ export const frameSlots: readonly SlotKey<unknown>[] = [
   trailAction,
   windowEmpty,
   windowBanner,
-  panelTab,
-  panelCover,
-  panelSection,
 ];
 
 export const frameSlotIds: ReadonlySet<string> = new Set(frameSlots.map((key) => key.id));

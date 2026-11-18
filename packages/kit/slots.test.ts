@@ -5,10 +5,6 @@ Deno.test("every frame-owned slot of the catalogue has a unique key", () => {
   const expected = [
     "shell.page",
     "shell.region",
-    "circle.source",
-    "circle.tab",
-    "circle.rowMenu",
-    "circle.empty",
     "address.addressee",
     "address.action",
     "composer.addMenu",
@@ -20,9 +16,6 @@ Deno.test("every frame-owned slot of the catalogue has a unique key", () => {
     "trail.action",
     "window.empty",
     "window.banner",
-    "panel.tab",
-    "panel.cover",
-    "panel.section",
   ];
   assertEquals(frameSlots.map((key) => key.id), expected);
   assertEquals(frameSlotIds.size, expected.length);

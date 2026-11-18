@@ -1,6 +1,6 @@
 import { type ComponentType, lazy, type ReactElement, Suspense, useEffect, useMemo, useRef } from "react";
 import { HStack, VStack } from "@astryxdesign/core/Stack";
-import { createRoomCommand, type PageValue, runCommand, shellPage, useCtx, useSlot } from "@openwork/kit";
+import { commandKey, type PageValue, runCommand, shellPage, useCtx, useSlot } from "@openwork/kit";
 import { devicePorts, useRoom, useRooms, useSyncStatus } from "@openwork/store";
 import { ErrorBoundary, Loading } from "@openwork/ui";
 import { copy } from "./copy.ts";
@@ -9,6 +9,9 @@ import { type Drawer, useDrawer, useDrawerState } from "./drawer.ts";
 import { matchPath, roomIdOf, roomPath, type Route } from "./route.ts";
 import { useRoute, useRouter } from "./router.ts";
 import { useRegions } from "./useRegions.ts";
+
+/** Provided by the rooms plugin when the product has it; the frame only runs it by name, to open into a first room. */
+const createRoom = commandKey<[], Promise<void>>("rooms.create");
 
 const lazies = new WeakMap<PageValue, ComponentType>();
 
@@ -31,7 +34,7 @@ function RoomRoutes({ given, route }: { given: Regions; route: Route }): ReactEl
   const roomId = roomIdOf(route);
   const rooms = useRooms(devicePorts(ctx.ports).store);
   const latest = rooms?.[0]?.id;
-  const create = ctx.commands[createRoomCommand.name] ? () => runCommand(ctx, createRoomCommand) : undefined;
+  const create = ctx.commands[createRoom.name] ? () => runCommand(ctx, createRoom) : undefined;
   const room = useRoom(devicePorts(ctx.ports).store, roomId ?? "");
   const isMissing = !!roomId && room === null;
   const noRooms = rooms?.length === 0;

@@ -1,7 +1,8 @@
 import { Fragment, type ReactElement, useId, useState } from "react";
 import { VStack } from "@astryxdesign/core/Stack";
 import { Tab, TabList } from "@astryxdesign/core/TabList";
-import { panelCover, panelSection, panelTab, useCtx, useSlot } from "@openwork/kit";
+import { useCtx, useSlot } from "@openwork/kit";
+import { panelCover, panelSection, panelTab } from "./slots.ts";
 import { copy as uiCopy } from "@openwork/ui";
 
 /** The right pane: the covers plugins put in `panel.cover` above the scroll, then the sections plugins put in `panel.section`, top to bottom, then a tab bar when a plugin adds a tab. */

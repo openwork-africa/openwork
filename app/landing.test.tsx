@@ -1,7 +1,7 @@
 import { act } from "react";
 import { assert, assertEquals } from "@std/assert";
 import { until } from "@openwork/store/testing";
-import { bootProduct, click, flush } from "./harness.tsx";
+import { bootProduct, flush } from "./harness.tsx";
 import { openPlugins } from "./product.ts";
 
 const DESKTOP = (query: string) => ({ matches: !query.includes("max-width") });

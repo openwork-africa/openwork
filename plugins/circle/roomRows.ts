@@ -1,4 +1,5 @@
-import type { Observable, RowModel, SlotContext } from "@openwork/kit";
+import type { SlotContext } from "@openwork/kit";
+import type { Observable, RowModel } from "./slots.ts";
 import { devicePorts, type DeviceStore, type Live, type Room, type TrailMessage } from "@openwork/store";
 import { previewOf } from "./preview.ts";
 import { roomPictures } from "./pictures.ts";
@@ -16,7 +17,7 @@ export function rowOf(
   return {
     id: room.id,
     title: room.name,
-    preview: last ? previewOf(last.content) : "",
+    preview: last ? previewOf(last) : "",
     activityAt: last?.createdAt ?? room.activityAt,
     unread: trail.filter((message) => message.createdAt > mark).length,
     picture,

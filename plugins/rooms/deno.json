@@ -1,7 +1,7 @@
 {
   "name": "@openwork/plugin-rooms",
   "version": "0.1.0",
-  "exports": "./mod.ts",
+  "exports": { ".": "./mod.ts", "./services": "./services.ts" },
   "imports": {},
   "compilerOptions": {
     "jsx": "react-jsx",

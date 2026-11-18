@@ -4,19 +4,8 @@ import { Icon } from "@astryxdesign/core/Icon";
 import { IconButton } from "@astryxdesign/core/IconButton";
 import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { Plus } from "lucide-react";
-import {
-  circleEmpty,
-  circleRowMenu,
-  circleSource,
-  circleTab,
-  createRoomCommand,
-  type RowMenuValue,
-  type RowModel,
-  runCommand,
-  type SlotContext,
-  useCtx,
-  useSlot,
-} from "@openwork/kit";
+import { commandKey, runCommand, type SlotContext, useCtx, useSlot } from "@openwork/kit";
+import { circleEmpty, circleRowMenu, circleSource, circleTab, type RowMenuValue, type RowModel } from "./slots.ts";
 import { type DeviceStore, useSyncStatus } from "@openwork/store";
 import { roomPath } from "@openwork/kit";
 import { ErrorBoundary } from "@openwork/ui";
@@ -28,6 +17,9 @@ import { ChatTabs } from "./ChatTabs.tsx";
 import { isLoading, mergeRows, useSourceRows } from "./circleRows.ts";
 import { ConfirmDelete } from "./ConfirmDelete.tsx";
 import { copy } from "./copy.ts";
+
+/** Provided by the rooms plugin when the product has it; the list only runs it by name. */
+const createRoom = commandKey<[], Promise<void>>("rooms.create");
 
 interface Asked {
   row: RowModel;
@@ -61,7 +53,7 @@ export function Circle({ roomId }: { roomId?: string }): ReactElement {
   const rows = mergeRows(sources, bySource).filter((
     row,
   ) => (tabs.length > 1 && tab ? tab.filter(row) : true));
-  const create = ctx.commands[createRoomCommand.name] ? () => runCommand(ctx, createRoomCommand) : undefined;
+  const create = ctx.commands[createRoom.name] ? () => runCommand(ctx, createRoom) : undefined;
   const isEmptyDevice = !isLoading(sources, bySource) && mergeRows(sources, bySource).length === 0;
 
   useEffect(() => {
