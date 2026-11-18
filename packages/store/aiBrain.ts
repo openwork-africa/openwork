@@ -62,7 +62,10 @@ export class AiBrain implements Brain {
   #watch(change: 1 | -1): void {
     this.#watchers += change;
     if (this.#watchers > 0) void this.#loop();
-    else this.#wake?.();
+    else {
+      this.#wake?.();
+      this.#remote = new Set();
+    }
   }
 
   async #loop(): Promise<void> {

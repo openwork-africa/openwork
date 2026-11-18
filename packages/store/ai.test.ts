@@ -109,16 +109,18 @@ Deno.test("a message from the person is answered: the room's messages go out, th
   product.teardown();
 });
 
-Deno.test("with no AI on the server the brain stays idle, nothing is saved and it stops asking", async () => {
-  let asked = 0;
-  const client: AiClient = { reply: () => (asked++, Promise.resolve({ status: "unavailable" })), status: noAiClient.status };
+Deno.test("with no AI on the server one status check is made, no reply is ever asked for, and the brain stays idle", async () => {
+  let replies = 0;
+  let statuses = 0;
+  const client: AiClient = { reply: () => (replies++, Promise.resolve({ status: "unavailable" })), status: () => (statuses++, noAiClient.status()) };
   const { store, product } = aiRig(client);
   const room = await store.createRoom("Notes");
+  await settle();
   await store.send(room.id, "one");
   await settle();
   await store.send(room.id, "two");
   await settle();
-  assertEquals(asked, 1);
+  assertEquals([replies, statuses], [0, 1]);
   assertEquals((await until(store.trail(room.id))).map((m) => m.content), ["one", "two"]);
   const working = product.registry.service(brainService)!.isWorking(room.id);
   const stop = working.subscribe(() => {});
@@ -128,8 +130,42 @@ Deno.test("with no AI on the server the brain stays idle, nothing is saved and i
   product.teardown();
 });
 
+Deno.test("a server that says it has AI but answers 404 to the reply is asked once more at most", async () => {
+  let asked = 0;
+  const client: AiClient = {
+    reply: () => (asked++, Promise.resolve({ status: "unavailable" })),
+    status: () => Promise.resolve({ configured: true, pending: [] }),
+  };
+  const { store, product } = aiRig(client);
+  const room = await store.createRoom("Notes");
+  await settle();
+  await store.send(room.id, "one");
+  await settle();
+  await store.send(room.id, "two");
+  await settle();
+  assertEquals(asked, 1);
+  product.teardown();
+});
+
+Deno.test("the brain forgets the server's pending rooms when nobody is watching", async () => {
+  const brain = new AiBrain(5);
+  brain.connect({ reply: noAiClient.reply, status: () => Promise.resolve({ configured: true, pending: ["r1"] }) });
+  const live = brain.isWorking("r1");
+  const stop = live.subscribe(() => {});
+  await until(live, (working) => working);
+  stop();
+  await settle();
+  const again = brain.isWorking("r1");
+  const stopAgain = again.subscribe(() => {});
+  assertEquals(again.get(), false);
+  stopAgain();
+});
+
 Deno.test("a failed reply tells the person in plain words and saves nothing", async () => {
-  const client: AiClient = { reply: () => Promise.reject(new HttpError(502, "The assistant could not answer. Try again.")), status: noAiClient.status };
+  const client: AiClient = {
+    reply: () => Promise.reject(new HttpError(502, "The assistant could not answer. Try again.")),
+    status: () => Promise.resolve({ configured: true, pending: [] }),
+  };
   const { store, product } = aiRig(client);
   const room = await store.createRoom("Notes");
   await store.send(room.id, "hi");

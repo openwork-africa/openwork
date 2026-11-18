@@ -34,8 +34,11 @@ Data: `<data>/openwork.db` (SQLite, migrations in `crates/ow-store/migrations`) 
 - `GET /api/pull?since=<cursor>` returns `{ "changes": Change[], "cursor": number }`. `since=0` returns everything.
 - `PUT /api/files/:id` (raw bytes, `Content-Type`) returns 204; larger than 25 MB returns 413. `GET /api/files/:id` returns the bytes or 404.
 - `POST /api/ai/reply` with `{ "roomId", "messages": [{ "id", "authorId", "content", "createdAt" }] }` returns `{ "status": "reply", "text" }` or `{ "status": "none" }`. With no
-  AI plugin it returns 404. A reply already pending in the room returns 409; a plugin failure returns 502 or 503 with a plain message and no internals.
-- `GET /api/ai/status` returns `{ "configured": boolean, "pending": roomId[] }`.
+  AI plugin it returns 404. Limits: body 1 MB, room id 128 bytes, 200 messages, 16 KB per message, and no empty id, author or content (400; a larger body is 413). A reply
+  already pending in the room returns 409. A plugin failure returns 502 and a plugin that is unavailable or takes more than 150 seconds returns 503, each with a plain
+  message and no internals.
+- `GET /api/ai/status` returns `{ "configured": boolean, "pending": roomId[] }`. The app makes this one check at boot; when it says not configured the app never calls
+  `/api/ai/reply`. (If the server cannot be reached at boot the app tries a reply when the person sends a message, and stops after a 404.)
 - Any other `/api/*` returns 404 JSON `{ "message": "..." }`.
 - Any other GET serves the static folder, falling back to `index.html`.
 - CORS allows `http://127.0.0.1:47411` and `http://localhost:47411`.

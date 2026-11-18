@@ -188,3 +188,58 @@ async fn a_second_reply_for_a_room_already_replying_is_refused_and_status_lists_
     assert_eq!(first.await.unwrap().0, StatusCode::OK);
     assert_eq!(call(&app, status_request()).await.1["pending"], json!([]));
 }
+
+fn message_with(id: &str, author: &str, content: &str) -> Value {
+    json!({ "id": id, "authorId": author, "content": content, "createdAt": 1 })
+}
+
+async fn refused(body: Value) -> StatusCode {
+    let (app, _data) = app(Some(Ok(Reply::Nothing))).await;
+    call(&app, reply_request(body)).await.0
+}
+
+#[tokio::test]
+async fn caps_and_empty_fields_are_400() {
+    let ok = || message_with("m", "you", "hi");
+    assert_eq!(
+        refused(json!({ "roomId": "r".repeat(128), "messages": [ok()] })).await,
+        StatusCode::OK
+    );
+    assert_eq!(
+        refused(json!({ "roomId": "r".repeat(129), "messages": [ok()] })).await,
+        StatusCode::BAD_REQUEST
+    );
+    assert_eq!(
+        refused(json!({ "roomId": "r", "messages": vec![ok(); 200] })).await,
+        StatusCode::OK
+    );
+    assert_eq!(
+        refused(json!({ "roomId": "r", "messages": vec![ok(); 201] })).await,
+        StatusCode::BAD_REQUEST
+    );
+    let content = |size: usize| message_with("m", "you", &"x".repeat(size));
+    assert_eq!(
+        refused(json!({ "roomId": "r", "messages": [content(16 * 1024)] })).await,
+        StatusCode::OK
+    );
+    assert_eq!(
+        refused(json!({ "roomId": "r", "messages": [content(16 * 1024 + 1)] })).await,
+        StatusCode::BAD_REQUEST
+    );
+    for bad in [
+        message_with("", "you", "hi"),
+        message_with("m", "", "hi"),
+        message_with("m", "you", ""),
+    ] {
+        assert_eq!(
+            refused(json!({ "roomId": "r", "messages": [bad] })).await,
+            StatusCode::BAD_REQUEST
+        );
+    }
+}
+
+#[tokio::test]
+async fn a_body_over_the_limit_is_413() {
+    let huge = json!({ "roomId": "r", "messages": [message_with("m", "you", &"x".repeat(2 * 1024 * 1024))] });
+    assert_eq!(refused(huge).await, StatusCode::PAYLOAD_TOO_LARGE);
+}
