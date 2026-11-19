@@ -90,7 +90,7 @@ Deno.test("a device with no rooms opens into the product's default room, with it
     await flush();
     const [room] = await until(given.store.rooms(), (list) => list.length === 1);
     assertEquals(room.members, [operator]);
-    assertEquals((await until(given.store.trail(room.id))).map((line) => line.content), ["Fake operator joined"]);
+    assertEquals((await until(given.store.trail(room.id))).map((line) => line.content), ["Fake operator was added"]);
     await given.stop();
     const plain = await bootProduct([rooms(), text], "/");
     await flush();

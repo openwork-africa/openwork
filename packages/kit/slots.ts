@@ -71,6 +71,8 @@ export interface TrailBodyValue {
   kind: string;
   matches: (message: MessageView) => boolean;
   render: (message: MessageView, ctx: SlotContext) => ReactNode;
+  /** A system line, drawn centered with its time and no bubble, menu or ticks (a member joining, a transcript mark). */
+  systemLine?: true;
 }
 
 export interface TrailExtraValue {

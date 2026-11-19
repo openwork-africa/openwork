@@ -11,7 +11,7 @@ export const memberName = (member: Member): string => member.name.trim() || (isO
 
 export const operatorsOf = (room: Pick<Room, "members">): Member[] => (room.members ?? []).filter(isOperator);
 
-export const joinedLine = (member: Member): string => `${memberName(member)} joined`;
+export const joinedLine = (member: Member): string => `${memberName(member)} was added`;
 
 /** A room with at most one other in it is one-to-one; when that one is an operator the room is called by its name, else by the room's own name. */
 export function roomTitle(room: Pick<Room, "name" | "members">): string {
