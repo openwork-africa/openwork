@@ -72,17 +72,30 @@ Deno.test("HttpTransport speaks the server's paths and turns a refusal into the 
   ]);
 });
 
-Deno.test("a 502, 503, 504 or a network failure reads as unreachable; a 404 keeps the server's words", async () => {
+Deno.test("each status reads as plain words; a server message always wins", async () => {
   const warn = console.warn;
   console.warn = () => {};
   try {
     const answering = (status: number, body: unknown) =>
       new HttpTransport("", (() => Promise.resolve(Response.json(body, { status }))) as unknown as typeof fetch);
-    for (const status of [502, 503, 504]) {
-      await assertRejects(() => answering(status, {}).pull(0), HttpError, copy.serverUnreachable);
+    const cases: [number, string][] = [
+      [400, copy.badRequest],
+      [401, copy.signedOut],
+      [403, copy.forbidden],
+      [404, copy.notFound],
+      [413, copy.tooLarge],
+      [429, copy.tooManyRequests],
+      [500, copy.serverBroke],
+      [502, copy.serverUnreachable],
+      [503, copy.serverUnreachable],
+      [504, copy.serverTimedOut],
+      [418, copy.requestFailed],
+    ];
+    for (const [status, text] of cases) {
+      await assertRejects(() => answering(status, {}).pull(0), HttpError, text);
+      assertEquals(text.includes(String(status)), false);
     }
     await assertRejects(() => answering(404, { message: "No such room." }).pull(0), HttpError, "No such room.");
-    await assertRejects(() => answering(500, {}).pull(0), HttpError, "Something went wrong. Try again.");
     const down = new HttpTransport("", (() => Promise.reject(new TypeError("ECONNREFUSED"))) as unknown as typeof fetch);
     await assertRejects(() => down.pull(0), NetworkError, copy.serverUnreachable);
     assertEquals(new HttpError(502).status, 502);
