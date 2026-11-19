@@ -18,7 +18,7 @@ Deno.test("the AI client posts the room and its messages and reads the reply and
   assertEquals(await client.status(), { configured: true, pending: ["r1"] });
   assertEquals(seen[0].url, "http://server/api/ai/reply");
   assertEquals(seen[0].init?.method, "POST");
-  assertEquals(JSON.parse(String(seen[0].init?.body)), { roomId: "r1", messages });
+  assertEquals(JSON.parse(String(seen[0].init?.body)), { roomId: "r1", messages, bursts: true });
   assertEquals(seen[1].url, "http://server/api/ai/status");
 });
 
@@ -77,5 +77,19 @@ Deno.test("the client sends the session it keeps and keeps the one the server ha
   assertEquals(kept, "s2");
   assertEquals(await client.reply("r", []), { status: "none" });
   assertEquals(kept, "s2");
-  assertEquals(bodies, [{ roomId: "r", messages: [], session: "old" }, { roomId: "r", messages: [], session: "s1" }, { roomId: "r", messages: [], session: "s2" }]);
+  assertEquals(bodies, [{ roomId: "r", messages: [], session: "old", bursts: true }, { roomId: "r", messages: [], session: "s1", bursts: true }, { roomId: "r", messages: [], session: "s2", bursts: true }]);
+});
+
+Deno.test("burst events are handed over as they arrive, and done carries the bursts and the group", async () => {
+  const client = new HttpAiClient("", () =>
+    Promise.resolve(sse(
+      ["started", {}],
+      ["burst", { text: "One.", index: 0, group: "g1" }],
+      ["burst", { text: "Two?", index: 1, group: "g1" }],
+      ["done", { text: "One. Two?", bursts: ["One.", "Two?"], group: "g1" }],
+    )));
+  const seen: unknown[] = [];
+  const reply = await client.reply("r1", [], { onBurst: (burst) => seen.push(burst) });
+  assertEquals(seen, [{ text: "One.", index: 0, group: "g1" }, { text: "Two?", index: 1, group: "g1" }]);
+  assertEquals(reply, { status: "reply", text: "One. Two?", bursts: ["One.", "Two?"], group: "g1" });
 });

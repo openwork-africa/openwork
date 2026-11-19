@@ -4,6 +4,7 @@ import { noAiClient } from "./aiClient.ts";
 import type { AiClient, AiMessage, AiReply } from "./aiClient.ts";
 import { AiBrain } from "./aiBrain.ts";
 import { aiPlugin, brainService } from "./aiPlugin.ts";
+import { historyOf } from "./aiReplies.ts";
 import { HttpError } from "./errors.ts";
 import { type Live } from "./live.ts";
 import type { TrailMessage } from "./types.ts";
@@ -292,4 +293,71 @@ Deno.test("a message in a room with an operator gets a reply request, and a room
   await settle();
   assertEquals(asked, [withHelper.id, alone.id], "a room that gains an operator is answered from then on");
   product.teardown();
+});
+
+Deno.test("each burst of a reply is saved as its own message in the room, in order, with the group and the index in its data", async () => {
+  const client: AiClient = {
+    reply: (_room, _messages, handlers) => {
+      handlers?.onStarted?.();
+      handlers?.onBurst?.({ text: "One.", index: 0, group: "g1" });
+      handlers?.onBurst?.({ text: "Two?", index: 1, group: "g1" });
+      return Promise.resolve({ status: "reply", text: "One. Two?", bursts: ["One.", "Two?"], group: "g1" });
+    },
+    status: () => Promise.resolve({ configured: true, pending: [] }),
+  };
+  const { store, product } = aiRig(client);
+  const room = await store.createRoom("Notes", withOperator);
+  await store.send(room.id, "hello");
+  const trail = await said(store.trail(room.id), 3);
+  await settle();
+  assertEquals(trail.map((m) => [m.authorId, m.content]), [["you", "hello"], ["assistant", "One."], ["assistant", "Two?"]]);
+  assertEquals(trail.slice(1).map((m) => m.data), [{ burstGroup: "g1", burstIndex: 0 }, { burstGroup: "g1", burstIndex: 1 }]);
+  assertEquals((await said(store.trail(room.id), 3)).length, 3, "bursts already saved are not saved again at done");
+  product.teardown();
+});
+
+Deno.test("a reply that comes whole with a bursts array is saved as those bursts, and one with none as one message", async () => {
+  const replies: AiReply[] = [{ status: "reply", text: "A. B.", bursts: ["A.", "B."], group: "g2" }, { status: "reply", text: "Plain" }];
+  const client: AiClient = { reply: () => Promise.resolve(replies.shift()!), status: () => Promise.resolve({ configured: true, pending: [] }) };
+  const { store, product } = aiRig(client);
+  const room = await store.createRoom("Notes", withOperator);
+  await store.send(room.id, "first");
+  await said(store.trail(room.id), 3);
+  await store.send(room.id, "second");
+  const trail = await said(store.trail(room.id), 5);
+  assertEquals(trail.map((m) => m.content), ["first", "A.", "B.", "second", "Plain"]);
+  assertEquals(trail[4].data, undefined);
+  product.teardown();
+});
+
+const trailOf = (...rows: [string, string, Record<string, unknown>?][]): TrailMessage[] =>
+  rows.map(([id, content, data], at) => ({ id, roomId: "r", authorId: id.startsWith("u") ? "you" : "assistant", content, createdAt: at + 1, updatedAt: at + 1, state: "sent" as const, ...(data && { data }) }));
+
+Deno.test("the history joins consecutive messages of one burst group into one message, in index order, and leaves the rest alone", () => {
+  const history = historyOf(trailOf(
+    ["u1", "hello"],
+    ["a1", "Two?", { burstGroup: "g", burstIndex: 1 }],
+    ["a0", "One.", { burstGroup: "g", burstIndex: 0 }],
+    ["a2", "Three!", { burstGroup: "g", burstIndex: 2 }],
+    ["u2", "ok"],
+    ["a3", "Solo.", { burstGroup: "h", burstIndex: 0 }],
+    ["a4", "Other.", { burstGroup: "i", burstIndex: 0 }],
+    ["a5", "Plain."],
+  ));
+  assertEquals(history.map((m) => [m.id, m.authorId, m.content]), [
+    ["u1", "you", "hello"],
+    ["a0", "assistant", "One. Two? Three!"],
+    ["u2", "you", "ok"],
+    ["a3", "assistant", "Solo."],
+    ["a4", "assistant", "Other."],
+    ["a5", "assistant", "Plain."],
+  ]);
+});
+
+Deno.test("a group split by another message is not joined across it, and failed messages are left out", () => {
+  const history = historyOf([
+    ...trailOf(["a1", "A.", { burstGroup: "g", burstIndex: 0 }], ["u1", "wait"], ["a2", "B.", { burstGroup: "g", burstIndex: 1 }]),
+    { ...trailOf(["u2", "broken"])[0], state: "failed" as const },
+  ]);
+  assertEquals(history.map((m) => m.content), ["A.", "wait", "B."]);
 });

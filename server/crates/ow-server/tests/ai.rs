@@ -319,3 +319,95 @@ async fn a_session_that_is_too_long_is_refused() {
     let (status, _) = call(&app, reply_request(body)).await;
     assert_eq!(status, StatusCode::BAD_REQUEST);
 }
+
+struct Says(&'static str);
+
+impl Assistant for Says {
+    fn reply<'a>(
+        &'a self,
+        _: &'a str,
+        _: &'a [AiMessage],
+        _: Option<&'a str>,
+    ) -> BoxFuture<'a, Result<Answer, AiError>> {
+        let text = self.0.to_string();
+        Box::pin(async move { Ok(Reply::Text(text).into()) })
+    }
+}
+
+async fn says(text: &'static str) -> (Router, TempDir) {
+    let data = tempfile::tempdir().unwrap();
+    let assistant = Arc::new(Says(text)) as Arc<dyn Assistant>;
+    (
+        build_app_with(&config(&data), Some(assistant)).await.unwrap(),
+        data,
+    )
+}
+
+fn bursts_body() -> Value {
+    let mut body = one_message();
+    body["bursts"] = json!(true);
+    body
+}
+
+#[tokio::test]
+async fn a_reply_asked_as_bursts_carries_a_bursts_array_and_a_group() {
+    let (app, _data) = says("Hi there. How are you? Fine!").await;
+    let (status, body) = call(&app, reply_request(bursts_body())).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["bursts"], json!(["Hi there.", "How are you?", "Fine!"]));
+    assert_eq!(body["text"], "Hi there. How are you? Fine!");
+    assert!(body["group"].as_str().is_some_and(|g| !g.is_empty()));
+}
+
+#[tokio::test]
+async fn a_reply_not_asked_as_bursts_has_no_bursts_field() {
+    let (app, _data) = says("Hi there. How are you?").await;
+    let (_, body) = call(&app, reply_request(one_message())).await;
+    assert_eq!(body, json!({ "status": "reply", "text": "Hi there. How are you?" }));
+}
+
+#[tokio::test]
+async fn a_streamed_reply_sends_one_burst_event_per_sentence_with_one_group() {
+    let (app, _data) = says("Hi there. How are you? Fine!").await;
+    let request = Request::post("/api/ai/reply")
+        .header(header::CONTENT_TYPE, "application/json")
+        .header(header::ACCEPT, "text/event-stream")
+        .body(Body::from(bursts_body().to_string()))
+        .unwrap();
+    let response = app.oneshot(request).await.unwrap();
+    let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    let text = String::from_utf8(bytes.to_vec()).unwrap();
+    let bursts: Vec<Value> = text
+        .split("\n\n")
+        .filter_map(|block| block.strip_prefix("event: burst\ndata: "))
+        .map(|data| serde_json::from_str(data).unwrap())
+        .collect();
+    assert_eq!(bursts.len(), 3, "{text}");
+    let texts: Vec<&str> = bursts.iter().map(|b| b["text"].as_str().unwrap()).collect();
+    assert_eq!(texts, ["Hi there.", "How are you?", "Fine!"]);
+    let indexes: Vec<u64> = bursts.iter().map(|b| b["index"].as_u64().unwrap()).collect();
+    assert_eq!(indexes, [0, 1, 2]);
+    assert!(bursts.iter().all(|b| b["group"] == bursts[0]["group"]));
+    let done = text.split("event: done\ndata: ").nth(1).unwrap();
+    let done: Value = serde_json::from_str(done.trim()).unwrap();
+    assert_eq!(done["text"], "Hi there. How are you? Fine!");
+    assert_eq!(done["group"], bursts[0]["group"]);
+    assert_eq!(done["bursts"].as_array().unwrap().len(), 3);
+}
+
+#[tokio::test]
+async fn a_streamed_reply_not_asked_as_bursts_has_no_burst_events() {
+    let (app, _data) = says("Hi there. How are you?").await;
+    let request = Request::post("/api/ai/reply")
+        .header(header::CONTENT_TYPE, "application/json")
+        .header(header::ACCEPT, "text/event-stream")
+        .body(Body::from(one_message().to_string()))
+        .unwrap();
+    let response = app.oneshot(request).await.unwrap();
+    let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    assert!(!String::from_utf8(bytes.to_vec()).unwrap().contains("event: burst"));
+}

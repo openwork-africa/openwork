@@ -23,6 +23,7 @@ export const messageWire = (message: Message): Message =>
     authorId: message.authorId,
     content: message.content,
     kind: message.kind,
+    data: message.data,
     createdAt: message.createdAt,
     updatedAt: message.updatedAt,
     deleted: message.deleted,
