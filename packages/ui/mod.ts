@@ -33,7 +33,7 @@ export {
 export type { Base, Scheme } from "./theme/bases.ts";
 export { readableAccent, swatchOf, themeFor, ThemeProvider, useBase, useChatDensity } from "./theme/ThemeProvider.tsx";
 export { DEFAULT_CHAT_DENSITY, THEME_BY_ID } from "./theme/registry.ts";
-export type { ChatDensity } from "./theme/registry.ts";
+export type { ChatDensity, ThemeEntry } from "./theme/registry.ts";
 export {
   appComponents,
   appTokens,

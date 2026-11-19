@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { resolveThemeToken } from "@astryxdesign/core/theme";
 import { applyBase, BASE_SCHEME, BASES, DEFAULT_BASE, getBase, isBase, setBase, STORAGE_KEY, subscribeBase } from "./bases.ts";
 import { THEME_BY_ID } from "./registry.ts";
-import { readableAccent, themeFor, ThemeProvider } from "./ThemeProvider.tsx";
+import { readableAccent, themeFor, ThemeProvider, useChatDensity } from "./ThemeProvider.tsx";
 import { appTokens, brandFoundations, REPLY_WIDTH, replyWidthPx, shellTokens } from "./themes/openwork/brand.ts";
 
 const COVERS = new URL("../assets/covers/", import.meta.url);
@@ -109,4 +109,18 @@ Deno.test("ThemeProvider renders its children under the default theme", () => {
     ).includes("<p>inside</p>"),
     true,
   );
+});
+
+Deno.test("a theme passed to ThemeProvider replaces the device default, a given base still wins, none changes nothing", () => {
+  const own = { theme: THEME_BY_ID.gothic.theme, scheme: "dark" as const, chat: "balanced" as const };
+  const seen: string[] = [];
+  const Probe = () => {
+    seen.push(useChatDensity());
+    return null;
+  };
+  renderToStaticMarkup(<ThemeProvider theme={own}><Probe /></ThemeProvider>);
+  renderToStaticMarkup(<ThemeProvider theme={own} base="white"><Probe /></ThemeProvider>);
+  renderToStaticMarkup(<ThemeProvider><Probe /></ThemeProvider>);
+  assertEquals(seen, ["balanced", "compact", "compact"]);
+  assertEquals(readableAccent("white", "#d14c2c", own).onAccent === readableAccent("gothic", "#d14c2c").onAccent, true);
 });
