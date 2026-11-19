@@ -9,6 +9,7 @@ use ow_core::{ChangeRepository, CoreError, FileStore};
 use crate::copy;
 use crate::error::ApiError;
 use crate::router::AppState;
+use crate::session::Caller;
 
 pub const FILE_LIMIT: usize = 25 * 1024 * 1024;
 
@@ -18,6 +19,7 @@ fn too_large() -> ApiError {
 
 pub async fn put<R: ChangeRepository, F: FileStore>(
     State(state): State<Arc<AppState<R, F>>>,
+    caller: Caller,
     Path(id): Path<String>,
     request: Request,
 ) -> Result<StatusCode, ApiError> {
@@ -38,15 +40,19 @@ pub async fn put<R: ChangeRepository, F: FileStore>(
     let bytes = axum::body::to_bytes(request.into_body(), FILE_LIMIT)
         .await
         .map_err(|_| too_large())?;
-    state.files.put(&id, &content_type, bytes.to_vec()).await?;
+    state
+        .files
+        .put(&id, &content_type, bytes.to_vec(), caller.owner())
+        .await?;
     Ok(StatusCode::NO_CONTENT)
 }
 
 pub async fn get<R: ChangeRepository, F: FileStore>(
     State(state): State<Arc<AppState<R, F>>>,
+    caller: Caller,
     Path(id): Path<String>,
 ) -> Result<Response, ApiError> {
-    match state.files.get(&id).await {
+    match state.files.get(&id, caller.owner()).await {
         Ok(Some(file)) => {
             let mut headers = HeaderMap::new();
             if let Ok(value) = file.content_type.parse() {

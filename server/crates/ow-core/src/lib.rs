@@ -6,4 +6,4 @@ pub mod sync;
 
 pub use entity::*;
 pub use error::CoreError;
-pub use ports::{valid_file_id, Applied, ChangeRepository, FileStore, StoredFile};
+pub use ports::{valid_file_id, Applied, ChangeRepository, FileStore, StoredFile, GUEST_OWNER};

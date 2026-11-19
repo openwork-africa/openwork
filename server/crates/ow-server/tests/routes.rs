@@ -13,6 +13,9 @@ fn config(dir: &std::path::Path) -> Config {
         data_dir: dir.join("nested"),
         static_dir: dir.join("static"),
         dev_origins: vec![],
+        sessions: false,
+        session_secret: None,
+        session_ttl_secs: 3600,
     }
 }
 

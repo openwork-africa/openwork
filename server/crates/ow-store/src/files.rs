@@ -25,30 +25,46 @@ impl DiskFileStore {
 }
 
 impl FileStore for DiskFileStore {
-    async fn put(&self, id: &str, content_type: &str, bytes: Vec<u8>) -> Result<(), CoreError> {
+    async fn put(
+        &self,
+        id: &str,
+        content_type: &str,
+        bytes: Vec<u8>,
+        owner: &str,
+    ) -> Result<(), CoreError> {
         let path = self.checked_path(id)?;
+        let held: Option<String> = sqlx::query_scalar("SELECT owner FROM file_types WHERE id = ?")
+            .bind(id)
+            .fetch_optional(&self.pool)
+            .await
+            .map_err(storage)?;
+        if held.is_some_and(|holder| holder != owner) {
+            return Err(CoreError::Invalid(copy::FILE_NOT_YOURS.into()));
+        }
         let temporary = self.dir.join(format!("{id}.partial"));
         tokio::fs::write(&temporary, bytes).await.map_err(storage)?;
         tokio::fs::rename(&temporary, &path)
             .await
             .map_err(storage)?;
         sqlx::query(
-            "INSERT INTO file_types (id, content_type) VALUES (?, ?) \
+            "INSERT INTO file_types (id, content_type, owner) VALUES (?, ?, ?) \
              ON CONFLICT (id) DO UPDATE SET content_type = excluded.content_type",
         )
         .bind(id)
         .bind(content_type)
+        .bind(owner)
         .execute(&self.pool)
         .await
         .map_err(storage)?;
         Ok(())
     }
 
-    async fn get(&self, id: &str) -> Result<Option<StoredFile>, CoreError> {
+    async fn get(&self, id: &str, owner: &str) -> Result<Option<StoredFile>, CoreError> {
         let path = self.checked_path(id)?;
         let content_type: Option<String> =
-            sqlx::query_scalar("SELECT content_type FROM file_types WHERE id = ?")
+            sqlx::query_scalar("SELECT content_type FROM file_types WHERE id = ? AND owner = ?")
                 .bind(id)
+                .bind(owner)
                 .fetch_optional(&self.pool)
                 .await
                 .map_err(storage)?;

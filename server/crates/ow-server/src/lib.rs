@@ -5,5 +5,6 @@ mod error;
 mod files;
 mod logging;
 mod router;
+pub mod session;
 mod static_files;
 mod sync;

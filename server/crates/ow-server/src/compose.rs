@@ -9,6 +9,7 @@ use ow_core::CoreError;
 use crate::config::Config;
 use crate::copy;
 use crate::router::{self, AppState};
+use crate::session::Sessions;
 
 /// The public server: no AI plugin, so the AI routes answer as if there were none.
 pub async fn build_app(config: &Config) -> Result<Router, CoreError> {
@@ -36,12 +37,14 @@ pub async fn build_app_with_routes(
             HeaderValue::from_str(origin).map_err(|_| CoreError::Invalid(copy::BAD_ORIGIN.into()))
         })
         .collect::<Result<Vec<_>, _>>()?;
+    let sessions = Sessions::from_config(config)?;
     let store = ow_store::open(&config.data_dir).await?;
     Ok(router::build_with(
         AppState {
             assistant,
             changes: store.changes,
             files: store.files,
+            sessions,
             static_dir: config.static_dir.clone(),
             dev_origins,
         },
