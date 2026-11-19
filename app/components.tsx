@@ -84,7 +84,7 @@ function Showcase(): ReactElement {
           </div>
           <div className="showcase-art cover-art">
             <Standalone>
-              <ContactCover roomId={room.id} background="matcha" />
+              <ContactCover roomId={room.id} background="white" />
             </Standalone>
           </div>
         </article>

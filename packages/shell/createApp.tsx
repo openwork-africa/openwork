@@ -15,6 +15,8 @@ export interface AppOptions extends ShellOptions {
   serviceWorker?: boolean;
   /** The product's own theme and scheme, passed in so the shell imports none; without it the device's base ("white" by default) applies. */
   theme?: ThemeEntry;
+  /** The id of a theme registered with `registerTheme` before this call; `theme` wins when both are given. */
+  themeId?: string;
 }
 
 export interface App {
@@ -41,7 +43,7 @@ export function createApp(options: AppOptions): App {
     if (recoverFromStaleBuild()) event.preventDefault();
   };
   globalThis.addEventListener("vite:preloadError", onPreloadError);
-  root.render(<ShellApp product={shell.product} router={shell.router} regions={shell.regions} drawer={shell.drawer} theme={options.theme} />);
+  root.render(<ShellApp product={shell.product} router={shell.router} regions={shell.regions} drawer={shell.drawer} theme={options.theme} themeId={options.themeId} />);
   const stopWorker = options.serviceWorker ?? !isDev ? startServiceWorker(browserWorkerEnv(shell.product.notices)) : () => {};
   return {
     shell,

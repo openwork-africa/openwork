@@ -106,11 +106,11 @@ Deno.test("picking a theme cover saves the base name as the background", async (
   await act(() => labelled(copy.changeBackground).click());
   await flush();
   const choices = [...document.querySelectorAll(`[aria-label="${copy.backgrounds}"] button, [aria-label="${copy.backgrounds}"] [role="button"]`)];
-  assert(choices.length >= 12, "upload card and eleven theme covers");
-  await act(() => labelled(copy.backgroundOf("Ember")).click());
+  assertEquals(choices.length, 2, "upload card and the one theme cover");
+  await act(() => labelled(copy.backgroundOf("White")).click());
   await flush();
-  assertEquals((await roomNow(store, room.id)).background, "ember");
-  assert(container.querySelector(".profile-cover")?.getAttribute("style")?.includes("/assets/covers/ember.jpg"));
+  assertEquals((await roomNow(store, room.id)).background, "white");
+  assert(container.querySelector(".profile-cover")?.getAttribute("style")?.includes("/assets/covers/white.jpg"));
   await unmount();
 });
 
