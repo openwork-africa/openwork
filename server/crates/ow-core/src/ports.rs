@@ -7,11 +7,26 @@ use crate::error::CoreError;
 pub enum Applied {
     Stored,
     Ignored,
+    /// The record id already belongs to another owner, so nothing was written.
+    Foreign,
 }
 
+/// The owner of data saved without signing in: one shared pool, kept apart from every account.
+pub const GUEST_OWNER: &str = "";
+
 pub trait ChangeRepository: Send + Sync + 'static {
-    fn apply(&self, change: Change) -> impl Future<Output = Result<Applied, CoreError>> + Send;
-    fn pull(&self, since: u64) -> impl Future<Output = Result<PullAnswer, CoreError>> + Send;
+    /// Store a change for `owner`; an id another owner already holds is `Applied::Foreign`.
+    fn apply(
+        &self,
+        change: Change,
+        owner: &str,
+    ) -> impl Future<Output = Result<Applied, CoreError>> + Send;
+    /// The changes after `since` that belong to `owner`.
+    fn pull(
+        &self,
+        since: u64,
+        owner: &str,
+    ) -> impl Future<Output = Result<PullAnswer, CoreError>> + Send;
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -26,8 +41,14 @@ pub trait FileStore: Send + Sync + 'static {
         id: &str,
         content_type: &str,
         bytes: Vec<u8>,
+        owner: &str,
     ) -> impl Future<Output = Result<(), CoreError>> + Send;
-    fn get(&self, id: &str) -> impl Future<Output = Result<Option<StoredFile>, CoreError>> + Send;
+    /// The file, only when `owner` owns it.
+    fn get(
+        &self,
+        id: &str,
+        owner: &str,
+    ) -> impl Future<Output = Result<Option<StoredFile>, CoreError>> + Send;
 }
 
 pub fn valid_file_id(id: &str) -> bool {

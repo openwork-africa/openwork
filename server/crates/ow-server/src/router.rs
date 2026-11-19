@@ -10,12 +10,14 @@ use ow_core::{ChangeRepository, FileStore};
 use tower_http::cors::CorsLayer;
 
 use crate::error::ApiError;
-use crate::{files, logging, static_files, sync};
+use crate::session::Sessions;
+use crate::{files, logging, session, static_files, sync};
 
 pub struct AppState<R, F> {
     pub assistant: Option<Arc<dyn Assistant>>,
     pub changes: R,
     pub files: F,
+    pub sessions: Option<Sessions>,
     pub static_dir: PathBuf,
     pub dev_origins: Vec<HeaderValue>,
 }
@@ -32,11 +34,13 @@ pub fn build<R: ChangeRepository, F: FileStore>(state: AppState<R, F>) -> Router
     let cors = CorsLayer::new()
         .allow_origin(state.dev_origins.clone())
         .allow_methods([Method::GET, Method::POST, Method::PUT, Method::OPTIONS])
-        .allow_headers([header::CONTENT_TYPE]);
+        .allow_headers([header::CONTENT_TYPE])
+        .allow_credentials(true);
     let assistant = state.assistant.clone();
     Router::new()
         .route("/healthz", get(healthz))
         .merge(ow_ai::router(assistant))
+        .merge(session::routes::<R, F>())
         .route("/api/push", post(sync::push::<R, F>))
         .route("/api/pull", get(sync::pull::<R, F>))
         .route(

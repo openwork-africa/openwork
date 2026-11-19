@@ -25,4 +25,21 @@ pub struct Config {
         default_values = ["http://127.0.0.1:47411", "http://localhost:47411"]
     )]
     pub dev_origins: Vec<String>,
+    /// Check the `openwork_session` cookie and keep each signed-in user's data apart.
+    #[arg(long = "sessions", env = "OPENWORK_SESSIONS", default_value_t = false)]
+    pub sessions: bool,
+    /// The secret that signs session tokens; the product that signs people in must use the same one.
+    #[arg(
+        long = "session-secret",
+        env = "OPENWORK_SESSION_SECRET",
+        hide_env_values = true
+    )]
+    pub session_secret: Option<String>,
+    /// How long a session token stays valid, in seconds (default 30 days).
+    #[arg(
+        long = "session-ttl",
+        env = "OPENWORK_SESSION_TTL",
+        default_value_t = 2_592_000
+    )]
+    pub session_ttl_secs: u64,
 }

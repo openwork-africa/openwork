@@ -35,6 +35,9 @@ fn config(data: &TempDir) -> Config {
         data_dir: data.path().join("nested"),
         static_dir: data.path().join("static"),
         dev_origins: vec![],
+        sessions: false,
+        session_secret: None,
+        session_ttl_secs: 60,
     }
 }
 
@@ -338,7 +341,9 @@ async fn says(text: &'static str) -> (Router, TempDir) {
     let data = tempfile::tempdir().unwrap();
     let assistant = Arc::new(Says(text)) as Arc<dyn Assistant>;
     (
-        build_app_with(&config(&data), Some(assistant)).await.unwrap(),
+        build_app_with(&config(&data), Some(assistant))
+            .await
+            .unwrap(),
         data,
     )
 }
@@ -354,7 +359,10 @@ async fn a_reply_asked_as_bursts_carries_a_bursts_array_and_a_group() {
     let (app, _data) = says("Hi there. How are you? Fine!").await;
     let (status, body) = call(&app, reply_request(bursts_body())).await;
     assert_eq!(status, StatusCode::OK);
-    assert_eq!(body["bursts"], json!(["Hi there.", "How are you?", "Fine!"]));
+    assert_eq!(
+        body["bursts"],
+        json!(["Hi there.", "How are you?", "Fine!"])
+    );
     assert_eq!(body["text"], "Hi there. How are you? Fine!");
     assert!(body["group"].as_str().is_some_and(|g| !g.is_empty()));
 }
@@ -363,7 +371,10 @@ async fn a_reply_asked_as_bursts_carries_a_bursts_array_and_a_group() {
 async fn a_reply_not_asked_as_bursts_has_no_bursts_field() {
     let (app, _data) = says("Hi there. How are you?").await;
     let (_, body) = call(&app, reply_request(one_message())).await;
-    assert_eq!(body, json!({ "status": "reply", "text": "Hi there. How are you?" }));
+    assert_eq!(
+        body,
+        json!({ "status": "reply", "text": "Hi there. How are you?" })
+    );
 }
 
 #[tokio::test]
@@ -387,7 +398,10 @@ async fn a_streamed_reply_sends_one_burst_event_per_sentence_with_one_group() {
     assert_eq!(bursts.len(), 3, "{text}");
     let texts: Vec<&str> = bursts.iter().map(|b| b["text"].as_str().unwrap()).collect();
     assert_eq!(texts, ["Hi there.", "How are you?", "Fine!"]);
-    let indexes: Vec<u64> = bursts.iter().map(|b| b["index"].as_u64().unwrap()).collect();
+    let indexes: Vec<u64> = bursts
+        .iter()
+        .map(|b| b["index"].as_u64().unwrap())
+        .collect();
     assert_eq!(indexes, [0, 1, 2]);
     assert!(bursts.iter().all(|b| b["group"] == bursts[0]["group"]));
     let done = text.split("event: done\ndata: ").nth(1).unwrap();
@@ -409,5 +423,7 @@ async fn a_streamed_reply_not_asked_as_bursts_has_no_burst_events() {
     let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
         .await
         .unwrap();
-    assert!(!String::from_utf8(bytes.to_vec()).unwrap().contains("event: burst"));
+    assert!(!String::from_utf8(bytes.to_vec())
+        .unwrap()
+        .contains("event: burst"));
 }

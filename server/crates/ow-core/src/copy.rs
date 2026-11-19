@@ -4,3 +4,4 @@ pub const IDS_DIFFER: &str = "The change id and the record id differ.";
 pub const TIMES_DIFFER: &str = "The change time and the record time differ.";
 pub const NOT_SAVED: &str = "The server could not save this change. Try again.";
 pub const UNKNOWN_KIND: &str = "unknown record kind";
+pub const NOT_YOURS: &str = "This id already belongs to another account.";

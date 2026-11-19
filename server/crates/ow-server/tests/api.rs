@@ -25,6 +25,9 @@ async fn harness() -> Harness {
             "http://127.0.0.1:47411".into(),
             "http://localhost:47411".into(),
         ],
+        sessions: false,
+        session_secret: None,
+        session_ttl_secs: 60,
     };
     Harness {
         app: build_app(&config).await.unwrap(),

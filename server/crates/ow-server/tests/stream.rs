@@ -57,6 +57,9 @@ async fn app(assistant: Arc<dyn Assistant>) -> (Router, tempfile::TempDir) {
         data_dir: data.path().join("nested"),
         static_dir: data.path().join("static"),
         dev_origins: vec![],
+        sessions: false,
+        session_secret: None,
+        session_ttl_secs: 60,
     };
     (
         build_app_with(&config, Some(assistant)).await.unwrap(),
@@ -280,5 +283,8 @@ async fn bursts_are_cut_across_deltas_and_sent_as_each_sentence_ends() {
     assert_eq!(bursts, ["One.", "Two, e.g. this.", "Last"], "{text}");
     // The first burst is sent before the delta that finishes the next one arrives.
     assert!(text.find("event: burst").unwrap() < text.find("{\"text\":\"o, e.\"}").unwrap());
-    assert!(text.contains("\"text\":\"One. Two, e.g. this. Last\""), "{text}");
+    assert!(
+        text.contains("\"text\":\"One. Two, e.g. this. Last\""),
+        "{text}"
+    );
 }
