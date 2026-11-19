@@ -21,6 +21,15 @@ pub async fn build_app_with(
     config: &Config,
     assistant: Option<Arc<dyn Assistant>>,
 ) -> Result<Router, CoreError> {
+    build_app_with_routes(config, assistant, None).await
+}
+
+/// `build_app_with` plus a product's own routes, merged in beside the built-in ones.
+pub async fn build_app_with_routes(
+    config: &Config,
+    assistant: Option<Arc<dyn Assistant>>,
+    extra: Option<Router<()>>,
+) -> Result<Router, CoreError> {
     let dev_origins = config
         .dev_origins
         .iter()
@@ -30,14 +39,17 @@ pub async fn build_app_with(
         .collect::<Result<Vec<_>, _>>()?;
     let sessions = Sessions::from_config(config)?;
     let store = ow_store::open(&config.data_dir).await?;
-    Ok(router::build(AppState {
-        assistant,
-        changes: store.changes,
-        files: store.files,
-        sessions,
-        static_dir: config.static_dir.clone(),
-        dev_origins,
-    }))
+    Ok(router::build_with(
+        AppState {
+            assistant,
+            changes: store.changes,
+            files: store.files,
+            sessions,
+            static_dir: config.static_dir.clone(),
+            dev_origins,
+        },
+        extra,
+    ))
 }
 
 pub async fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
@@ -49,7 +61,16 @@ pub async fn run_with(
     config: Config,
     assistant: Option<Arc<dyn Assistant>>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let app = build_app_with(&config, assistant).await?;
+    run_with_routes(config, assistant, None).await
+}
+
+/// `run_with` plus a product's own routes.
+pub async fn run_with_routes(
+    config: Config,
+    assistant: Option<Arc<dyn Assistant>>,
+    extra: Option<Router<()>>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let app = build_app_with_routes(&config, assistant, extra).await?;
     let address: SocketAddr = format!("{}:{}", config.host, config.port).parse()?;
     let listener = tokio::net::TcpListener::bind(address).await?;
     tracing::info!("openwork-server listening on http://{address}");

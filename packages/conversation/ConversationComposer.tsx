@@ -1,7 +1,9 @@
 import { type KeyboardEvent, type ReactElement, useEffect, useRef, useState } from "react";
-import { composerAction, composerAddMenu, composerBeforeSend, composerTray, useCtx, useSlot } from "@openwork/kit";
+import { composerAction, composerAddMenu, composerBeforeSend, composerNotice, composerTray, useCtx, useSlot } from "@openwork/kit";
 import { devicePorts } from "@openwork/store";
 import { ChatComposer, ChatComposerDrawer, ChatComposerInput, type ChatComposerInputHandle, ChatSendButton } from "@astryxdesign/core/Chat";
+import { Banner } from "@astryxdesign/core/Banner";
+import { Button } from "@astryxdesign/core/Button";
 import { Icon } from "@astryxdesign/core/Icon";
 import { IconButton } from "@astryxdesign/core/IconButton";
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
@@ -16,7 +18,7 @@ import { useSend } from "./useSend.ts";
 /**
  * The text field and Send. `composer.beforeSend` handlers run on the draft before the store sends it; `composer.action`
  * puts buttons at the start or end; with `composer.addMenu` contributions there is a + that opens the menu and the
- * `composer.tray` an item opens. With none of them it is the field and Send.
+ * `composer.tray` an item opens; each `composer.notice` is drawn just above it. With none of them it is the field and Send.
  */
 export function ConversationComposer({ roomId }: { roomId: string }): ReactElement {
   const ctx = useCtx();
@@ -25,6 +27,7 @@ export function ConversationComposer({ roomId }: { roomId: string }): ReactEleme
   const isPhone = useMediaQuery(PHONE_QUERY);
   const input = useRef<ChatComposerInputHandle | null>(null);
   const addItems = useSlot(composerAddMenu, ctx);
+  const notices = useSlot(composerNotice, ctx);
   const trays = useSlot(composerTray, ctx);
   const actions = useSlot(composerAction, ctx);
   const handlers = useSlot(composerBeforeSend, ctx);
@@ -65,7 +68,7 @@ export function ConversationComposer({ roomId }: { roomId: string }): ReactEleme
     ));
   const field = <ChatComposerInput handleRef={input} maxRows={6} hasHistory={false} onKeyDown={onKeyDown} />;
 
-  return (
+  const composer = (
     <ChatComposer
       value={value}
       onChange={setValue}
@@ -88,5 +91,21 @@ export function ConversationComposer({ roomId }: { roomId: string }): ReactEleme
         )
         : field}
     />
+  );
+  if (notices.length === 0) return composer;
+  return (
+    <VStack gap={2}>
+      {notices.map((notice) => (
+        <Banner
+          key={notice.id}
+          status="info"
+          title={notice.label}
+          description={notice.description}
+          icon={notice.icon}
+          endContent={<Button label={notice.actionLabel} variant="secondary" size="sm" onClick={() => notice.onAction(ctx)} />}
+        />
+      ))}
+      {composer}
+    </VStack>
   );
 }

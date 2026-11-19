@@ -31,13 +31,21 @@ async fn unknown_api() -> ApiError {
 }
 
 pub fn build<R: ChangeRepository, F: FileStore>(state: AppState<R, F>) -> Router {
+    build_with(state, None)
+}
+
+/// `build` with a product's own routes merged in beside the built-in ones.
+pub fn build_with<R: ChangeRepository, F: FileStore>(
+    state: AppState<R, F>,
+    extra: Option<Router<()>>,
+) -> Router {
     let cors = CorsLayer::new()
         .allow_origin(state.dev_origins.clone())
         .allow_methods([Method::GET, Method::POST, Method::PUT, Method::OPTIONS])
         .allow_headers([header::CONTENT_TYPE])
         .allow_credentials(true);
     let assistant = state.assistant.clone();
-    Router::new()
+    let app = Router::new()
         .route("/healthz", get(healthz))
         .merge(ow_ai::router(assistant))
         .merge(session::routes::<R, F>())
@@ -51,7 +59,11 @@ pub fn build<R: ChangeRepository, F: FileStore>(state: AppState<R, F>) -> Router
         .route("/api/", get(unknown_api))
         .route("/api/{*rest}", axum::routing::any(unknown_api))
         .fallback(get(static_files::serve::<R, F>))
-        .layer(cors)
+        .with_state(Arc::new(state));
+    let app = match extra {
+        Some(extra) => app.merge(extra),
+        None => app,
+    };
+    app.layer(cors)
         .layer(middleware::from_fn(logging::log_request))
-        .with_state(Arc::new(state))
 }
