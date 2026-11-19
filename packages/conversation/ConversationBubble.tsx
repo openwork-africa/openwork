@@ -1,7 +1,7 @@
 import { Fragment, memo, type ReactElement } from "react";
 import type { Placed, SlotContext, TrailActionValue, TrailBodyValue, TrailExtraValue } from "@openwork/kit";
 import { DEFAULT_KIND, type MessageAnswer, type TrailMessage } from "@openwork/store";
-import { ChatMessage as AxMessage, ChatMessageBubble } from "@astryxdesign/core/Chat";
+import { ChatMessage as AxMessage, ChatMessageBubble, ChatSystemMessage } from "@astryxdesign/core/Chat";
 import { ContextMenu } from "@astryxdesign/core/ContextMenu";
 import { Icon } from "@astryxdesign/core/Icon";
 import { IconButton } from "@astryxdesign/core/IconButton";
@@ -41,6 +41,13 @@ function Stamp({ message, answer }: { message: TrailMessage; answer?: MessageAns
 function Bubble({ message, group, ctx, bodies, extras, actions, onRetry, answer }: BubbleProps): ReactElement {
   const isFailed = message.state === "failed";
   const body = bodies.find((candidate) => candidate.matches(message));
+  if (body?.systemLine === true) {
+    return (
+      <ChatSystemMessage id={`msg-${message.id}`}>
+        {body.render(message, ctx)} · <Timestamp value={message.createdAt} format={timeFormatOf(message.createdAt, Date.now())} size="xsm" hasTooltip={false} />
+      </ChatSystemMessage>
+    );
+  }
   const words = body
     ? body.render(message, ctx)
     : <Text as="p">{(message.kind ?? DEFAULT_KIND) === DEFAULT_KIND ? message.content : copy.unsupportedKind}</Text>;
