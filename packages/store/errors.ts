@@ -8,12 +8,15 @@ export class NetworkError extends Error {
   }
 }
 
-/** The server answered, with something other than success. */
+/** Statuses that mean the server (or the proxy in front of it) is not there right now. */
+const unreachableStatuses: readonly number[] = [502, 503, 504];
+
+/** The server answered, with something other than success. `message` is the server's own plain words; with none, a 502, 503 or 504 reads as unreachable and anything else as a generic failure; the exact status stays on `status`. */
 export class HttpError extends Error {
   readonly status: number;
 
-  constructor(status: number, message: string = copy.serverRefused(status)) {
-    super(message);
+  constructor(status: number, message?: string) {
+    super(message ?? (unreachableStatuses.includes(status) ? copy.serverUnreachable : copy.serverRefused(status)));
     this.name = "HttpError";
     this.status = status;
   }

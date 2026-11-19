@@ -1,8 +1,9 @@
 export const copy = {
   syncFailed: "Could not sync your changes. Please try again.",
   offline: "You're offline. Your changes are saved on this device and will go through when you're back.",
-  offlineNow: "No connection right now.",
-  serverRefused: (status: number) => `The server answered ${status}.`,
+  offlineNow: "We can't reach the server right now. Retrying…",
+  serverUnreachable: "We can't reach the server right now. Retrying…",
+  serverRefused: (_status: number) => "Something went wrong. Try again.",
   noRoom: (id: string) => `There is no room ${id} on this device.`,
   noReply: "The assistant could not answer. Try again.",
   missingPorts: "The product was composed without the device ports.",
