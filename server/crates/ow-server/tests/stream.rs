@@ -21,14 +21,16 @@ impl Assistant for Scripted {
         &'a self,
         room_id: &'a str,
         messages: &'a [AiMessage],
-    ) -> ow_ai::BoxFuture<'a, Result<ow_ai::Reply, AiError>> {
-        Box::pin(ow_ai::collect(self.stream(room_id, messages)))
+        session: Option<&'a str>,
+    ) -> ow_ai::BoxFuture<'a, Result<ow_ai::Answer, AiError>> {
+        Box::pin(ow_ai::collect(self.stream(room_id, messages, session)))
     }
 
     fn stream<'a>(
         &'a self,
         _: &'a str,
         _: &'a [AiMessage],
+        _: Option<&'a str>,
     ) -> BoxStream<'a, Result<AiEvent, AiError>> {
         Box::pin(stream::unfold(&self.0, |held| async move {
             let mut taken = held.lock().await.take()?;
@@ -211,8 +213,11 @@ async fn an_assistant_with_only_reply_still_streams_and_a_plain_request_stays_js
             &'a self,
             _: &'a str,
             messages: &'a [AiMessage],
-        ) -> ow_ai::BoxFuture<'a, Result<ow_ai::Reply, AiError>> {
-            Box::pin(async move { Ok(ow_ai::Reply::Text(format!("{} messages", messages.len()))) })
+            _: Option<&'a str>,
+        ) -> ow_ai::BoxFuture<'a, Result<ow_ai::Answer, AiError>> {
+            Box::pin(async move {
+                Ok(ow_ai::Reply::Text(format!("{} messages", messages.len())).into())
+            })
         }
     }
     let (app, _data) = app(Arc::new(Plain)).await;

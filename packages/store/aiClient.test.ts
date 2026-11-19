@@ -1,5 +1,6 @@
 import { assert, assertEquals } from "@std/assert";
 import { HttpAiClient } from "./aiClient.ts";
+import type { AiSession } from "./aiClient.ts";
 import type { AiMessage } from "./aiClient.ts";
 import { HttpError } from "./errors.ts";
 
@@ -59,4 +60,22 @@ Deno.test("a stream that ends with no done is a failure, and a done with no text
   assert(await cut.reply("r1", []).catch((e) => e) instanceof Error);
   const empty = new HttpAiClient("", () => Promise.resolve(sse(["started", {}], ["done", { text: "" }])));
   assertEquals(await empty.reply("r1", []), { status: "none" });
+});
+
+Deno.test("the client sends the session it keeps and keeps the one the server hands back, from JSON and from a stream", async () => {
+  let kept: string | undefined = "old";
+  const session: AiSession = { get: () => kept, set: (value) => (kept = value) };
+  const bodies: unknown[] = [];
+  const answers = [json(200, { status: "reply", text: "Hi", session: "s1" }), sse(["started", {}], ["done", { text: "Yo", session: "s2" }]), json(200, { status: "none" })];
+  const client = new HttpAiClient("", (_input, init) => {
+    bodies.push(JSON.parse(String(init?.body)));
+    return Promise.resolve(answers.shift()!);
+  }, session);
+  assertEquals(await client.reply("r", []), { status: "reply", text: "Hi" });
+  assertEquals(kept, "s1");
+  assertEquals(await client.reply("r", []), { status: "reply", text: "Yo" });
+  assertEquals(kept, "s2");
+  assertEquals(await client.reply("r", []), { status: "none" });
+  assertEquals(kept, "s2");
+  assertEquals(bodies, [{ roomId: "r", messages: [], session: "old" }, { roomId: "r", messages: [], session: "s1" }, { roomId: "r", messages: [], session: "s2" }]);
 });
