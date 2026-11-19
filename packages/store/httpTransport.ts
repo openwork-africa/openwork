@@ -5,6 +5,7 @@ import { pushBodyWire } from "./wire.ts";
 
 async function failure(response: Response): Promise<HttpError> {
   const body = await response.json().catch(() => undefined) as { message?: string } | undefined;
+  console.warn(`Openwork server answered ${response.status} ${response.url}`);
   return new HttpError(response.status, body?.message);
 }
 
@@ -23,6 +24,7 @@ export class HttpTransport implements Transport {
     try {
       response = await this.#fetch(`${this.#baseUrl}${path}`, init);
     } catch (error) {
+      console.warn(`Openwork server not reachable: ${path}`, error);
       throw new NetworkError(error);
     }
     return response;
