@@ -1,8 +1,8 @@
 import { definePlugin, type Plugin, provideCommand, type SlotContext } from "@openwork/kit";
-import { devicePorts, type Member } from "@openwork/store";
+import { devicePorts, type Member, type Room } from "@openwork/store";
 import { roomPath } from "@openwork/kit";
 import { copy } from "./copy.ts";
-import { createRoomCommand, deleteRoomCommand } from "./services.ts";
+import { createRoomCommand, deleteRoomCommand, openDefaultRoomCommand } from "./services.ts";
 
 const ROOT = "/";
 const UNDO_HOLD_MS = 8_000;
@@ -12,12 +12,23 @@ export interface RoomsOptions {
   defaultRoom?: { members: readonly Member[] };
 }
 
+/** The room that holds every given member, the oldest when several do (two devices that each made one agree on it); undefined when none does. */
+export const defaultRoomOf = (rooms: readonly Room[], members: readonly Member[]): Room | undefined =>
+  [...rooms]
+    .filter((room) => members.every((member) => room.members?.some((each) => each.id === member.id)))
+    .sort((a, b) => a.createdAt - b.createdAt || a.id.localeCompare(b.id))[0];
+
 /** The rooms of this device: the `rooms.create` and `rooms.delete` commands. The list that shows them is the circle plugin's. */
 export function rooms(options: RoomsOptions = {}): Plugin {
   const create = async (ctx: SlotContext, createOptions?: { first?: boolean }): Promise<void> => {
     const members = createOptions?.first ? options.defaultRoom?.members : undefined;
     const room = await devicePorts(ctx.ports).store.createRoom(copy.newRoomName, members && { members: [...members] });
     (ctx.replace ?? ctx.navigate)(roomPath(room.id));
+  };
+  const openDefault = async (ctx: SlotContext, list: readonly Room[], opened?: { navigate?: boolean }): Promise<void> => {
+    const members = options.defaultRoom?.members ?? [];
+    const room = defaultRoomOf(list, members) ?? await devicePorts(ctx.ports).store.createRoom(copy.newRoomName, { members: [...members] });
+    if (opened?.navigate !== false) (ctx.replace ?? ctx.navigate)(roomPath(room.id));
   };
   const remove = async (ctx: SlotContext, id: string): Promise<void> => {
     const { store } = devicePorts(ctx.ports);
@@ -43,6 +54,7 @@ export function rooms(options: RoomsOptions = {}): Plugin {
     contributes: [],
     provides: [
       provideCommand(createRoomCommand, create),
+      ...(options.defaultRoom ? [provideCommand(openDefaultRoomCommand, openDefault)] : []),
       provideCommand(deleteRoomCommand, remove),
     ],
   });

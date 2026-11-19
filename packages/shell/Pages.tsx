@@ -1,7 +1,7 @@
-import { type ComponentType, lazy, type ReactElement, Suspense, useEffect, useMemo, useRef } from "react";
+import { type ComponentType, lazy, type ReactElement, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { commandKey, type PageValue, runCommand, shellPage, useCtx, useSlot } from "@openwork/kit";
-import { devicePorts, useRoom, useRooms, useSyncStatus } from "@openwork/store";
+import { devicePorts, type Room, useRoom, useRooms, useSyncStatus } from "@openwork/store";
 import { ErrorBoundary, Loading } from "@openwork/ui";
 import { copy } from "./copy.ts";
 import { Frame, type Regions } from "./Frame.tsx";
@@ -12,6 +12,9 @@ import { useRegions } from "./useRegions.ts";
 
 /** Provided by the rooms plugin when the product has it; the frame only runs it by name, to open into a first room. */
 const createRoom = commandKey<[options?: { first?: boolean }], Promise<void>>("rooms.create");
+
+/** Provided by the rooms plugin when the product names a default room: the shell opens (or makes) it once, when the app opens. */
+const openDefaultRoom = commandKey<[rooms: readonly Room[], options?: { navigate?: boolean }], Promise<void>>("rooms.openDefault");
 
 const lazies = new WeakMap<PageValue, ComponentType>();
 
@@ -41,16 +44,26 @@ function RoomRoutes({ given, route }: { given: Regions; route: Route }): ReactEl
   useEffect(() => drawerState?.setDrawer(drawerFor(route, noRooms, regions)), [route.name, roomId, noRooms, drawerState, regions]);
   const isSettled = useSyncStatus(devicePorts(ctx.ports).store) !== "catchingUp";
   const isCreating = useRef(false);
+  // A product with a default room opens into it once, after the first pull: the oldest room that holds its members, made when there is none.
+  const hasDefault = !!ctx.commands[openDefaultRoom.name];
+  const [booted, setBooted] = useState(!hasDefault);
+  const isOpening = useRef(false);
+  useEffect(() => {
+    if (booted || !rooms || !isSettled || isOpening.current) return;
+    isOpening.current = true;
+    const landing = route.name === "home" || rooms.length === 0;
+    void (runCommand(ctx, openDefaultRoom, rooms, { navigate: landing }) ?? Promise.resolve()).finally(() => setBooted(true));
+  }, [booted, rooms, isSettled]);
   useEffect(() => {
     if (!noRooms) isCreating.current = false;
-    else if (create && isSettled && !isCreating.current) {
+    else if (create && !hasDefault && isSettled && !isCreating.current) {
       isCreating.current = true;
       void create({ first: true });
     }
   }, [noRooms, isSettled]);
   useEffect(() => {
-    if (route.name === "home" && latest) router.replace(roomPath(latest));
-  }, [route.name, latest]);
+    if (route.name === "home" && latest && booted) router.replace(roomPath(latest));
+  }, [route.name, latest, booted]);
 
   useEffect(() => {
     if (!isMissing) return;
