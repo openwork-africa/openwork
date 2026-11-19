@@ -55,6 +55,25 @@ Deno.test("trail.body: the first match by order draws the message, a message not
   await unmount();
 });
 
+Deno.test("trail.body with systemLine draws a centered status line with its time, not a bubble", async () => {
+  const line = contribute(trailBody, {
+    id: "joined",
+    order: 10,
+    kind: "member.added",
+    matches: (message) => message.content.startsWith("Sam"),
+    render: (message) => message.content,
+    systemLine: true,
+  });
+  const { container, unmount } = await open([plugin([line])], ["Sam was added", "hello"]);
+  const drawn = [...container.querySelectorAll('[id^="msg-"]')];
+  assertEquals(drawn.length, 2);
+  const [systemLine, bubble] = drawn;
+  assertEquals(systemLine.getAttribute("role"), "status", "the matching message draws as a system message");
+  assert((systemLine.textContent ?? "").includes("Sam was added ·"), "content with the time separator, like the legacy status line");
+  assertEquals(bubble.getAttribute("role"), null, "anything else still draws as a bubble");
+  await unmount();
+});
+
 Deno.test("trail.extra draws under the body, in order", async () => {
   const extra = (id: string, order: number) => contribute(trailExtra, { id, order, render: (message) => <p data-extra={id}>{`${id}:${message.content}`}</p> });
   const { container, unmount } = await open([plugin([extra("b", 20), extra("a", 10)])], ["hello"]);
