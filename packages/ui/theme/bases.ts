@@ -2,23 +2,12 @@ export type Scheme = "light" | "dark" | "system";
 
 export const BASE_SCHEME = {
   white: "light",
-  midnight: "dark",
-  nightshade: "dark",
-  ember: "dark",
-  neutral: "system",
-  butter: "system",
-  chocolate: "system",
-  gothic: "dark",
-  matcha: "system",
-  stone: "system",
-  y2k: "system",
 } as const satisfies Record<string, Scheme>;
 
 export type Base = keyof typeof BASE_SCHEME;
 export const BASES = Object.keys(BASE_SCHEME) as Base[];
-const LEADING_BASES: readonly Base[] = ["white", "midnight", "nightshade", "ember"];
-export const THEME_BASES: readonly Base[] = [...LEADING_BASES, ...BASES.filter((base) => !LEADING_BASES.includes(base))];
-const BASE_LABELS: Partial<Record<Base, string>> = { white: "White", y2k: "Y2K" };
+export const THEME_BASES: readonly Base[] = BASES;
+const BASE_LABELS: Partial<Record<Base, string>> = { white: "White" };
 export const baseLabel = (base: Base): string => BASE_LABELS[base] ?? base.charAt(0).toUpperCase() + base.slice(1);
 
 export const DEFAULT_BASE: Base = "white";

@@ -1,5 +1,6 @@
 use std::collections::BTreeSet;
 use std::convert::Infallible;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
@@ -17,13 +18,15 @@ use futures_util::StreamExt;
 use tokio::sync::mpsc;
 use tokio::time::Instant;
 
-use crate::assistant::{AiError, AiEvent, AiMessage, Assistant, Reply};
+use crate::assistant::{AiError, AiEvent, AiMessage, Answer, Assistant, Reply};
+use crate::burst::{join_bursts, split_bursts};
 use crate::copy;
 
 pub const MAX_BODY_BYTES: usize = 1024 * 1024;
 pub const MAX_ROOM_ID_BYTES: usize = 128;
 pub const MAX_MESSAGES: usize = 200;
 pub const MAX_CONTENT_BYTES: usize = 16 * 1024;
+pub const MAX_SESSION_BYTES: usize = 4 * 1024;
 /// How long the assistant has to answer before the request gives up.
 pub const REPLY_TIMEOUT: Duration = Duration::from_secs(150);
 
@@ -52,6 +55,22 @@ impl Drop for PendingRoom {
 struct ReplyBody {
     room_id: String,
     messages: Vec<AiMessage>,
+    /// What the browser kept from an earlier reply, sent back as it was. Opaque to the server.
+    #[serde(default)]
+    session: Option<String>,
+    /// Ask for the reply as bursts: short messages, one per sentence. Off unless the browser asks.
+    #[serde(default)]
+    bursts: bool,
+}
+
+/// A group id for the bursts of one reply: the time and a counter, so two replies never share one.
+fn new_group() -> String {
+    static COUNTER: AtomicU64 = AtomicU64::new(0);
+    let nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_nanos())
+        .unwrap_or(0);
+    format!("burst-{nanos:x}-{:x}", COUNTER.fetch_add(1, Ordering::Relaxed))
 }
 
 fn refusal(status: StatusCode, message: &str) -> Response {
@@ -91,6 +110,13 @@ fn invalid(body: &ReplyBody) -> Option<&'static str> {
     }
     if body.room_id.len() > MAX_ROOM_ID_BYTES {
         return Some(copy::ROOM_ID_TOO_LONG);
+    }
+    if body
+        .session
+        .as_ref()
+        .is_some_and(|s| s.len() > MAX_SESSION_BYTES)
+    {
+        return Some(copy::SESSION_TOO_LONG);
     }
     if body.messages.len() > MAX_MESSAGES {
         return Some(copy::TOO_MANY_MESSAGES);
@@ -153,6 +179,31 @@ async fn emit(events: &Events, name: &str, data: Value) -> bool {
     events.send(sse(name, data)).await.is_ok()
 }
 
+/// The bursts cut so far from a streaming reply: the text not yet ended by a stop, and the bursts already sent.
+#[derive(Default)]
+struct Bursting {
+    pending: String,
+    sent: Vec<String>,
+}
+
+impl Bursting {
+    /// Adds a piece of text and sends each burst it completes as a `burst` event ({text, index, group}). With `finished`,
+    /// whatever is left is the last burst. False when the browser has gone.
+    async fn feed(&mut self, events: &Events, group: &str, piece: &str, finished: bool) -> bool {
+        self.pending.push_str(piece);
+        let split = split_bursts(&self.pending, finished);
+        self.pending = split.rest;
+        for text in split.complete {
+            let index = self.sent.len();
+            if !emit(events, "burst", json!({ "text": text, "index": index, "group": group })).await {
+                return false;
+            }
+            self.sent.push(text);
+        }
+        true
+    }
+}
+
 /// Feeds the assistant's events to the open stream until it ends, fails, times out or the browser leaves. The room's
 /// claim is held by this task, so it clears however the stream ends.
 async fn pump(
@@ -163,9 +214,12 @@ async fn pump(
     _held: PendingRoom,
 ) {
     let deadline = Instant::now() + timeout;
-    let mut incoming = assistant.stream(&body.room_id, &body.messages);
+    let mut incoming = assistant.stream(&body.room_id, &body.messages, body.session.as_deref());
     let mut text = String::new();
     let mut started = false;
+    let mut session: Option<String> = None;
+    let group = body.bursts.then(new_group);
+    let mut cut = Bursting::default();
     loop {
         let next = tokio::select! {
             _ = events.closed() => return,
@@ -190,13 +244,36 @@ async fn pump(
                 let opened = started || emit(&events, "started", json!({})).await;
                 started = true;
                 text.push_str(&piece);
-                opened && emit(&events, "delta", json!({ "text": piece })).await
+                let delta = emit(&events, "delta", json!({ "text": piece })).await;
+                let burst = match &group {
+                    Some(group) => cut.feed(&events, group, &piece, false).await,
+                    None => true,
+                };
+                opened && delta && burst
+            }
+            Ok(Some(Ok(AiEvent::Session(value)))) => {
+                session = Some(value);
+                true
             }
             Ok(Some(Ok(AiEvent::Done))) | Ok(None) => {
                 if !started {
                     emit(&events, "started", json!({})).await;
                 }
-                emit(&events, "done", json!({ "text": text })).await;
+                if let Some(group) = &group {
+                    if !cut.feed(&events, group, "", true).await {
+                        return;
+                    }
+                }
+                let mut done = json!({ "text": text });
+                if let Some(group) = &group {
+                    done["text"] = json!(join_bursts(&cut.sent));
+                    done["bursts"] = json!(cut.sent);
+                    done["group"] = json!(group);
+                }
+                if let Some(session) = session {
+                    done["session"] = json!(session);
+                }
+                emit(&events, "done", done).await;
                 return;
             }
         };
@@ -206,8 +283,7 @@ async fn pump(
     }
 }
 
-/// The reply as server-sent events: `started` first, `delta` ({text}) as the text comes, then `done` ({text}, all of it)
-/// or `error` ({message}). The room is pending only while the stream is open; when the browser leaves, the work stops.
+/// The reply as server-sent events: `started` first, `delta` ({text}) as the text comes, then `done` ({text}, all of it, and `session` when the assistant gave one) or `error` ({message}). When the body has `"bursts": true`, a `burst` event ({text, index, group}) follows the delta that completes each sentence, and `done` adds `bursts` (all of them) and `group`; its `text` is the bursts joined with spaces. The room is pending only while the stream is open; when the browser leaves, the work stops.
 fn streamed(
     state: &AiState,
     assistant: Arc<dyn Assistant>,
@@ -254,12 +330,13 @@ async fn reply(
         state: state.clone(),
         room_id: body.room_id.clone(),
     };
+    let wants_bursts = body.bursts;
     if wants_stream(&headers) {
         return streamed(&state, assistant, body, pending);
     }
     let answer = tokio::time::timeout(
         state.timeout,
-        assistant.reply(&body.room_id, &body.messages),
+        assistant.reply(&body.room_id, &body.messages, body.session.as_deref()),
     )
     .await;
     let Ok(answer) = answer else {
@@ -267,8 +344,20 @@ async fn reply(
         return refusal(StatusCode::SERVICE_UNAVAILABLE, copy::TIMED_OUT);
     };
     match answer {
-        Ok(Reply::Text(text)) => Json(json!({ "status": "reply", "text": text })).into_response(),
-        Ok(Reply::Nothing) => Json(json!({ "status": "none" })).into_response(),
+        Ok(Answer { reply, session }) => {
+            let mut body = match reply {
+                Reply::Text(text) if wants_bursts => {
+                    let bursts = split_bursts(&text, true).complete;
+                    json!({ "status": "reply", "text": join_bursts(&bursts), "bursts": bursts, "group": new_group() })
+                }
+                Reply::Text(text) => json!({ "status": "reply", "text": text }),
+                Reply::Nothing => json!({ "status": "none" }),
+            };
+            if let Some(session) = session {
+                body["session"] = json!(session);
+            }
+            Json(body).into_response()
+        }
         Err(AiError::Unavailable(detail)) => {
             tracing::warn!("assistant unavailable: {detail}");
             refusal(StatusCode::SERVICE_UNAVAILABLE, copy::UNAVAILABLE)

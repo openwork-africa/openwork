@@ -1,7 +1,7 @@
 import { createContext, type ReactNode, useContext, useEffect, useSyncExternalStore } from "react";
 import { defineTheme, resolveThemeToken, Theme } from "@astryxdesign/core/theme";
 import { applyBase, type Base, DEFAULT_BASE, getBase, subscribeBase } from "./bases.ts";
-import { type ChatDensity, DEFAULT_CHAT_DENSITY, THEME_BY_ID } from "./registry.ts";
+import { type ChatDensity, DEFAULT_CHAT_DENSITY, THEME_BY_ID, registeredTheme, type ThemeEntry } from "./registry.ts";
 
 const rgb = (hex: string): [number, number, number] =>
   [1, 3, 5].map((at) => parseInt(hex.slice(at, at + 2), 16) / 255).map((value) => value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4) as [
@@ -24,9 +24,9 @@ const mix = (a: string, b: string, amount: number): string =>
     ).join("")
   }`;
 
-export function readableAccent(base: Base, accent: string): { accent: string; onAccent: string } {
+export function readableAccent(base: Base, accent: string, entry: ThemeEntry = THEME_BY_ID[base]): { accent: string; onAccent: string } {
   if (!/^#[0-9a-f]{6}$/i.test(accent)) return { accent, onAccent: "#000000" };
-  const { theme, scheme } = THEME_BY_ID[base];
+  const { theme, scheme } = entry;
   const mode = scheme === "system" ? "light" : scheme;
   const surface = resolveThemeToken(theme, "--color-background-body", { mode });
   let adjusted = accent;
@@ -47,16 +47,16 @@ function useDeviceBase(): Base {
   return useSyncExternalStore(subscribeBase, getBase, () => DEFAULT_BASE);
 }
 
-const ShownBase = createContext<Base | null>(null);
+const Shown = createContext<(ThemeEntry & { base: Base }) | null>(null);
 
 function useChosenBase(): Base {
   const device = useDeviceBase();
-  return useContext(ShownBase) ?? device;
+  return useContext(Shown)?.base ?? device;
 }
 
 /** The theme of a base, the scheme it is shown in and how close it sets a conversation's messages. */
 export function themeFor(base: Base = DEFAULT_BASE) {
-  return { ...THEME_BY_ID[base], base };
+  return { ...(THEME_BY_ID[base] ?? THEME_BY_ID[DEFAULT_BASE]), base };
 }
 
 /** The base the app is shown in: the open conversation's own when it has one, else the one chosen on this device. */
@@ -66,28 +66,33 @@ export function useBase(): Base {
 
 /** How close the theme sets a conversation's messages: the gap between rows, and under the last one. */
 export function useChatDensity(): ChatDensity {
-  return THEME_BY_ID[useChosenBase()].chat ?? DEFAULT_CHAT_DENSITY;
+  const shown = useContext(Shown);
+  return (shown ?? THEME_BY_ID[useChosenBase()]).chat ?? DEFAULT_CHAT_DENSITY;
 }
 
 /**
  * The one place the app's theme is chosen. Everything below reads Astryx tokens, so a theme change
  * here (and a theme's own file) is the only edit a visual change ever needs. `base` overrides the device's
- * base while it is given: the shell passes the open conversation's own.
+ * base while it is given: the shell passes the open conversation's own. `themeId` selects a theme registered with `registerTheme`; `theme` is a product's own theme, passed in
+ * by the app (so this package never imports one): it stands in for the device's base, and a given `base` still wins.
  */
-export function ThemeProvider({ children, base, accent }: { children: ReactNode; base?: Base; accent?: string }) {
+export function ThemeProvider(
+  { children, base, accent, theme, themeId }: { children: ReactNode; base?: Base; accent?: string; theme?: ThemeEntry; themeId?: string },
+) {
   const device = useDeviceBase();
-  const active = themeFor(base ?? device);
-  const readable = accent ? readableAccent(active.base, accent) : undefined;
-  const theme = readable && /^#[0-9a-f]{6}$/i.test(readable.accent)
+  const own = theme ?? (themeId === undefined ? undefined : registeredTheme(themeId));
+  const active = base || !own ? themeFor(base ?? device) : { ...own, base: DEFAULT_BASE };
+  const readable = accent ? readableAccent(active.base, accent, active) : undefined;
+  const shown = readable && /^#[0-9a-f]{6}$/i.test(readable.accent)
     ? defineTheme({ name: "room-accent", extends: active.theme, tokens: { "--color-accent": readable.accent, "--color-on-accent": readable.onAccent } })
     : active.theme;
   useEffect(() => {
     applyBase(active.base);
   }, [active.base]);
   return (
-    <ShownBase.Provider value={active.base}>
-      <Theme theme={theme} mode={active.scheme}>{children}</Theme>
-    </ShownBase.Provider>
+    <Shown.Provider value={active}>
+      <Theme theme={shown} mode={active.scheme}>{children}</Theme>
+    </Shown.Provider>
   );
 }
 

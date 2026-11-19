@@ -4,6 +4,7 @@ import {
   composerAction,
   composerAddMenu,
   composerBeforeSend,
+  composerNotice,
   composerTray,
   contribute,
   definePlugin,
@@ -174,5 +175,24 @@ Deno.test("composer.addMenu: no items, no + button; with items the + opens the m
   const field = container.querySelector("[contenteditable]") as HTMLElement;
   await act(() => void field.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true })));
   assert(!textOf(container).includes("emoji tray"), "Escape closed the tray");
+  await unmount();
+});
+
+Deno.test("composer.notice draws each notice above the composer and runs its action; none draws nothing", async () => {
+  const none = await open([plugin([])]);
+  assert(none.container.querySelector(".astryx-chat-composer"), "the composer is drawn");
+  assertEquals(none.container.querySelector(".astryx-chat-composer")?.parentElement?.children.length, 1, "with no notices nothing sits beside it");
+  await none.unmount();
+
+  const ran: string[] = [];
+  const notice = (id: string, order: number) =>
+    contribute(composerNotice, { id, order, label: `${id} title`, description: `${id} text`, actionLabel: `${id} go`, onAction: () => void ran.push(id) });
+  const { container, unmount } = await open([plugin([notice("b", 2), notice("a", 1)])]);
+  const text = textOf(container);
+  assert(text.indexOf("a title") >= 0 && text.indexOf("a title") < text.indexOf("b title"), "in order");
+  const go = [...container.querySelectorAll("button")].find((button) => button.textContent === "b go")!;
+  assert(go.compareDocumentPosition(container.querySelector(".astryx-chat-composer")!) & Node.DOCUMENT_POSITION_FOLLOWING, "above the composer");
+  await press(go);
+  assertEquals(ran, ["b"]);
   await unmount();
 });

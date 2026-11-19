@@ -6,12 +6,17 @@ import { bootShell, type Shell, type ShellOptions } from "./boot.ts";
 import { ShellApp } from "./ShellApp.tsx";
 import { browserWorkerEnv, isStaleImportError, recoverFromStaleBuild, startServiceWorker } from "./serviceWorker.ts";
 import { copy } from "./copy.ts";
+import type { ThemeEntry } from "@openwork/ui";
 
 export interface AppOptions extends ShellOptions {
   /** Where to mount; `#root` by default. */
   element?: HTMLElement;
   /** The service worker is off while developing. */
   serviceWorker?: boolean;
+  /** The product's own theme and scheme, passed in so the shell imports none; without it the device's base ("white" by default) applies. */
+  theme?: ThemeEntry;
+  /** The id of a theme registered with `registerTheme` before this call; `theme` wins when both are given. */
+  themeId?: string;
 }
 
 export interface App {
@@ -38,7 +43,7 @@ export function createApp(options: AppOptions): App {
     if (recoverFromStaleBuild()) event.preventDefault();
   };
   globalThis.addEventListener("vite:preloadError", onPreloadError);
-  root.render(<ShellApp product={shell.product} router={shell.router} regions={shell.regions} drawer={shell.drawer} />);
+  root.render(<ShellApp product={shell.product} router={shell.router} regions={shell.regions} drawer={shell.drawer} theme={options.theme} themeId={options.themeId} />);
   const stopWorker = options.serviceWorker ?? !isDev ? startServiceWorker(browserWorkerEnv(shell.product.notices)) : () => {};
   return {
     shell,

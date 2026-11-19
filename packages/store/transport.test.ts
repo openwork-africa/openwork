@@ -1,6 +1,7 @@
 import { assertEquals, assertRejects } from "@std/assert";
 import { manualConnectivity } from "./connectivity.ts";
 import { stackTransport, withRetrying } from "./decorators.ts";
+import { copy } from "./copy.ts";
 import { HttpError, NetworkError, OfflineError } from "./errors.ts";
 import { HttpTransport } from "./httpTransport.ts";
 import { MemoryTransport } from "./memoryTransport.ts";
@@ -43,7 +44,7 @@ Deno.test("the stack refuses offline without calling through, and logs outermost
   const lines: string[] = [];
   const stack = stackTransport(transport, { connectivity, log: (line) => lines.push(line), retry: noSleep });
   await assertRejects(() => stack.pull(0), OfflineError);
-  assertEquals([calls(), lines], [0, ["transport pull failed: No connection right now."]]);
+  assertEquals([calls(), lines], [0, [`transport pull failed: ${copy.offlineNow}`]]);
   connectivity.set(true);
   await stack.pull(0);
   assertEquals([calls(), lines.at(-1)], [1, "transport pull ok"]);
@@ -69,4 +70,36 @@ Deno.test("HttpTransport speaks the server's paths and turns a refusal into the 
     "GET http://127.0.0.1:47410/api/pull?since=7",
     "GET http://127.0.0.1:47410/api/files/gone",
   ]);
+});
+
+Deno.test("each status reads as plain words; a server message always wins", async () => {
+  const warn = console.warn;
+  console.warn = () => {};
+  try {
+    const answering = (status: number, body: unknown) =>
+      new HttpTransport("", (() => Promise.resolve(Response.json(body, { status }))) as unknown as typeof fetch);
+    const cases: [number, string][] = [
+      [400, copy.badRequest],
+      [401, copy.signedOut],
+      [403, copy.forbidden],
+      [404, copy.notFound],
+      [413, copy.tooLarge],
+      [429, copy.tooManyRequests],
+      [500, copy.serverBroke],
+      [502, copy.serverUnreachable],
+      [503, copy.serverUnreachable],
+      [504, copy.serverTimedOut],
+      [418, copy.requestFailed],
+    ];
+    for (const [status, text] of cases) {
+      await assertRejects(() => answering(status, {}).pull(0), HttpError, text);
+      assertEquals(text.includes(String(status)), false);
+    }
+    await assertRejects(() => answering(404, { message: "No such room." }).pull(0), HttpError, "No such room.");
+    const down = new HttpTransport("", (() => Promise.reject(new TypeError("ECONNREFUSED"))) as unknown as typeof fetch);
+    await assertRejects(() => down.pull(0), NetworkError, copy.serverUnreachable);
+    assertEquals(new HttpError(502).status, 502);
+  } finally {
+    console.warn = warn;
+  }
 });

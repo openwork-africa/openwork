@@ -1,7 +1,7 @@
 import type { ReactElement } from "react";
 import { type Product, useCtx, useNotices } from "@openwork/kit";
 import { devicePorts, useRoom } from "@openwork/store";
-import { type Base, Feedback, isBase, ThemeProvider } from "@openwork/ui";
+import { type Base, Feedback, isBase, type ThemeEntry, ThemeProvider } from "@openwork/ui";
 import type { Regions } from "./Frame.tsx";
 import { ShellRoutes } from "./Pages.tsx";
 import { roomIdOf } from "./route.ts";
@@ -19,22 +19,22 @@ function useOpenBase(roomId: string | undefined): Base | undefined {
   return isBase(background) ? background : undefined;
 }
 
-function Themed({ product, regions, roomId }: { product: Product; regions: Regions; roomId: string | undefined }): ReactElement {
+function Themed({ product, regions, roomId, theme, themeId }: { product: Product; regions: Regions; roomId: string | undefined; theme?: ThemeEntry; themeId?: string }): ReactElement {
   const { store } = devicePorts(useCtx().ports);
   const room = useRoom(store, roomId ?? "");
   return (
-    <ThemeProvider base={useOpenBase(roomId)} accent={!isBase(room?.background) ? room?.accent : undefined}>
+    <ThemeProvider base={useOpenBase(roomId)} theme={theme} themeId={themeId} accent={!isBase(room?.background) ? room?.accent : undefined}>
       <ShellRoutes regions={regions} />
       <Notices product={product} />
     </ThemeProvider>
   );
 }
 
-function Routed({ product, router, regions }: ShellAppProps): ReactElement {
+function Routed({ product, router, regions, theme, themeId }: ShellAppProps): ReactElement {
   const roomId = roomIdOf(useRoute());
   return (
     <product.Root roomId={roomId} navigate={router.navigate} replace={router.replace}>
-      <Themed product={product} regions={regions} roomId={roomId} />
+      <Themed product={product} regions={regions} roomId={roomId} theme={theme} themeId={themeId} />
     </product.Root>
   );
 }
@@ -44,6 +44,10 @@ export interface ShellAppProps {
   router: Router;
   regions: Regions;
   drawer: DrawerState;
+  /** The product's own theme, shown where no conversation sets one; the device's base applies when absent. */
+  theme?: ThemeEntry;
+  /** The id of a theme registered with `registerTheme`. */
+  themeId?: string;
 }
 
 /** What the app mounts: the composed product with its routes, the theme of the open conversation, and the stack of notices. */

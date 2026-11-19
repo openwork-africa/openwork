@@ -1,5 +1,5 @@
 pub const NOT_FOUND: &str = "There is nothing at this address.";
-pub const BAD_BODY: &str = "The body must be JSON like {\"roomId\": \"...\", \"messages\": [...]}.";
+pub const BAD_BODY: &str = "The body must be JSON like {\"roomId\": \"...\", \"messages\": [...]} (and optionally \"session\").";
 pub const NO_MESSAGES: &str = "A reply needs a room and at least one message.";
 pub const BUSY: &str = "A reply is already on its way for this room.";
 pub const FAILED: &str = "The assistant could not answer. Try again.";
@@ -10,3 +10,4 @@ pub const MESSAGE_TOO_LONG: &str = "One of the messages is too long to answer.";
 pub const EMPTY_FIELD: &str = "Every message needs an id, an author and some words.";
 pub const BODY_TOO_LARGE: &str = "This request is too large.";
 pub const TIMED_OUT: &str = "The assistant took too long to answer. Try again.";
+pub const SESSION_TOO_LONG: &str = "The session is too long.";

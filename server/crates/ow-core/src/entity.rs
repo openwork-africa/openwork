@@ -52,6 +52,9 @@ pub struct Message {
     /// What kind of message this is, as an open string any plugin may define; the server keeps it as given.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
+    /// Extra fields a plugin keeps on the message (for example which burst group it belongs to); the server keeps them as given.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub data: Option<serde_json::Value>,
     pub created_at: i64,
     pub updated_at: i64,
     #[serde(default, skip_serializing_if = "Option::is_none")]

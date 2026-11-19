@@ -55,6 +55,15 @@ export interface AddMenuValue {
   run?: (ctx: SlotContext) => void;
 }
 
+/** A notice drawn just above the composer: what it says and the one thing it offers to do. */
+export interface ComposerNoticeValue {
+  label: string;
+  description?: string;
+  actionLabel: string;
+  onAction: (ctx: SlotContext) => void;
+  icon?: ReactNode;
+}
+
 export interface TrayValue {
   render: (ctx: SlotContext, close: () => void) => ReactNode;
 }
@@ -95,6 +104,7 @@ export const shellRegion: SlotKey<RegionValue> = slot("shell.region");
 export const addressAddressee: SlotKey<AddresseeValue> = slot("address.addressee");
 export const addressAction: SlotKey<ActionValue> = slot("address.action");
 export const composerAddMenu: SlotKey<AddMenuValue> = slot("composer.addMenu");
+export const composerNotice: SlotKey<ComposerNoticeValue> = slot("composer.notice");
 export const composerTray: SlotKey<TrayValue> = slot("composer.tray");
 export const composerAction: SlotKey<ComposerActionValue> = slot("composer.action");
 export const composerBeforeSend: SlotKey<BeforeSendValue> = slot("composer.beforeSend");
@@ -110,6 +120,7 @@ export const frameSlots: readonly SlotKey<unknown>[] = [
   addressAddressee,
   addressAction,
   composerAddMenu,
+  composerNotice,
   composerTray,
   composerAction,
   composerBeforeSend,

@@ -26,6 +26,24 @@ pub enum Reply {
     Nothing,
 }
 
+/// A reply and the session the assistant wants the browser to keep for the next request. The session is an opaque string:
+/// the browser stores it (per browser) and sends it back with each request; the server keeps none.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Answer {
+    pub reply: Reply,
+    /// A new or changed session to hand back to the browser; `None` leaves the one it has.
+    pub session: Option<String>,
+}
+
+impl From<Reply> for Answer {
+    fn from(reply: Reply) -> Self {
+        Self {
+            reply,
+            session: None,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum AiError {
     /// The assistant cannot be reached or is not set up. The detail is for the log only.
@@ -35,34 +53,47 @@ pub enum AiError {
 }
 
 /// What a streaming assistant yields, in order: `Started` once when it has taken the message, `Delta` for each piece of
-/// text, then `Done` (the route sends the full text with it). An `Err` ends the reply.
+/// text, then `Done` (the route sends the full text with it). `Session` may come at any point before `Done`: the session to
+/// hand back to the browser. An `Err` ends the reply.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum AiEvent {
     Started,
     Delta(String),
+    Session(String),
     Done,
 }
 
-/// Given a room and its messages (the newest last), returns the reply.
+/// Given a room, its messages (the newest last) and the session the browser sent with the request (if any), returns the reply.
 ///
 /// `reply` is required. `stream` has a default made from it (`Started`, one `Delta` with the whole text, `Done`); an
-/// assistant that really streams overrides `stream` and writes `reply` as `Box::pin(collect(self.stream(room_id, messages)))`.
+/// assistant that really streams overrides `stream` and writes `reply` as `Box::pin(collect(self.stream(room_id, messages, session)))`.
 pub trait Assistant: Send + Sync {
     fn reply<'a>(
         &'a self,
         room_id: &'a str,
         messages: &'a [AiMessage],
-    ) -> BoxFuture<'a, Result<Reply, AiError>>;
+        session: Option<&'a str>,
+    ) -> BoxFuture<'a, Result<Answer, AiError>>;
 
     fn stream<'a>(
         &'a self,
         room_id: &'a str,
         messages: &'a [AiMessage],
+        session: Option<&'a str>,
     ) -> BoxStream<'a, Result<AiEvent, AiError>> {
-        let answer = stream::once(self.reply(room_id, messages)).flat_map(|result| {
+        let answer = stream::once(self.reply(room_id, messages, session)).flat_map(|result| {
             stream::iter(match result {
-                Ok(Reply::Text(text)) => vec![Ok(AiEvent::Delta(text)), Ok(AiEvent::Done)],
-                Ok(Reply::Nothing) => vec![Ok(AiEvent::Done)],
+                Ok(Answer { reply, session }) => {
+                    let mut events: Vec<Result<AiEvent, AiError>> = session
+                        .into_iter()
+                        .map(|s| Ok(AiEvent::Session(s)))
+                        .collect();
+                    if let Reply::Text(text) = reply {
+                        events.push(Ok(AiEvent::Delta(text)));
+                    }
+                    events.push(Ok(AiEvent::Done));
+                    events
+                }
                 Err(error) => vec![Err(error)],
             })
         });
@@ -70,21 +101,24 @@ pub trait Assistant: Send + Sync {
     }
 }
 
-/// The reply a stream adds up to: its text, or nothing when it said none.
+/// The answer a stream adds up to: its text (or nothing when it said none) and the last session it gave.
 pub async fn collect(
     mut events: BoxStream<'_, Result<AiEvent, AiError>>,
-) -> Result<Reply, AiError> {
+) -> Result<Answer, AiError> {
     let mut text = String::new();
+    let mut session = None;
     while let Some(event) = events.next().await {
         match event? {
             AiEvent::Delta(piece) => text.push_str(&piece),
+            AiEvent::Session(value) => session = Some(value),
             AiEvent::Started => {}
             AiEvent::Done => break,
         }
     }
-    Ok(if text.is_empty() {
+    let reply = if text.is_empty() {
         Reply::Nothing
     } else {
         Reply::Text(text)
-    })
+    };
+    Ok(Answer { reply, session })
 }

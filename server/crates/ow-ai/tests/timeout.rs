@@ -4,7 +4,7 @@ use std::time::Duration;
 use axum::body::Body;
 use axum::http::{header, Request, StatusCode};
 use axum::Router;
-use ow_ai::{router_with_timeout, AiError, AiMessage, Assistant, BoxFuture, Reply};
+use ow_ai::{router_with_timeout, AiError, AiMessage, Answer, Assistant, BoxFuture};
 use serde_json::{json, Value};
 use tower::ServiceExt;
 
@@ -15,7 +15,8 @@ impl Assistant for Never {
         &'a self,
         _: &'a str,
         _: &'a [AiMessage],
-    ) -> BoxFuture<'a, Result<Reply, AiError>> {
+        _: Option<&'a str>,
+    ) -> BoxFuture<'a, Result<Answer, AiError>> {
         Box::pin(std::future::pending())
     }
 }

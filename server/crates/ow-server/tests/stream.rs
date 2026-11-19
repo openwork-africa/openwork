@@ -21,14 +21,16 @@ impl Assistant for Scripted {
         &'a self,
         room_id: &'a str,
         messages: &'a [AiMessage],
-    ) -> ow_ai::BoxFuture<'a, Result<ow_ai::Reply, AiError>> {
-        Box::pin(ow_ai::collect(self.stream(room_id, messages)))
+        session: Option<&'a str>,
+    ) -> ow_ai::BoxFuture<'a, Result<ow_ai::Answer, AiError>> {
+        Box::pin(ow_ai::collect(self.stream(room_id, messages, session)))
     }
 
     fn stream<'a>(
         &'a self,
         _: &'a str,
         _: &'a [AiMessage],
+        _: Option<&'a str>,
     ) -> BoxStream<'a, Result<AiEvent, AiError>> {
         Box::pin(stream::unfold(&self.0, |held| async move {
             let mut taken = held.lock().await.take()?;
@@ -211,8 +213,11 @@ async fn an_assistant_with_only_reply_still_streams_and_a_plain_request_stays_js
             &'a self,
             _: &'a str,
             messages: &'a [AiMessage],
-        ) -> ow_ai::BoxFuture<'a, Result<ow_ai::Reply, AiError>> {
-            Box::pin(async move { Ok(ow_ai::Reply::Text(format!("{} messages", messages.len()))) })
+            _: Option<&'a str>,
+        ) -> ow_ai::BoxFuture<'a, Result<ow_ai::Answer, AiError>> {
+            Box::pin(async move {
+                Ok(ow_ai::Reply::Text(format!("{} messages", messages.len())).into())
+            })
         }
     }
     let (app, _data) = app(Arc::new(Plain)).await;
@@ -241,4 +246,39 @@ async fn an_assistant_with_only_stream_serves_a_plain_request_by_collecting() {
         serde_json::from_str::<Value>(&text_of(response).await).unwrap(),
         json!({ "status": "reply", "text": "ab" })
     );
+}
+
+#[tokio::test]
+async fn bursts_are_cut_across_deltas_and_sent_as_each_sentence_ends() {
+    let (assistant, events) = scripted();
+    let (app, _data) = app(assistant).await;
+    for event in [
+        Ok(AiEvent::Started),
+        Ok(AiEvent::Delta("On".into())),
+        Ok(AiEvent::Delta("e. Tw".into())),
+        Ok(AiEvent::Delta("o, e.".into())),
+        Ok(AiEvent::Delta("g. this. Last".into())),
+        Ok(AiEvent::Done),
+    ] {
+        events.send(event).unwrap();
+    }
+    let body = json!({ "roomId": "r1", "bursts": true, "messages": [{ "id": "m1", "authorId": "you", "content": "hi", "createdAt": 1 }] });
+    let request = Request::post("/api/ai/reply")
+        .header(header::CONTENT_TYPE, "application/json")
+        .header(header::ACCEPT, "text/event-stream")
+        .body(Body::from(body.to_string()))
+        .unwrap();
+    let text = text_of(app.clone().oneshot(request).await.unwrap()).await;
+    let bursts: Vec<String> = text
+        .split("\n\n")
+        .filter_map(|block| block.strip_prefix("event: burst\ndata: "))
+        .map(|data| {
+            let value: Value = serde_json::from_str(data).unwrap();
+            value["text"].as_str().unwrap().to_string()
+        })
+        .collect();
+    assert_eq!(bursts, ["One.", "Two, e.g. this.", "Last"], "{text}");
+    // The first burst is sent before the delta that finishes the next one arrives.
+    assert!(text.find("event: burst").unwrap() < text.find("{\"text\":\"o, e.\"}").unwrap());
+    assert!(text.contains("\"text\":\"One. Two, e.g. this. Last\""), "{text}");
 }

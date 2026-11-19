@@ -1,5 +1,6 @@
 import { assert, assertEquals } from "@std/assert";
 import { HttpAiClient } from "./aiClient.ts";
+import type { AiSession } from "./aiClient.ts";
 import type { AiMessage } from "./aiClient.ts";
 import { HttpError } from "./errors.ts";
 
@@ -17,7 +18,7 @@ Deno.test("the AI client posts the room and its messages and reads the reply and
   assertEquals(await client.status(), { configured: true, pending: ["r1"] });
   assertEquals(seen[0].url, "http://server/api/ai/reply");
   assertEquals(seen[0].init?.method, "POST");
-  assertEquals(JSON.parse(String(seen[0].init?.body)), { roomId: "r1", messages });
+  assertEquals(JSON.parse(String(seen[0].init?.body)), { roomId: "r1", messages, bursts: true });
   assertEquals(seen[1].url, "http://server/api/ai/status");
 });
 
@@ -59,4 +60,36 @@ Deno.test("a stream that ends with no done is a failure, and a done with no text
   assert(await cut.reply("r1", []).catch((e) => e) instanceof Error);
   const empty = new HttpAiClient("", () => Promise.resolve(sse(["started", {}], ["done", { text: "" }])));
   assertEquals(await empty.reply("r1", []), { status: "none" });
+});
+
+Deno.test("the client sends the session it keeps and keeps the one the server hands back, from JSON and from a stream", async () => {
+  let kept: string | undefined = "old";
+  const session: AiSession = { get: () => kept, set: (value) => (kept = value) };
+  const bodies: unknown[] = [];
+  const answers = [json(200, { status: "reply", text: "Hi", session: "s1" }), sse(["started", {}], ["done", { text: "Yo", session: "s2" }]), json(200, { status: "none" })];
+  const client = new HttpAiClient("", (_input, init) => {
+    bodies.push(JSON.parse(String(init?.body)));
+    return Promise.resolve(answers.shift()!);
+  }, session);
+  assertEquals(await client.reply("r", []), { status: "reply", text: "Hi" });
+  assertEquals(kept, "s1");
+  assertEquals(await client.reply("r", []), { status: "reply", text: "Yo" });
+  assertEquals(kept, "s2");
+  assertEquals(await client.reply("r", []), { status: "none" });
+  assertEquals(kept, "s2");
+  assertEquals(bodies, [{ roomId: "r", messages: [], session: "old", bursts: true }, { roomId: "r", messages: [], session: "s1", bursts: true }, { roomId: "r", messages: [], session: "s2", bursts: true }]);
+});
+
+Deno.test("burst events are handed over as they arrive, and done carries the bursts and the group", async () => {
+  const client = new HttpAiClient("", () =>
+    Promise.resolve(sse(
+      ["started", {}],
+      ["burst", { text: "One.", index: 0, group: "g1" }],
+      ["burst", { text: "Two?", index: 1, group: "g1" }],
+      ["done", { text: "One. Two?", bursts: ["One.", "Two?"], group: "g1" }],
+    )));
+  const seen: unknown[] = [];
+  const reply = await client.reply("r1", [], { onBurst: (burst) => seen.push(burst) });
+  assertEquals(seen, [{ text: "One.", index: 0, group: "g1" }, { text: "Two?", index: 1, group: "g1" }]);
+  assertEquals(reply, { status: "reply", text: "One. Two?", bursts: ["One.", "Two?"], group: "g1" });
 });
