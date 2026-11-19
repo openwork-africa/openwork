@@ -18,7 +18,10 @@ import { type Base, BASE_SCHEME, type Scheme } from "./bases.ts";
 export type ChatDensity = "compact" | "balanced" | "spacious";
 export const DEFAULT_CHAT_DENSITY: ChatDensity = "spacious";
 
-export const THEME_BY_ID: Record<Base, { theme: DefinedTheme; scheme: Scheme; chat?: ChatDensity }> = {
+/** A theme with the scheme it is shown in; a product passes its own one to the shell instead of adding to `THEME_BY_ID`. */
+export type ThemeEntry = { theme: DefinedTheme; scheme: Scheme; chat?: ChatDensity };
+
+export const THEME_BY_ID: Record<Base, ThemeEntry> = {
   white: { theme: whiteTheme, scheme: BASE_SCHEME.white, chat: "compact" },
   midnight: { theme: midnightTheme, scheme: BASE_SCHEME.midnight },
   nightshade: { theme: nightshadeTheme, scheme: BASE_SCHEME.nightshade, chat: "compact" },
