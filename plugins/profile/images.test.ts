@@ -8,14 +8,15 @@ Deno.test("a file reference round-trips and anything else is not one", () => {
 });
 
 Deno.test("the cover is the chosen base, else the current theme's, else the uploaded picture", () => {
-  assertEquals(backgroundOf("ember", "white"), "ember");
-  assertEquals(backgroundOf(undefined, "midnight"), "midnight");
+  assertEquals(backgroundOf("white", "white"), "white");
+  assertEquals(backgroundOf(undefined, "white"), "white");
+  assertEquals(backgroundOf("midnight", "white"), "white");
   assertEquals(backgroundOf("not-a-base", "white"), "white");
-  assertEquals(coverUrlOf("ember", "white"), "/assets/covers/ember.jpg");
-  assertEquals(coverUrlOf(undefined, "midnight"), "/assets/covers/midnight.jpg");
-  assertEquals(coverUrlOf("file:abc", "stone"), "/assets/covers/stone.jpg");
-  assertEquals(coverUrlOf("file:abc", "stone", "blob:x"), "blob:x");
-  assertEquals(coverUrlOf("ember", "stone", "blob:x"), "/assets/covers/ember.jpg");
+  assertEquals(coverUrlOf("white", "white"), "/assets/covers/white.jpg");
+  assertEquals(coverUrlOf(undefined, "white"), "/assets/covers/white.jpg");
+  assertEquals(coverUrlOf("file:abc", "white"), "/assets/covers/white.jpg");
+  assertEquals(coverUrlOf("file:abc", "white", "blob:x"), "blob:x");
+  assertEquals(coverUrlOf("white", "white", "blob:x"), "/assets/covers/white.jpg");
 });
 
 Deno.test("an image stored on this device shows from its bytes, any other from the server", async () => {

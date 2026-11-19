@@ -1,15 +1,18 @@
-import { assert, assertEquals, assertExists } from "@std/assert";
+import { assert, assertEquals, assertExists, assertThrows } from "@std/assert";
 import { renderToStaticMarkup } from "react-dom/server";
-import { resolveThemeToken } from "@astryxdesign/core/theme";
+import { defineTheme, resolveThemeToken } from "@astryxdesign/core/theme";
 import { applyBase, BASE_SCHEME, BASES, DEFAULT_BASE, getBase, isBase, setBase, STORAGE_KEY, subscribeBase } from "./bases.ts";
-import { THEME_BY_ID } from "./registry.ts";
+import { registeredTheme, registerTheme, THEME_BY_ID } from "./registry.ts";
+import { THEME_BASES } from "./bases.ts";
 import { readableAccent, themeFor, ThemeProvider, useChatDensity } from "./ThemeProvider.tsx";
 import { appTokens, brandFoundations, REPLY_WIDTH, replyWidthPx, shellTokens } from "./themes/openwork/brand.ts";
 
+const OTHER = defineTheme({ name: "other", extends: THEME_BY_ID.white.theme, tokens: { "--color-accent": "#336699" } });
 const COVERS = new URL("../assets/covers/", import.meta.url);
 
 Deno.test("every base id resolves to a theme, in the scheme the base states", () => {
-  assertEquals(BASES.length, 11);
+  assertEquals(BASES, ["white"]);
+  assertEquals(THEME_BASES, ["white"]);
   for (const base of BASES) {
     assertExists(THEME_BY_ID[base].theme, base);
     assertEquals(THEME_BY_ID[base].scheme, BASE_SCHEME[base], base);
@@ -43,9 +46,6 @@ Deno.test("token values equal the source's", () => {
     ["white", "light", "--color-accent", "#1397c1"],
     ["white", "light", "--color-background-body", "#f8f7f5"],
     ["white", "light", "--color-text-primary", "#000000"],
-    ["midnight", "dark", "--color-accent", "#ffffff"],
-    ["nightshade", "dark", "--color-accent", "#c084fc"],
-    ["ember", "dark", "--color-background-body", "#210f07"],
     ["white", "light", "--radius-chat", "12px"],
   ];
   for (const [base, mode, token, expected] of table) assertEquals(colour(base, token, mode).toLowerCase(), expected, `${base} ${token}`);
@@ -85,19 +85,19 @@ Deno.test("the chosen base is kept on the device under ow-base and announced", (
     assertEquals(getBase(), "white");
     let heard = 0;
     const stop = subscribeBase(() => heard++);
-    setBase("midnight");
-    assertEquals([getBase(), heard], ["midnight", 1]);
-    assertEquals(globalThis.localStorage.getItem(STORAGE_KEY), "midnight");
-    stop();
     setBase("white");
-    assertEquals(heard, 1);
+    assertEquals([getBase(), heard], ["white", 1]);
+    assertEquals(globalThis.localStorage.getItem(STORAGE_KEY), "white");
+    stop();
+    assertThrows(() => setBase("midnight" as never));
+    assertEquals([getBase(), heard], ["white", 1]);
   });
 });
 
 Deno.test("the base is put on the page as data-base", () => {
   const attributes: Record<string, string> = {};
-  applyBase("gothic", { setAttribute: (name, value) => void (attributes[name] = value) });
-  assertEquals(attributes, { "data-base": "gothic" });
+  applyBase("white", { setAttribute: (name, value) => void (attributes[name] = value) });
+  assertEquals(attributes, { "data-base": "white" });
 });
 
 Deno.test("ThemeProvider renders its children under the default theme", () => {
@@ -112,7 +112,7 @@ Deno.test("ThemeProvider renders its children under the default theme", () => {
 });
 
 Deno.test("a theme passed to ThemeProvider replaces the device default, a given base still wins, none changes nothing", () => {
-  const own = { theme: THEME_BY_ID.gothic.theme, scheme: "dark" as const, chat: "balanced" as const };
+  const own = { theme: OTHER, scheme: "dark" as const, chat: "balanced" as const };
   const seen: string[] = [];
   const Probe = () => {
     seen.push(useChatDensity());
@@ -122,5 +122,28 @@ Deno.test("a theme passed to ThemeProvider replaces the device default, a given 
   renderToStaticMarkup(<ThemeProvider theme={own} base="white"><Probe /></ThemeProvider>);
   renderToStaticMarkup(<ThemeProvider><Probe /></ThemeProvider>);
   assertEquals(seen, ["balanced", "compact", "compact"]);
-  assertEquals(readableAccent("white", "#d14c2c", own).onAccent === readableAccent("gothic", "#d14c2c").onAccent, true);
+  assertEquals(readableAccent("white", "#d14c2c", own).onAccent, readableAccent("white", "#d14c2c", { ...own, scheme: "dark" }).onAccent);
+});
+
+Deno.test("a registered theme is selected by id, an unregistered id falls back, and it never joins the picker", () => {
+  const entry = { theme: OTHER, scheme: "dark" as const, chat: "balanced" as const };
+  const bases = [...BASES], picker = [...THEME_BASES];
+  registerTheme("test-extra", entry);
+  assertEquals(registeredTheme("test-extra"), entry);
+  assertEquals(registeredTheme("test-missing"), undefined);
+  assertEquals([...BASES], bases);
+  assertEquals([...THEME_BASES], picker);
+  assertEquals(isBase("test-extra"), false);
+  assertThrows(() => registerTheme("white", entry));
+  const seen: string[] = [];
+  const Probe = () => {
+    seen.push(useChatDensity());
+    return null;
+  };
+  renderToStaticMarkup(<ThemeProvider themeId="test-extra"><Probe /></ThemeProvider>);
+  renderToStaticMarkup(<ThemeProvider themeId="test-missing"><Probe /></ThemeProvider>);
+  renderToStaticMarkup(<ThemeProvider themeId="test-extra" base="white"><Probe /></ThemeProvider>);
+  assertEquals(seen, ["balanced", "compact", "compact"]);
+  assertEquals(themeFor("test-missing" as never).base, "test-missing");
+  assertExists(themeFor("test-missing" as never).theme);
 });

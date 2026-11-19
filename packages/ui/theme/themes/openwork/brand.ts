@@ -1,6 +1,6 @@
 /**
  * Openwork brand foundations, shared by every Openwork theme. Typography, shape and motion live here once;
- * a theme only states its colours. Astryx themes (neutral, butter, …) carry their own foundations.
+ * a theme only states its colours. The neutral icon set is reused by every theme.
  */
 import { type DefinedTheme, defineTheme } from "@astryxdesign/core/theme";
 import { neutralIconRegistry } from "../neutral/icons.tsx";
