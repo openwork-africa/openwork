@@ -8,6 +8,7 @@ Deno.test("every frame-owned slot of the catalogue has a unique key", () => {
     "address.addressee",
     "address.action",
     "composer.addMenu",
+    "composer.notice",
     "composer.tray",
     "composer.action",
     "composer.beforeSend",
