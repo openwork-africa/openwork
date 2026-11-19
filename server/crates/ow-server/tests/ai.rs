@@ -3,7 +3,7 @@ use std::sync::Arc;
 use axum::body::Body;
 use axum::http::{header, Request, StatusCode};
 use axum::Router;
-use ow_ai::{AiError, AiMessage, Assistant, BoxFuture, Reply};
+use ow_ai::{AiError, AiMessage, Answer, Assistant, BoxFuture, Reply};
 use ow_server::compose::build_app_with;
 use ow_server::config::Config;
 use serde_json::{json, Value};
@@ -17,10 +17,12 @@ impl Assistant for Fake {
         &'a self,
         _: &'a str,
         messages: &'a [AiMessage],
-    ) -> BoxFuture<'a, Result<Reply, AiError>> {
+        _: Option<&'a str>,
+    ) -> BoxFuture<'a, Result<Answer, AiError>> {
         let answer = match &self.0 {
-            Ok(Reply::Text(_)) => Ok(Reply::Text(format!("{} messages", messages.len()))),
-            other => other.clone(),
+            Ok(Reply::Text(_)) => Ok(Reply::Text(format!("{} messages", messages.len())).into()),
+            Ok(other) => Ok(other.clone().into()),
+            Err(error) => Err(error.clone()),
         };
         Box::pin(async move { answer })
     }
@@ -156,10 +158,11 @@ async fn a_second_reply_for_a_room_already_replying_is_refused_and_status_lists_
             &'a self,
             _: &'a str,
             _: &'a [AiMessage],
-        ) -> BoxFuture<'a, Result<Reply, AiError>> {
+            _: Option<&'a str>,
+        ) -> BoxFuture<'a, Result<Answer, AiError>> {
             Box::pin(async move {
                 self.0.notified().await;
-                Ok(Reply::Text("done".into()))
+                Ok(Reply::Text("done".into()).into())
             })
         }
     }
@@ -242,4 +245,77 @@ async fn caps_and_empty_fields_are_400() {
 async fn a_body_over_the_limit_is_413() {
     let huge = json!({ "roomId": "r", "messages": [message_with("m", "you", &"x".repeat(2 * 1024 * 1024))] });
     assert_eq!(refused(huge).await, StatusCode::PAYLOAD_TOO_LARGE);
+}
+
+/// Answers with the session it was sent (or "none"), and hands back a new one.
+struct Remembers;
+
+impl Assistant for Remembers {
+    fn reply<'a>(
+        &'a self,
+        _: &'a str,
+        _: &'a [AiMessage],
+        session: Option<&'a str>,
+    ) -> BoxFuture<'a, Result<Answer, AiError>> {
+        let seen = session.unwrap_or("none").to_string();
+        Box::pin(async move {
+            Ok(Answer {
+                reply: Reply::Text(format!("saw {seen}")),
+                session: Some("next".into()),
+            })
+        })
+    }
+}
+
+async fn remembering() -> (Router, TempDir) {
+    let data = tempfile::tempdir().unwrap();
+    let app = build_app_with(&config(&data), Some(Arc::new(Remembers)))
+        .await
+        .unwrap();
+    (app, data)
+}
+
+#[tokio::test]
+async fn the_session_the_browser_sends_reaches_the_assistant_and_the_new_one_comes_back() {
+    let (app, _data) = remembering().await;
+    let mut body = one_message();
+    let (status, first) = call(&app, reply_request(body.clone())).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(
+        first,
+        json!({ "status": "reply", "text": "saw none", "session": "next" })
+    );
+    body["session"] = json!("mine");
+    let (_, second) = call(&app, reply_request(body)).await;
+    assert_eq!(second["text"], "saw mine");
+}
+
+#[tokio::test]
+async fn a_streamed_reply_carries_the_session_in_done() {
+    let (app, _data) = remembering().await;
+    let mut body = one_message();
+    body["session"] = json!("mine");
+    let request = Request::post("/api/ai/reply")
+        .header(header::CONTENT_TYPE, "application/json")
+        .header(header::ACCEPT, "text/event-stream")
+        .body(Body::from(body.to_string()))
+        .unwrap();
+    let response = app.oneshot(request).await.unwrap();
+    let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    let text = String::from_utf8(bytes.to_vec()).unwrap();
+    assert!(
+        text.ends_with("event: done\ndata: {\"session\":\"next\",\"text\":\"saw mine\"}\n\n"),
+        "{text}"
+    );
+}
+
+#[tokio::test]
+async fn a_session_that_is_too_long_is_refused() {
+    let (app, _data) = remembering().await;
+    let mut body = one_message();
+    body["session"] = json!("x".repeat(5000));
+    let (status, _) = call(&app, reply_request(body)).await;
+    assert_eq!(status, StatusCode::BAD_REQUEST);
 }

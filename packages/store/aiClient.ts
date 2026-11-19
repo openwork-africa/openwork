@@ -30,6 +30,12 @@ export interface AiReplyHandlers {
   onStarted?: () => void;
 }
 
+/** Where the browser keeps the session the server hands back with a reply; it is sent with the next request. The server keeps none. */
+export interface AiSession {
+  get(): string | undefined;
+  set(value: string): void;
+}
+
 export interface AiClient {
   /** Asks for a reply as a stream. It settles when the stream ends: with the whole reply at `done`, or by throwing at `error`. */
   reply(roomId: string, messages: AiMessage[], handlers?: AiReplyHandlers): Promise<AiReply>;
@@ -46,10 +52,12 @@ export const noAiClient: AiClient = {
 export class HttpAiClient implements AiClient {
   readonly #baseUrl: string;
   readonly #fetch: typeof fetch;
+  readonly #session: AiSession | undefined;
 
-  constructor(baseUrl = "", fetcher: typeof fetch = (input, init) => fetch(input, init)) {
+  constructor(baseUrl = "", fetcher: typeof fetch = (input, init) => fetch(input, init), session?: AiSession) {
     this.#baseUrl = baseUrl.replace(/\/$/, "");
     this.#fetch = fetcher;
+    this.#session = session;
   }
 
   async #request(path: string, init?: RequestInit): Promise<Response> {
@@ -64,7 +72,7 @@ export class HttpAiClient implements AiClient {
     const response = await this.#request("/api/ai/reply", {
       method: "POST",
       headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
-      body: JSON.stringify({ roomId, messages }),
+      body: JSON.stringify({ roomId, messages, session: this.#session?.get() }),
     });
     if (response.status === 404) return { status: "unavailable" };
     if (response.status === 409) return { status: "busy" };
@@ -72,17 +80,23 @@ export class HttpAiClient implements AiClient {
       const body = await response.json().catch(() => undefined) as { message?: string } | undefined;
       throw new HttpError(response.status, body?.message);
     }
-    if (!response.headers.get("Content-Type")?.includes("text/event-stream") || !response.body) return await response.json() as AiReply;
+    if (!response.headers.get("Content-Type")?.includes("text/event-stream") || !response.body) return this.#keep(await response.json() as AiReply & { session?: string });
     return await this.#streamed(response.body, handlers);
+  }
+
+  /** Keeps the session the server handed back, if any, and returns the reply without it. */
+  #keep({ session, ...reply }: AiReply & { session?: string }): AiReply {
+    if (session) this.#session?.set(session);
+    return reply as AiReply;
   }
 
   /** `delta` events carry the text as it comes; the reply is shown whole, so only `done` (all of it) is used. */
   async #streamed(body: ReadableStream<Uint8Array>, handlers: AiReplyHandlers): Promise<AiReply> {
     for await (const { event, data } of readEvents(body)) {
-      const fields = (data ? JSON.parse(data) : {}) as { text?: string; message?: string };
+      const fields = (data ? JSON.parse(data) : {}) as { text?: string; message?: string; session?: string };
       if (event === "started") handlers.onStarted?.();
       if (event === "error") throw new Error(fields.message ?? copy.noReply);
-      if (event === "done") return fields.text ? { status: "reply", text: fields.text } : { status: "none" };
+      if (event === "done") return this.#keep(fields.text ? { status: "reply", text: fields.text, session: fields.session } : { status: "none", session: fields.session });
     }
     throw new Error(copy.noReply);
   }

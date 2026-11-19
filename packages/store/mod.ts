@@ -1,6 +1,6 @@
 export { AiBrain } from "./aiBrain.ts";
 export { HttpAiClient, noAiClient } from "./aiClient.ts";
-export type { AiClient, AiMessage, AiReply, AiReplyHandlers, AiStatus } from "./aiClient.ts";
+export type { AiClient, AiMessage, AiSession, AiReply, AiReplyHandlers, AiStatus } from "./aiClient.ts";
 export { aiPlugin, brainService } from "./aiPlugin.ts";
 export { browserConnectivity, manualConnectivity } from "./connectivity.ts";
 export type { Database, Tx } from "./database.ts";
