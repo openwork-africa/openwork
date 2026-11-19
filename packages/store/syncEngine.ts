@@ -118,6 +118,8 @@ export function createSyncEngine(options: SyncOptions): SyncEngine {
       if (stops.length) return;
       stops = [journal.onQueued(run), connectivity.subscribe(run)];
       timer = setInterval(() => connectivity.isOnline() && run(), intervalMs);
+      // Said before the first round's first await: a shell that opens into a first room when the device has none waits for this pull, and must not read "current" in the gap before it.
+      if (connectivity.isOnline()) journal.setStatus("catchingUp");
       run();
     },
     stop() {
