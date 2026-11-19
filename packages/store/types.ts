@@ -30,6 +30,8 @@ export interface Message {
   content: string;
   /** What kind of message this is: an open string that plugins define, "text" when absent. The store keeps it as given. */
   kind?: string;
+  /** Extra fields a plugin keeps on the message, such as `burstGroup` and `burstIndex` of a reply sent in bursts. The store and the server keep them as given. */
+  data?: Record<string, unknown>;
   createdAt: number;
   updatedAt: number;
   deleted?: boolean;

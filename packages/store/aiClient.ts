@@ -11,8 +11,16 @@ export interface AiMessage {
   createdAt: number;
 }
 
+/** One short message of a reply sent in bursts. All bursts of one reply have the same `group`; `index` is their order. */
+export interface AiBurst {
+  text: string;
+  index: number;
+  group: string;
+}
+
 export type AiReply =
-  | { status: "reply"; text: string }
+  /** `bursts` and `group` are there when the reply came as bursts (the server's own cut of `text`). */
+  | { status: "reply"; text: string; bursts?: string[]; group?: string }
   | { status: "none" }
   /** The server has no AI plugin. */
   | { status: "unavailable" }
@@ -28,6 +36,8 @@ export interface AiStatus {
 export interface AiReplyHandlers {
   /** The assistant has taken the message; called once, before any reply. */
   onStarted?: () => void;
+  /** Called for each burst as it arrives, in order, before the stream ends. A reply that came whole has none: use `bursts` of the reply. */
+  onBurst?: (burst: AiBurst) => void;
 }
 
 /** Where the browser keeps the session the server hands back with a reply; it is sent with the next request. The server keeps none. */
@@ -72,7 +82,7 @@ export class HttpAiClient implements AiClient {
     const response = await this.#request("/api/ai/reply", {
       method: "POST",
       headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
-      body: JSON.stringify({ roomId, messages, session: this.#session?.get() }),
+      body: JSON.stringify({ roomId, messages, session: this.#session?.get(), bursts: true }),
     });
     if (response.status === 404) return { status: "unavailable" };
     if (response.status === 409) return { status: "busy" };
@@ -93,10 +103,13 @@ export class HttpAiClient implements AiClient {
   /** `delta` events carry the text as it comes; the reply is shown whole, so only `done` (all of it) is used. */
   async #streamed(body: ReadableStream<Uint8Array>, handlers: AiReplyHandlers): Promise<AiReply> {
     for await (const { event, data } of readEvents(body)) {
-      const fields = (data ? JSON.parse(data) : {}) as { text?: string; message?: string; session?: string };
+      const fields = (data ? JSON.parse(data) : {}) as { text?: string; message?: string; session?: string; bursts?: string[]; group?: string; index?: number };
       if (event === "started") handlers.onStarted?.();
+      if (event === "burst" && fields.text && fields.group !== undefined && fields.index !== undefined) {
+        handlers.onBurst?.({ text: fields.text, index: fields.index, group: fields.group });
+      }
       if (event === "error") throw new Error(fields.message ?? copy.noReply);
-      if (event === "done") return this.#keep(fields.text ? { status: "reply", text: fields.text, session: fields.session } : { status: "none", session: fields.session });
+      if (event === "done") return this.#keep(fields.text ? { status: "reply", text: fields.text, ...(fields.bursts && { bursts: fields.bursts, group: fields.group }), session: fields.session } : { status: "none", session: fields.session });
     }
     throw new Error(copy.noReply);
   }

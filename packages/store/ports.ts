@@ -47,7 +47,7 @@ export interface DeviceStore {
   restoreRoom(id: string): Promise<void>;
   trail(roomId: string): Live<TrailMessage[]>;
   /** Saves a message in the room, as the person by default; the assistant's replies go through here too, so they sync like any other message. */
-  send(roomId: string, content: string, authorId?: Author, kind?: string): Promise<Message>;
+  send(roomId: string, content: string, authorId?: Author, kind?: string, data?: Record<string, unknown>): Promise<Message>;
   retry(messageId: string): Promise<void>;
   putFile(file: FileDraft): Promise<FileItem>;
   syncStatus(): Live<SyncStatus>;
